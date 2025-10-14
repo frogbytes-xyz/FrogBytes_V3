@@ -1,0 +1,147 @@
+# ============================================
+# Dependencies
+# ============================================
+node_modules/
+/.pnp
+.pnp.js
+.yarn/
+.pnpm-store/
+
+# ============================================
+# Testing & Coverage
+# ============================================
+coverage/
+*.lcov
+.nyc_output
+test-results/
+playwright-report/
+playwright/.cache/
+.playwright-mcp/
+__snapshots__/
+
+# ============================================
+# Next.js Build Artifacts
+# ============================================
+.next/
+out/
+build/
+dist/
+.turbo/
+
+# ============================================
+# TypeScript
+# ============================================
+*.tsbuildinfo
+*.tsbuildinfo.*
+next-env.d.ts
+
+# ============================================
+# Logs
+# ============================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+dev-debug.log
+
+# ============================================
+# Environment Variables (NEVER COMMIT SECRETS)
+# ============================================
+.env
+.env*.local
+.env.production
+.env.development.local
+.env.test.local
+
+# ============================================
+# Deployment
+# ============================================
+.vercel
+.netlify/
+
+# ============================================
+# Editor Directories and Files
+# ============================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================
+# OS Specific
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# ============================================
+# Project Management Tools
+# ============================================
+.taskmaster/
+.github/
+.claude/
+
+# ============================================
+# Uploaded Files & Temporary Data
+# ============================================
+tmp/
+uploads/
+temp/
+*.backup
+*.old
+*.tmp
+
+# ============================================
+# Supabase Local Development
+# ============================================
+.branches/
+.temp/
+supabase/.branches/
+supabase/.temp/
+
+# ============================================
+# Bundle Analyzer
+# ============================================
+.next/analyze/
+
+# ============================================
+# Git Hooks
+# ============================================
+.husky/_
+
+# ============================================
+# Screenshots & Images (development)
+# ============================================
+# Allow curated images in public/, but ignore development screenshots
+**/*Screenshot*.png
+**/*screenshot*.png
+**/screenshot-*.png
+
+# ============================================
+# Database & Migration Artifacts
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ============================================
+# Miscellaneous
+# ============================================
+.cache/
+.parcel-cache/
+.eslintcache 

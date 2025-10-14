@@ -1,0 +1,154 @@
+/* React-PDF Styles - Must be imported before Tailwind */
+@import 'react-pdf/dist/Page/TextLayer.css';
+@import 'react-pdf/dist/Page/AnnotationLayer.css';
+
+/* Syntax Highlighting for Code Blocks */
+@import 'highlight.js/styles/github-dark.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Refreshing Light Mode Design System */
+:root {
+  --background: 0, 0%, 100%;
+  --foreground: 222, 47%, 11%;
+  --card: 0, 0%, 99%;
+  --card-foreground: 222, 47%, 11%;
+  --popover: 0, 0%, 100%;
+  --popover-foreground: 222, 47%, 11%;
+  --primary: 222, 47%, 11%;
+  --primary-foreground: 0, 0%, 98%;
+  --secondary: 210, 40%, 96%;
+  --secondary-foreground: 222, 47%, 11%;
+  --muted: 210, 40%, 96%;
+  --muted-foreground: 215, 16%, 47%;
+  --accent: 210, 40%, 96%;
+  --accent-foreground: 222, 47%, 11%;
+  --destructive: 0, 84%, 60%;
+  --destructive-foreground: 0, 0%, 98%;
+  --border: 214, 32%, 91%;
+  --input: 214, 32%, 91%;
+  --ring: 222, 47%, 11%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 0, 0%, 7%;
+  --foreground: 0 0% 98%;
+  --card: 0, 0%, 7%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0, 0%, 7%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 0, 0%, 11%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0, 0%, 11%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 0, 0%, 11%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 359, 100%, 61%;
+  --destructive-foreground: 0, 0%, 100%;
+  --border: 0, 0%, 17%;
+  --input: 0, 0%, 11%;
+  --ring: 240 4.9% 83.9%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .step {
+    counter-increment: step;
+  }
+
+  .step:before {
+    @apply absolute w-9 h-9 bg-muted rounded-full font-mono font-medium text-sm text-center text-muted-foreground flex items-center justify-center;
+    @apply ml-[-50px] mt-[-4px];
+    content: counter(step);
+  }
+
+  /* Fade in animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out;
+  }
+
+  /* 3D transform utilities for flashcard flip */
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out;
+  }
+
+  .delay-100 {
+    animation-delay: 0.1s;
+  }
+
+  .delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .delay-300 {
+    animation-delay: 0.3s;
+  }
+
+  .delay-1000 {
+    animation-delay: 1s;
+  }
+
+  .delay-2000 {
+    animation-delay: 2s;
+  }
+
+  /* Shimmer animation for progress bar */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+}
