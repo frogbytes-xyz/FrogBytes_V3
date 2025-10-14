@@ -53,8 +53,12 @@ dev-debug.log
 .env
 .env*.local
 .env.production
+.env.production.local
 .env.development.local
+.env.test
 .env.test.local
+.env.backup
+.env.keys
 
 # ============================================
 # Deployment
@@ -106,6 +110,16 @@ temp/
 *.tmp
 
 # ============================================
+# Archives & Compressed Files
+# ============================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ============================================
 # Supabase Local Development
 # ============================================
 .branches/
@@ -140,8 +154,21 @@ supabase/.temp/
 *.db-journal
 
 # ============================================
+# Scripts & One-off Migrations
+# ============================================
+scripts/
+_scripts/
+migrations-temp/
+
+# ============================================
 # Miscellaneous
 # ============================================
 .cache/
 .parcel-cache/
-.eslintcache 
+.eslintcache
+.mcp.json
+.swc/
+.cursor/
+*.pid
+*.seed
+*.pid.lock
