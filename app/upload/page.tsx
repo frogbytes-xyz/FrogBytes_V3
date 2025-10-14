@@ -264,6 +264,21 @@ export default function UploadPage() {
 
   const handleUploadError = (error: string) => {
     console.error('Upload error:', error)
+    
+    // Check if this is an authentication error
+    const isAuthError = error.toLowerCase().includes('authentication') || 
+                        error.toLowerCase().includes('require authentication') ||
+                        error.toLowerCase().includes('private or require')
+    
+    // For authentication errors, DON'T change processingStep
+    // This keeps the FileUpload component visible with the extension button
+    if (isAuthError) {
+      console.log('Authentication error detected - keeping FileUpload visible for cookie extraction')
+      // The FileUpload component will handle showing the auth helper UI
+      return
+    }
+    
+    // For other errors, show error state
     setErrorMessage(error)
     setProcessingStep('error')
   }
