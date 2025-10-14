@@ -342,6 +342,7 @@ export default function UploadPage() {
               onUploadComplete={handleUploadComplete}
               onUploadError={handleUploadError}
               initialFile={pendingFile}
+              user={user}
             />
           </>
         )}

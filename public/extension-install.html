@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install FrogBytes Cookie Helper</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 24px;
+      padding: 48px;
+      max-width: 600px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      font-size: 18px;
+      color: #666;
+    }
+    
+    .benefits {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 32px 0;
+    }
+    
+    .benefits h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    
+    .benefits ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .benefits li {
+      padding: 12px 0;
+      display: flex;
+      align-items: start;
+      gap: 12px;
+    }
+    
+    .benefits li::before {
+      content: '✓';
+      color: #10b981;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    
+    .steps {
+      margin: 32px 0;
+    }
+    
+    .steps h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    
+    .steps ol {
+      padding-left: 24px;
+    }
+    
+    .steps li {
+      margin: 12px 0;
+      line-height: 1.6;
+      color: #333;
+    }
+    
+    .steps li strong {
+      color: #000;
+    }
+    
+    .cta-button {
+      display: block;
+      width: 100%;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-align: center;
+      text-decoration: none;
+      margin: 24px 0;
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    }
+    
+    .note {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 24px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .security {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 24px 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">🐸🔐</div>
+      <h1>FrogBytes Cookie Helper</h1>
+      <p class="subtitle">One-click cookie extraction for protected videos</p>
+    </div>
+    
+    <div class="benefits">
+      <h2>Why Install This Extension?</h2>
+      <ul>
+        <li>
+          <div>
+            <strong>One-Click Authentication</strong><br>
+            No more manual cookie copying - just click and it's done!
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>University Lectures Made Easy</strong><br>
+            Download Kaltura, Panopto, and other protected content effortlessly
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Privacy First</strong><br>
+            Cookies are only shared with FrogBytes, never stored by the extension
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Works Everywhere</strong><br>
+            Supports 1500+ video platforms through yt-dlp
+          </div>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="steps">
+      <h2>📦 Installation Steps</h2>
+      <ol>
+        <li><strong>Download</strong> the extension files (manifest.json, extension-*.js)</li>
+        <li>Open Chrome and go to <code>chrome://extensions/</code></li>
+        <li>Enable <strong>"Developer mode"</strong> (top right)</li>
+        <li>Click <strong>"Load unpacked"</strong></li>
+        <li>Select the folder containing the extension files</li>
+        <li>Done! Extension is now installed ✨</li>
+      </ol>
+    </div>
+    
+    <a href="#" class="cta-button" onclick="downloadExtension()">
+      📥 Download Extension Files
+    </a>
+    
+    <div class="steps">
+      <h2>🚀 How to Use</h2>
+      <ol>
+        <li>Go to FrogBytes and click <strong>"Paste URL"</strong></li>
+        <li>Enter a video URL that requires authentication</li>
+        <li>Click <strong>"Download Video"</strong></li>
+        <li>If authentication is needed, click <strong>"🚀 Auto Extract with Extension"</strong></li>
+        <li>The extension automatically extracts cookies and starts the download!</li>
+      </ol>
+    </div>
+    
+    <div class="security">
+      <strong>🔒 Security & Privacy:</strong><br>
+      • Extension only reads cookies when you explicitly request it<br>
+      • Cookies are sent only to FrogBytes (your own app)<br>
+      • No data is stored or sent to third parties<br>
+      • Open source - you can review all the code
+    </div>
+    
+    <div class="note">
+      <strong>⚠️ Note:</strong> This extension requires "Developer mode" to be installed. 
+      Chrome may show a warning - this is normal for unpacked extensions. 
+      The extension is completely safe and you can review the source code.
+    </div>
+  </div>
+  
+  <script>
+    function downloadExtension() {
+      alert('To download: Right-click and save the following files from /public/:\n\n' +
+            '• manifest.json\n' +
+            '• extension-content.js\n' +
+            '• extension-background.js\n' +
+            '• extension-popup.html\n\n' +
+            'Then follow the installation steps above.');
+    }
+  </script>
+</body>
+</html>
+

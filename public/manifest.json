@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "FrogBytes Cookie Helper",
+  "version": "1.0.0",
+  "description": "Automatically share cookies with FrogBytes for downloading protected university lectures",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "extension-popup.html",
+    "default_icon": {
+      "16": "icon-16.png",
+      "48": "icon-48.png",
+      "128": "icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "extension-background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["extension-content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "icons": {
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
+  }
+}
+

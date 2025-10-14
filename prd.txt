@@ -1,0 +1,286 @@
+# Multi-Source Video Download System
+## Product Design Review (PDR)
+
+**Version:** 1.0  
+**Date:** October 14, 2025  
+**Status:** Design Phase
+
+---
+
+## 1. Executive Summary
+
+### 1.1 Purpose
+Enable users to download videos from any platform by providing a URL. The system automatically handles authentication when needed through a smart cookie-based flow.
+
+### 1.2 Key Features
+- Universal URL support (1500+ platforms via yt-dlp)
+- Automatic authentication detection
+- Cookie-based session handling (no credential storage)
+- Real-time download progress
+- MP4 output format
+
+### 1.3 Success Criteria
+- Support 95%+ of video platforms
+- Authentication completion rate > 80%
+- Download initiation < 5 seconds
+
+---
+
+## 2. System Architecture
+
+### 2.1 High-Level Flow
+
+```
+User Input URL → Validate → Try Download
+                                ↓
+                    ┌───────────┴───────────┐
+                    │                       │
+                 Success                Auth Needed
+                    │                       │
+                    │                       ↓
+                    │              Open Auth Popup
+                    │                       │
+                    │              Extract Cookies
+                    │                       │
+                    │              Retry Download
+                    │                       │
+                    └───────────┬───────────┘
+                                ↓
+                         Download Complete
+```
+
+### 2.2 Components
+
+**Frontend:**
+- URL Input Component
+- Authentication Handler (popup/extension)
+- Download Progress Tracker
+
+**Backend:**
+- REST API (FastAPI/Express)
+- Download Engine (yt-dlp wrapper)
+- Cookie Manager (temp storage)
+
+**Storage:**
+- Temporary file storage
+- In-memory job queue (Redis)
+- Cookie cache (auto-cleanup)
+
+---
+
+## 3. Technical Design
+
+### 3.1 API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/download/initiate` | POST | Start download attempt |
+| `/api/download/retry` | POST | Retry with cookies |
+| `/api/download/status/:id` | GET | Check job status |
+| `/api/download/file/:id` | GET | Download completed file |
+| `/ws/download/:id` | WS | Real-time progress |
+
+### 3.2 Authentication Flow
+
+**Three Methods (in order of preference):**
+
+1. **Browser Extension** (Best UX)
+   - One-time install
+   - Automatic cookie extraction
+   - Works for all sites
+
+2. **Popup Window** (No install needed)
+   - Opens auth URL in popup
+   - User logs in
+   - Communicates cookies via postMessage
+
+3. **Manual Export** (Fallback)
+   - Show instructions
+   - User exports cookies manually
+   - Paste into text area
+
+### 3.3 Cookie Management
+
+**Lifecycle:**
+```
+Receive → Validate → Store (memory) → Convert to Netscape format
+→ Use for download → Delete temp files → Clear cache
+```
+
+**Security:**
+- No persistent storage
+- Encryption in transit (HTTPS)
+- Auto-cleanup after use
+- Separate files per request
+
+### 3.4 Download Process
+
+```python
+# Simplified flow
+1. POST /api/download/initiate with URL
+2. Backend tries yt-dlp download
+3. If auth needed → return {needs_auth: true}
+4. Frontend opens auth flow
+5. POST /api/download/retry with cookies
+6. Download completes
+7. Serve file to user
+```
+
+---
+
+## 4. Implementation Details
+
+### 4.1 Tech Stack
+
+**Backend:**
+- Python + FastAPI
+- yt-dlp (video extraction)
+- Redis (job queue)
+- FFmpeg (format conversion)
+
+**Frontend:**
+- React/Vue/Vanilla JS
+- WebSocket for progress
+- Optional browser extension
+
+### 4.2 Key Code Components
+
+**Backend (Python):**
+- `DownloadService` - Main download logic
+- `CookieManager` - Cookie handling
+- `JobQueue` - Async job processing
+
+**Frontend (JavaScript):**
+- `VideoDownloader` - Main controller
+- `AuthHandler` - Authentication flow
+- `ProgressTracker` - UI updates
+
+### 4.3 Error Handling
+
+| Error Type | Detection | Resolution |
+|------------|-----------|------------|
+| Auth Required | 401/403 or "login" in error | Trigger auth flow |
+| Invalid URL | Validation fails | Show error message |
+| Unsupported Site | yt-dlp fails | Notify user |
+| Download Failed | Network/server error | Retry up to 3 times |
+
+---
+
+## 5. Security & Privacy
+
+### 5.1 Cookie Security
+- Never store cookies permanently
+- Use only for single download
+- Encrypt in transit
+- Clear from memory after use
+
+### 5.2 Privacy
+- No credential storage
+- No tracking of download history (optional)
+- Clear communication about cookie usage
+- GDPR-compliant data handling
+
+### 5.3 Rate Limiting
+- Per-user limits to prevent abuse
+- IP-based throttling
+- Queue system for high load
+
+---
+
+## 6. User Experience
+
+### 6.1 Happy Path
+1. User pastes URL
+2. Click "Download"
+3. Video downloads immediately
+4. File saves to device
+
+### 6.2 Auth Required Path
+1. User pastes URL
+2. Click "Download"
+3. Modal: "Authentication needed"
+4. Popup opens with login page
+5. User logs in
+6. Popup closes automatically
+7. Download starts
+8. File saves to device
+
+### 6.3 Fallback Path
+1. User pastes URL
+2. Click "Download"
+3. Modal: "Authentication needed"
+4. Instructions shown
+5. User exports cookies manually
+6. Paste cookies
+7. Download starts
+8. File saves to device
+
+---
+
+## 7. Future Enhancements
+
+- Batch downloads
+- Format selection (quality options)
+- Playlist support
+- Schedule downloads
+- Cloud storage integration
+- Video preview before download
+
+---
+
+## 8. Risks & Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Platform blocks yt-dlp | High | Keep yt-dlp updated, fallback to browser automation |
+| Cookie extraction fails | Medium | Provide manual option |
+| Legal concerns | High | Terms of Service, user responsibility clause |
+| Storage costs | Medium | Auto-cleanup, time limits on files |
+| Abuse/overuse | Medium | Rate limiting, user quotas |
+
+---
+
+## 9. Success Metrics
+
+**Technical:**
+- 99% uptime
+- < 5s download initiation
+- < 1% error rate
+
+**User:**
+- > 80% auth completion rate
+- < 3 clicks to download
+- 4+ user satisfaction score
+
+**Business:**
+- Support cost < $X per user
+- Retention rate > Y%
+
+---
+
+## 10. Timeline & Milestones
+
+**Phase 1: MVP (4 weeks)**
+- Basic download functionality
+- Auth flow (popup method)
+- Progress tracking
+
+**Phase 2: Enhancement (2 weeks)**
+- Browser extension
+- Better error handling
+- UI polish
+
+**Phase 3: Scale (2 weeks)**
+- Queue system
+- Rate limiting
+- Performance optimization
+
+---
+
+## Appendix: Key Dependencies
+
+- **yt-dlp**: Video extraction (1500+ sites)
+- **FFmpeg**: Video conversion
+- **FastAPI**: Backend framework
+- **Redis**: Job queue
+- **WebSocket**: Real-time updates

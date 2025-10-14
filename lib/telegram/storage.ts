@@ -297,14 +297,21 @@ export async function uploadCompletePackage(
 export async function uploadToTelegram(
   filePath: string,
   fileName: string,
-  fileSize: number
+  fileSize: number,
+  sourceUrl?: string
 ): Promise<TelegramUploadResult> {
+  // Build caption with optional source URL
+  const caption = sourceUrl 
+    ? `📁 ${fileName}\n📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB\n🔗 Source: ${sourceUrl}`
+    : `📁 ${fileName}\n📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB`
+  
   // Use archive topic as default
   return uploadToTelegramTopic(
     filePath,
     fileName,
     fileSize,
-    TELEGRAM_ARCHIVE_TOPIC_ID
+    TELEGRAM_ARCHIVE_TOPIC_ID,
+    caption
   )
 }
 

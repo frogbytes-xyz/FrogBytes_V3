@@ -26,10 +26,43 @@ Visit [http://localhost:3000](http://localhost:3000) to access the application.
 - Node.js 22+ (recommended)
 - Docker (for local Supabase)
 - Supabase CLI (`npm install -g supabase`)
+- yt-dlp (`pip install yt-dlp` or `brew install yt-dlp`) - for URL video downloads
+
+## 🔐 Browser Extension (Optional - Auto Cookie Extraction)
+
+The **FrogBytes Cookie Helper** browser extension enables automatic cookie extraction for downloading protected university lectures and authenticated video content.
+
+**Features:**
+- 🚀 **One-Click Authentication** - No manual cookie copying
+- 🎓 **University Lectures** - Works with Kaltura, Panopto, Canvas, etc.
+- 🔒 **Privacy-First** - Cookies only shared with FrogBytes, never stored
+- ⚡ **Universal Support** - Works with 1500+ platforms via yt-dlp
+
+**Installation:**
+1. Open `chrome://extensions/` in Chrome
+2. Enable "Developer mode" (toggle in top-right)
+3. Click "Load unpacked"
+4. Select the `/public` folder from this project
+5. Extension is now active! Look for the 🐸 icon
+
+**Usage:**
+1. Go to FrogBytes upload page
+2. Click "Paste URL" tab
+3. Enter a protected video URL
+4. If authentication needed, click "🚀 Auto Extract with Extension"
+5. Extension automatically handles authentication
+6. Download proceeds seamlessly!
+
+Extension files are in `/public/`:
+- `manifest.json` - Extension configuration
+- `extension-content.js` - Detects FrogBytes page
+- `extension-background.js` - Handles cookie extraction
+- `extension-popup.html` - Extension popup UI
 
 ## ✨ Features
 
 - **Audio/Video Transcription**: Upload lectures and automatically transcribe using AI
+- **URL Download**: Paste video URLs from YouTube, Vimeo, and 10+ platforms instead of uploading files
 - **AI Summarization**: Generate structured summaries with key points and concepts
 - **PDF Generation**: Compile summaries into professional PDFs with LaTeX support
 - **Quiz & Flashcard Generation**: Create study materials from lecture content

@@ -8,6 +8,34 @@
 
 FrogBytes is a multifunctional lecture summarization & learning platform that helps students transcribe lectures, generate AI summaries, create study materials, and build a collaborative knowledge base.
 
+**🚨 ARCHITECTURE RULE: This is a Next.js 15 monolithic full-stack application. ALL features are implemented within the Next.js framework using:**
+- API Routes (`app/api/`) for backend endpoints
+- Server Actions for mutations
+- Server Components for data fetching
+- Client Components only when interactivity is needed
+- TypeScript throughout the entire stack
+
+**NEVER introduce separate backend frameworks (FastAPI, Express standalone, etc.). Everything must integrate into the existing Next.js architecture.**
+
+## 🚫 CRITICAL: No Documentation Files Rule
+
+**NEVER create markdown documentation files (.md) as part of your implementation work. This includes:**
+- ❌ No `FEATURE_NAME.md` files
+- ❌ No `IMPLEMENTATION_SUMMARY.md` files
+- ❌ No `FIX_SUMMARY.md` files
+- ❌ No `COMMIT_MESSAGE.txt` files
+- ❌ No technical documentation files of any kind
+
+**Why?** These files are a waste of time and clutter the repository. Focus exclusively on:
+- ✅ Writing production code
+- ✅ Fixing bugs
+- ✅ Implementing features
+- ✅ Writing tests
+
+**Only exception:** Updating the existing `README.md` if explicitly requested by the user.
+
+**If you need to document something:** Put it in code comments, JSDoc, or commit messages - never in separate .md files.
+
 ### Key Technologies
 - **Framework**: Next.js 15+ with App Router and Turbopack
 - **Database**: Supabase (PostgreSQL with Row Level Security)
@@ -140,13 +168,14 @@ Recent refactoring has established a clean foundation:
 
 ### When Making Changes
 
-1. **Read existing code first** - understand patterns before adding new code
-2. **Follow the existing structure** - don't introduce new patterns without reason
-3. **Type safety is paramount** - prefer type-safe solutions over quick hacks
-4. **Test your changes** - ensure TypeScript compiles and linting passes
-5. **Document complex logic** - add JSDoc for non-obvious behavior
-6. **Performance matters** - profile before optimizing, but be aware of bundle size
-7. **Security first** - validate inputs, sanitize outputs, respect RLS
+1. **CRITICAL: Maintain Architecture Consistency** - This is a Next.js 15 full-stack application. NEVER create separate backend directories (Python, Express, etc.). ALL backend logic goes in `app/api/` routes, `lib/` for business logic, and `services/` for data access. Any new feature must integrate into the existing Next.js architecture.
+2. **Read existing code first** - understand patterns before adding new code
+3. **Follow the existing structure** - don't introduce new patterns without reason
+4. **Type safety is paramount** - prefer type-safe solutions over quick hacks
+5. **Test your changes** - ensure TypeScript compiles and linting passes
+6. **Document complex logic** - add JSDoc for non-obvious behavior
+7. **Performance matters** - profile before optimizing, but be aware of bundle size
+8. **Security first** - validate inputs, sanitize outputs, respect RLS
 
 ### Resources
 

@@ -172,3 +172,14 @@ migrations-temp/
 *.pid
 *.seed
 *.pid.lock
+
+# Dependency directories
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/ 
