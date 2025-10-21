@@ -62,26 +62,27 @@ export async function downloadVideo(
         size: 0,
         mimeType: '',
         path: '',
-        error: 'Failed to retrieve video information. The video may be private or require authentication.'
+        error: 'Failed to retrieve video information. The video may be private or require authentication.',
+        errorType: 'auth'
       }
     }
 
     // Download the video
     const outputTemplate = join(uploadDir, `${fileId}.%(ext)s`)
-        const downloadedPath = await downloadWithProgress(
-          url,
-          outputTemplate,
-          options.onProgress,
-          options.cookies,
-          cookieFilePath ?? undefined
-        )
+    const downloadResult = await downloadWithProgress(
+      url,
+      outputTemplate,
+      options.onProgress,
+      options.cookies,
+      cookieFilePath ?? undefined
+    )
     
     // Clean up cookie file after download attempt
     if (cookieFilePath) {
       await unlink(cookieFilePath).catch(() => {})
     }
 
-    if (!downloadedPath) {
+    if (!downloadResult.path) {
       return {
         success: false,
         fileId: '',
@@ -89,9 +90,12 @@ export async function downloadVideo(
         size: 0,
         mimeType: '',
         path: '',
-        error: 'Download failed. Please try again.'
+        error: downloadResult.error || 'Download failed. Please try again.',
+        errorType: downloadResult.errorType || 'unknown'
       }
     }
+
+    const downloadedPath = downloadResult.path
 
     // Get file stats
     const stats = await stat(downloadedPath)
@@ -107,7 +111,8 @@ export async function downloadVideo(
         size: 0,
         mimeType: '',
         path: '',
-        error: `Video is too large (${(stats.size / 1024 / 1024).toFixed(2)}MB). Maximum size is ${(options.maxFileSize / 1024 / 1024).toFixed(0)}MB.`
+        error: `Video is too large (${(stats.size / 1024 / 1024).toFixed(2)}MB). Maximum size is ${(options.maxFileSize / 1024 / 1024).toFixed(0)}MB.`,
+        errorType: 'format'
       }
     }
 
@@ -133,6 +138,7 @@ export async function downloadVideo(
       }
     }
   } catch (error) {
+    const errorType = classifyDownloadError(error instanceof Error ? error.message : 'Unknown error')
     return {
       success: false,
       fileId: '',
@@ -140,7 +146,8 @@ export async function downloadVideo(
       size: 0,
       mimeType: '',
       path: '',
-      error: error instanceof Error ? error.message : 'An unexpected error occurred during download'
+      error: error instanceof Error ? error.message : 'An unexpected error occurred during download',
+      errorType
     }
   }
 }
@@ -222,7 +229,7 @@ async function downloadWithProgress(
   onProgress?: (progress: DownloadProgress) => void,
   cookies?: string,
   cookieFile?: string
-): Promise<string | null> {
+): Promise<{ path: string | null; error?: string; errorType?: 'auth' | 'network' | 'format' | 'timeout' | 'unknown' }> {
   return new Promise((resolve) => {
     const args = [
       '--format', 'best[ext=mp4]/best',
@@ -247,6 +254,7 @@ async function downloadWithProgress(
     const ytdlp = spawn('yt-dlp', args)
 
     let finalPath: string | null = null
+    let errorOutput = ''
 
     ytdlp.stdout.on('data', (data: Buffer) => {
       const output = data.toString()
@@ -294,15 +302,24 @@ async function downloadWithProgress(
       }
     })
 
+    ytdlp.stderr.on('data', (data: Buffer) => {
+      errorOutput += data.toString()
+    })
+
     ytdlp.on('close', (code) => {
       if (code !== 0) {
-        resolve(null)
+        const errorType = classifyDownloadError(errorOutput)
+        resolve({
+          path: null,
+          error: errorOutput || 'Download failed with non-zero exit code',
+          errorType
+        })
         return
       }
 
       // If we captured the path, use it
       if (finalPath) {
-        resolve(finalPath)
+        resolve({ path: finalPath })
         return
       }
 
@@ -316,16 +333,21 @@ async function downloadWithProgress(
       for (const ext of extensions) {
         const path = join(dir, `${fileId}.${ext}`)
         stat(path)
-          .then(() => resolve(path))
+          .then(() => resolve({ path }))
           .catch(() => {})
       }
 
       // If we still haven't found it, return null
-      setTimeout(() => resolve(null), 1000)
+      setTimeout(() => resolve({ path: null }), 1000)
     })
 
-    ytdlp.on('error', () => {
-      resolve(null)
+    ytdlp.on('error', (error) => {
+      const errorType = classifyDownloadError(error.message)
+      resolve({
+        path: null,
+        error: error.message,
+        errorType
+      })
     })
   })
 }
@@ -344,6 +366,45 @@ function parseSize(value: string, unit?: string): number {
   }
   
   return num * (multipliers[unit] ?? 1)
+}
+
+/**
+ * Classify download error type based on error message
+ */
+function classifyDownloadError(errorMessage: string): 'auth' | 'network' | 'format' | 'timeout' | 'unknown' {
+  const lowerError = errorMessage.toLowerCase()
+  
+  // Authentication errors
+  if (lowerError.includes('private') || lowerError.includes('authentication') || 
+      lowerError.includes('unauthorized') || lowerError.includes('forbidden') ||
+      lowerError.includes('login') || lowerError.includes('signin') ||
+      lowerError.includes('access denied') || lowerError.includes('members only') ||
+      lowerError.includes('subscription') || lowerError.includes('premium')) {
+    return 'auth'
+  }
+  
+  // Network errors
+  if (lowerError.includes('network') || lowerError.includes('connection') || 
+      lowerError.includes('timeout') || lowerError.includes('dns') ||
+      lowerError.includes('refused') || lowerError.includes('unreachable') ||
+      lowerError.includes('socket') || lowerError.includes('econnreset')) {
+    return 'network'
+  }
+  
+  // Format errors
+  if (lowerError.includes('format') || lowerError.includes('codec') || 
+      lowerError.includes('unsupported') || lowerError.includes('not available') ||
+      lowerError.includes('too large') || lowerError.includes('size limit')) {
+    return 'format'
+  }
+  
+  // Timeout errors
+  if (lowerError.includes('timeout') || lowerError.includes('timed out') ||
+      lowerError.includes('expired') || lowerError.includes('deadline')) {
+    return 'timeout'
+  }
+  
+  return 'unknown'
 }
 
 /**

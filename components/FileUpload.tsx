@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import LoginPromptDialog from '@/components/auth/LoginPromptDialog'
+import MiniBrowser from '@/components/MiniBrowser'
+import { useMiniBrowserAuth } from '@/hooks/useMiniBrowserAuth'
 
 interface FileUploadProps {
   onUploadComplete?: (fileId: string) => void
@@ -14,7 +16,7 @@ interface FileUploadProps {
 }
 
 type UploadMode = 'file' | 'url'
-type URLValidationState = 'idle' | 'validating' | 'valid' | 'invalid'
+// Removed URL validation - accept all URLs
 type DetectedPlatform = {
   name: string
   icon: string
@@ -25,7 +27,7 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
   const [mode, setMode] = useState<UploadMode>('file')
   const [file, setFile] = useState<File | null>(initialFile || null)
   const [url, setUrl] = useState<string>('')
-  const [urlValidation, setUrlValidation] = useState<URLValidationState>('idle')
+  // Removed URL validation state
   const [detectedPlatform, setDetectedPlatform] = useState<DetectedPlatform | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -42,7 +44,9 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
   const fileInputRef = useRef<HTMLInputElement>(null)
   const hasAutoUploaded = useRef(false)
   const urlInputRef = useRef<HTMLInputElement>(null)
-  const validationTimeoutRef = useRef<NodeJS.Timeout>()
+
+  // Mini-browser authentication
+  const miniBrowserAuth = useMiniBrowserAuth()
 
   const supportedFormats = ['.mp3', '.wav', '.mp4', '.m4a', '.mov', '.mpeg']
   
@@ -93,104 +97,9 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
     })
   }, [])
   
-  const platformPatterns: { [key: string]: { regex: RegExp; icon: string; color: string } } = {
-    youtube: { 
-      regex: /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)/i, 
-      icon: '▶️',
-      color: '#FF0000'
-    },
-    vimeo: { 
-      regex: /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|video\/)?(\d+)/i,
-      icon: '🎬',
-      color: '#1AB7EA'
-    },
-    dailymotion: { 
-      regex: /dailymotion\.com\/video\/([^_]+)/i,
-      icon: '🎥',
-      color: '#0066DC'
-    },
-    twitch: { 
-      regex: /twitch\.tv\/videos\/(\d+)|twitch\.tv\/(\w+)/i,
-      icon: '🎮',
-      color: '#9146FF'
-    },
-    tiktok: { 
-      regex: /tiktok\.com\/@[\w.-]+\/video\/\d+|vm\.tiktok\.com\/[\w-]+/i,
-      icon: '🎵',
-      color: '#000000'
-    },
-    instagram: { 
-      regex: /instagram\.com\/(p|reel|tv)\/[\w-]+/i,
-      icon: '📸',
-      color: '#E4405F'
-    }
-  }
+  // Removed platform patterns - accept all URLs
 
-  // URL Validation and Platform Detection
-  const validateAndDetectPlatform = useCallback((urlString: string) => {
-    if (!urlString.trim()) {
-      setUrlValidation('idle')
-      setDetectedPlatform(null)
-      return
-    }
-
-    setUrlValidation('validating')
-
-    // Clear previous timeout
-    if (validationTimeoutRef.current) {
-      clearTimeout(validationTimeoutRef.current)
-    }
-
-    // Debounce validation
-    validationTimeoutRef.current = setTimeout(() => {
-      try {
-        // Validate URL format
-      new URL(urlString)
-        let platformFound = false
-
-        // Check each known platform pattern
-        for (const [platformName, pattern] of Object.entries(platformPatterns)) {
-          if (pattern.regex.test(urlString)) {
-            setDetectedPlatform({
-              name: platformName.charAt(0).toUpperCase() + platformName.slice(1),
-              icon: pattern.icon,
-              color: pattern.color
-            })
-            setUrlValidation('valid')
-            platformFound = true
-            break
-          }
-        }
-
-        // If no specific platform matched, accept as generic video URL
-        // yt-dlp supports 1000+ sites, so we let it try
-        if (!platformFound) {
-          // Check if it looks like a video URL (has video-related keywords or file extensions)
-          const isLikelyVideo = /\/(video|media|watch|player|embed|stream|lecture|course|episode|clip)|\.mp4|\.m3u8|\.mpd/i.test(urlString)
-          
-          if (isLikelyVideo) {
-            setDetectedPlatform({
-              name: 'Video',
-              icon: '🎬',
-              color: '#6B7280' // Gray color for generic
-            })
-            setUrlValidation('valid')
-          } else {
-            // Still accept as valid URL, but mark as generic
-            setDetectedPlatform({
-              name: 'Web Video',
-              icon: '🌐',
-              color: '#6B7280'
-            })
-            setUrlValidation('valid')
-          }
-        }
-      } catch {
-        setDetectedPlatform(null)
-        setUrlValidation('invalid')
-      }
-    }, 500)
-  }, [])
+  // Removed URL validation - accept all URLs
 
   // Auto-paste from clipboard
   const handlePasteFromClipboard = useCallback(async () => {
@@ -198,30 +107,26 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
       const text = await navigator.clipboard.readText()
       if (text) {
         setUrl(text)
-        validateAndDetectPlatform(text)
         urlInputRef.current?.focus()
       }
     } catch (err) {
       console.error('Failed to read clipboard:', err)
     }
-  }, [validateAndDetectPlatform])
+  }, [])
 
   // Handle URL input change
   const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value
     setUrl(newUrl)
     setError(null)
-    validateAndDetectPlatform(newUrl)
-  }, [validateAndDetectPlatform])
+  }, [])
 
-  // Cleanup validation timeout
+  // Cleanup mini-browser auth
   useEffect(() => {
     return () => {
-      if (validationTimeoutRef.current) {
-        clearTimeout(validationTimeoutRef.current)
-      }
+      miniBrowserAuth.cleanup()
     }
-  }, [])
+  }, [miniBrowserAuth])
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -316,38 +221,15 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
     setNeedsAuth(false) // Reset auth flag
 
     try {
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
-          }
-          return prev + 10
-        })
-      }, 200)
-
-      const requestBody: { url: string; cookies?: string; cookieText?: string } = { url }
-      if (useCookies) {
-        if (useManualCookies && cookieText) {
-          // Use manually pasted cookies
-          requestBody.cookieText = cookieText
-        } else {
-          // Use browser cookie extraction
-          requestBody.cookies = browserForCookies
-        }
-      }
-
-      const response = await fetch('/api/upload/from-url', {
+      // Use the enhanced endpoint for automatic authentication
+      const response = await fetch('/api/upload/from-url/enhanced', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        credentials: 'include', // Include cookies for authentication
+        body: JSON.stringify({ url }),
       })
-
-      clearInterval(progressInterval)
-      setProgress(100)
 
       const contentType = response.headers.get('content-type') || ''
       const raw = await response.text()
@@ -371,6 +253,18 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         } else if (raw) {
           message = raw
         }
+        
+        // Check if this is an authentication error
+        const isAuthError = message.toLowerCase().includes('authentication') || 
+                            message.toLowerCase().includes('require authentication') ||
+                            message.toLowerCase().includes('private or require')
+        
+        if (isAuthError) {
+          // Authentication error - this should be handled by the job polling
+          // The enhanced endpoint will return authentication_required status
+          throw new Error(message)
+        }
+        
         throw new Error(message)
       }
 
@@ -382,37 +276,127 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         }
       }
 
-      setSuccess(true)
-      if (data && typeof data === 'object' && data !== null && 'file' in data) {
-        const fileData = data as { file: { id: string } }
-        onUploadComplete?.(fileData.file.id)
+      const result = data as { success: boolean; jobId: string; message: string; status: string }
+      if (!result.success || !result.jobId) {
+        throw new Error(result.message || 'Upload failed')
       }
 
-      setTimeout(() => {
-        setUrl('')
-        setSuccess(false)
-        setProgress(0)
-      }, 3000)
+      // Start polling for job status
+      await pollJobStatus(result.jobId)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Download failed'
-      
-      // Check if error is authentication-related
-      const isAuthError = errorMessage.toLowerCase().includes('private') ||
-                         errorMessage.toLowerCase().includes('authentication') ||
-                         errorMessage.toLowerCase().includes('require authentication') ||
-                         errorMessage.toLowerCase().includes('login') ||
-                         errorMessage.toLowerCase().includes('sign in')
-      
-      if (isAuthError && !useCookies) {
-        setNeedsAuth(true)
-      }
-      
       setError(errorMessage)
       onUploadError?.(errorMessage)
     } finally {
       setUploading(false)
     }
-  }, [url, user, browserForCookies, cookieText, useManualCookies, onUploadComplete, onUploadError])
+  }, [url, user, onUploadComplete, onUploadError, miniBrowserAuth])
+
+  // Poll job status for enhanced downloads
+  const pollJobStatus = useCallback(async (jobId: string) => {
+    const maxAttempts = 60 // 5 minutes with 5-second intervals
+    let attempts = 0
+
+    const poll = async (): Promise<void> => {
+      try {
+        const response = await fetch(`/api/upload/from-url/enhanced/${jobId}`, {
+          credentials: 'include', // Include cookies for authentication
+        })
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to check job status')
+        }
+
+        const jobData = data as {
+          success: boolean
+          status: string
+          message: string
+          progress?: { percentage: number }
+          file?: { id: string }
+          error?: string
+        }
+
+        // Update progress if available
+        if (jobData.progress) {
+          setProgress(jobData.progress.percentage)
+        }
+
+        // Handle different statuses
+        switch (jobData.status) {
+          case 'processing':
+            setProgress(10)
+            break
+          case 'authentication_required':
+            setProgress(20)
+            // Show mini-browser for authentication
+            setUploading(false)
+            setNeedsAuth(true)
+            
+            // Start mini-browser authentication
+            miniBrowserAuth.startAuth({
+              url,
+              userId: user.id,
+              onSuccess: (cookies) => {
+                console.log('Authentication successful, retrying upload...')
+                setNeedsAuth(false)
+                // Retry upload after authentication
+                setTimeout(() => {
+                  void handleUrlUpload(true) // Retry with authentication
+                }, 1000)
+              },
+              onError: (error) => {
+                console.error('Authentication failed:', error)
+                setError(`Authentication failed: ${error}`)
+                setNeedsAuth(false)
+                onUploadError?.(error)
+              },
+              onClose: () => {
+                setNeedsAuth(false)
+                setUploading(false)
+              }
+            })
+            return // Stop polling completely, mini-browser will handle the rest
+          case 'authentication_successful':
+            setProgress(40)
+            setError(null) // Clear auth message
+            break
+          case 'download_started':
+            setProgress(60)
+            break
+          case 'completed':
+            setProgress(100)
+            setSuccess(true)
+            if (jobData.file?.id) {
+              onUploadComplete(jobData.file.id)
+            } else {
+              throw new Error('Download completed but no file ID received')
+            }
+            return
+          case 'failed':
+            throw new Error(jobData.error || 'Download failed')
+          default:
+            // Continue polling for unknown statuses
+            break
+        }
+
+        // Continue polling if not completed or failed
+        attempts++
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 5000) // Poll every 5 seconds
+        } else {
+          throw new Error('Download timeout - please try again')
+        }
+      } catch (error) {
+        console.error('Job polling error:', error)
+        setError(error instanceof Error ? error.message : 'Failed to check download status')
+        onUploadError?.(error instanceof Error ? error.message : 'Failed to check download status')
+      }
+    }
+
+    // Start polling
+    poll()
+  }, [onUploadComplete, onUploadError])
 
   // Function to automatically extract and use cookies with extension
   const handleAutoExtractCookies = useCallback(async () => {
@@ -772,33 +756,10 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
                       value={url}
                       onChange={handleUrlChange}
                       disabled={uploading}
-                      className={`text-base h-12 pr-24 ${
-                        urlValidation === 'valid' ? 'border-green-500 focus-visible:ring-green-500' :
-                        urlValidation === 'invalid' ? 'border-red-500 focus-visible:ring-red-500' :
-                        ''
-                      }`}
+                      className="text-base h-12 pr-24"
                     />
                     
-                    {/* Validation Indicator */}
-                    <div className="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      {urlValidation === 'validating' && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                      )}
-                      {urlValidation === 'valid' && (
-                        <div className="text-green-500 flex items-center gap-1">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      )}
-                      {urlValidation === 'invalid' && url.length > 0 && (
-                        <div className="text-red-500">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
+                    {/* Removed validation indicators */}
                     
                     {/* Paste Button */}
                     <button
@@ -821,31 +782,12 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
                     </div>
                   )}
                   
-                  {/* Invalid URL Helper */}
-                  {urlValidation === 'invalid' && url.length > 0 && (
-                    <p className="mt-2 text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
-                      URL not recognized. Please enter a valid video link from a supported platform.
-                    </p>
-                  )}
+                  {/* Removed invalid URL helper */}
                 </div>
               </div>
               <div className="pt-6 border-t border-border/30">
-                <div className="text-xs text-muted-foreground">
-                  <div className="mb-3">
-                    <span className="font-medium text-foreground">Supported platforms:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {Object.entries(platformPatterns).map(([key, { icon }]) => (
-                      <Badge 
-                        key={key} 
-                        variant="outline" 
-                        className="text-xs flex items-center gap-1.5 hover:bg-muted/50 transition-colors cursor-default"
-                      >
-                        <span>{icon}</span>
-                        <span>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                      </Badge>
-                    ))}
-                  </div>
+                <div className="text-xs text-muted-foreground text-center">
+                  <p>Supports 1000+ video platforms via yt-dlp</p>
                 </div>
               </div>
             </div>
@@ -888,15 +830,14 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
                     }}
                     size="lg" 
                     className="px-8"
-                    disabled={urlValidation !== 'valid'}
+                    disabled={!url.trim()}
                   >
-                    {urlValidation === 'valid' ? 'Download Video' : 'Enter Valid URL'}
+                    Download Video
                   </Button>
                   <Button
                     onClick={() => {
                       setUrl('')
                       setError(null)
-                      setUrlValidation('idle')
                       setDetectedPlatform(null)
                     }}
                     variant="outline"
@@ -1136,6 +1077,26 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         isOpen={showLoginPrompt} 
         onClose={() => setShowLoginPrompt(false)} 
       />
+
+      {/* Mini Browser for Authentication */}
+      {miniBrowserAuth.isOpen && miniBrowserAuth.authUrl && (
+        <MiniBrowser
+          url={miniBrowserAuth.authUrl}
+          onClose={miniBrowserAuth.closeAuth}
+          onAuthenticationComplete={(cookies) => {
+            console.log('Mini-browser authentication completed')
+            miniBrowserAuth.closeAuth()
+          }}
+          onAuthenticationError={(error) => {
+            console.error('Mini-browser authentication failed:', error)
+            setError(`Authentication failed: ${error}`)
+            miniBrowserAuth.closeAuth()
+          }}
+          title="🔐 Authentication Required"
+          height="600px"
+          width="900px"
+        />
+      )}
     </div>
   )
 }

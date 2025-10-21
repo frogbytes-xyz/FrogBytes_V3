@@ -1,5 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createErrorResponse, setupGlobalErrorHandlers } from './lib/middleware/error-handler'
+
+// Setup global error handlers (only works in Node.js runtime, not Edge Runtime)
+try {
+  setupGlobalErrorHandlers()
+} catch (error) {
+  // Silently fail in Edge Runtime - error handling will be done at route level
+  console.warn('Could not setup global error handlers:', error)
+}
 
 /**
  * Next.js Middleware for Authentication
@@ -64,13 +73,9 @@ export async function middleware(request: NextRequest) {
 
     if (error || !user) {
       // No valid session - return 401
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Unauthorized',
-          details: ['Authentication required'],
-        },
-        { status: 401 }
+      return createErrorResponse(
+        new Error('Authentication required'),
+        crypto.randomUUID()
       )
     }
 
@@ -85,15 +90,7 @@ export async function middleware(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Middleware error:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-        details: ['Authentication check failed'],
-      },
-      { status: 500 }
-    )
+    return createErrorResponse(error, crypto.randomUUID())
   }
 }
 

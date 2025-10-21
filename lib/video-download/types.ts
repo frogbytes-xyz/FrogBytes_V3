@@ -11,6 +11,7 @@ export interface DownloadResult {
   path: string
   metadata?: VideoMetadata
   error?: string
+  errorType?: 'auth' | 'network' | 'format' | 'timeout' | 'unknown'
 }
 
 export interface VideoMetadata {
