@@ -341,11 +341,11 @@ export class DocumentSharingService {
       })
 
       if (error) {
-        console.warn('Failed to increment view count:', error)
+        logger.warn('Failed to increment view count', { error: error })
         // Don't throw error as this is not critical
       }
     } catch (error) {
-      console.warn('Failed to increment view count:', error)
+      logger.warn('Failed to increment view count', { error: error })
       // Don't throw error as this is not critical
     }
   }
@@ -426,6 +426,7 @@ export class DocumentSharingService {
  * Factory function to create document sharing service
  */
 export async function createDocumentSharingService(): Promise<DocumentSharingService> {
+import { logger } from '@/lib/utils/logger'
   const supabase = await createClient()
   return new DocumentSharingService(supabase)
 }

@@ -20,7 +20,7 @@ export class CollectionService {
 
   async createCollection(name: string, description: string | undefined, summaryIds: string[] = []) {
     const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) throw new Error('Authentication required to create a collection')
 
     // Ensure the user's profile row exists to satisfy FK on collections.user_id
     try {
@@ -32,7 +32,7 @@ export class CollectionService {
     } catch (e) {
       // Proceed even if upsert fails; if FK fails we will catch below
       // eslint-disable-next-line no-console
-      console.warn('User profile ensure failed (non-fatal):', e)
+      logger.warn('User profile ensure failed (non-fatal)', { error: e })
     }
 
     const { data: collection, error } = await (this.supabase as any)
@@ -97,7 +97,7 @@ export class CollectionService {
   // Accept a shared collection: duplicate summaries into recipient's account
   async acceptSharedCollection(slug: string, recipientUserId: string) {
     const shared = await this.getSharedCollection(slug)
-    if (!shared) throw new Error('Shared collection not found')
+    if (!shared) throw new Error('Shared collection not found. The link may be invalid or the collection is no longer shared')
 
     const sourceSummaries = (shared.summaries || []) as any[]
 
@@ -141,7 +141,7 @@ export class CollectionService {
   // Update collection
   async updateCollection(collectionId: string, updates: { name?: string; description?: string; is_public?: boolean }) {
     const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) throw new Error('Authentication required to update a collection')
 
     const { data, error } = await this.supabase
       .from('collections')
@@ -158,7 +158,7 @@ export class CollectionService {
   // Delete collection
   async deleteCollection(collectionId: string) {
     const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) throw new Error('Authentication required to delete a collection')
 
     const { error } = await this.supabase
       .from('collections')
@@ -173,7 +173,7 @@ export class CollectionService {
   // Add items to collection
   async addItemsToCollection(collectionId: string, summaryIds: string[]) {
     const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) throw new Error('Authentication required to add items to a collection')
 
     // Verify collection ownership
     const { data: collection, error: fetchError } = await this.supabase
@@ -183,7 +183,7 @@ export class CollectionService {
       .eq('user_id', user.id)
       .single()
 
-    if (fetchError || !collection) throw new Error('Collection not found or access denied')
+    if (fetchError || !collection) throw new Error('Collection not found or you do not have permission to modify it')
 
     // Verify summary ownership
     const { data: validSummaries, error: summariesError } = await this.supabase
@@ -195,7 +195,7 @@ export class CollectionService {
     if (summariesError) throw summariesError
 
   const validIds = (validSummaries || []).map((s: any) => s.id)
-    if (validIds.length === 0) throw new Error('No valid summaries found')
+    if (validIds.length === 0) throw new Error('No valid summaries found. Ensure the summaries exist and belong to your account')
 
     // Get existing items to avoid duplicates and determine position
     const { data: existingItems } = await this.supabase
@@ -230,7 +230,7 @@ export class CollectionService {
   // Remove items from collection
   async removeItemsFromCollection(collectionId: string, summaryIds: string[]) {
     const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('Unauthorized')
+    if (!user) throw new Error('Authentication required to remove items from a collection')
 
     // Verify collection ownership
     const { data: collection, error: fetchError } = await this.supabase
@@ -240,7 +240,7 @@ export class CollectionService {
       .eq('user_id', user.id)
       .single()
 
-    if (fetchError || !collection) throw new Error('Collection not found or access denied')
+    if (fetchError || !collection) throw new Error('Collection not found or you do not have permission to modify it')
 
     // Remove items
     const { error: deleteError } = await this.supabase
@@ -283,6 +283,7 @@ export class CollectionService {
 }
 
 export async function createCollectionService() {
+import { logger } from '@/lib/utils/logger'
   const supabase = await createClient()
   return new CollectionService(supabase)
 }

@@ -4,6 +4,7 @@ import { createRateLimitService, type UsageType, type UserUsageStatus as UsageSt
 import { getSafeErrorMessage } from '@/lib/utils/errors'
 
 export interface RateLimitOptions {
+import { logger } from '@/lib/utils/logger'
   usageType: UsageType
   increment?: number
   skipIncrement?: boolean
@@ -118,7 +119,7 @@ export async function withRateLimit(
     }
     return result
   } catch (error) {
-    console.error('Rate limit middleware error:', error)
+    logger.error('Rate limit middleware error', error)
     return {
       allowed: false,
       response: NextResponse.json(
@@ -254,7 +255,7 @@ export async function withMultipleRateLimits(
     }
     return result
   } catch (error) {
-    console.error('Multiple rate limit middleware error:', error)
+    logger.error('Multiple rate limit middleware error', error)
     return {
       allowed: false,
       response: NextResponse.json(

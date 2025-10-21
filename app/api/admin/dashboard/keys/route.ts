@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin Dashboard API: Scraped Keys
  * GET - Fetch all scraped keys with pagination and filtering
@@ -166,7 +168,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error: any) {
-    console.error('Dashboard keys API error:', error);
+    logger.error('Dashboard keys API error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

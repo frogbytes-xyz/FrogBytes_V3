@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -56,7 +58,7 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
 
       setFlashcards(data.flashcards)
     } catch (err) {
-      console.error('Flashcard generation error:', err)
+      logger.error('Flashcard generation error', err)
       setError(err instanceof Error ? err.message : 'Failed to generate flashcards')
     } finally {
       setLoading(false)

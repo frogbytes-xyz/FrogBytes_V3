@@ -14,11 +14,11 @@ export async function createClient(): Promise<ReturnType<typeof createServerClie
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection')
   }
 
   if (!supabaseAnonKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable')
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please configure your database connection')
   }
 
   const cookieStore = await cookies()
@@ -38,7 +38,7 @@ export async function createClient(): Promise<ReturnType<typeof createServerClie
           // This can happen when cookies are set in Server Components
           // The error is expected and can be safely ignored in some contexts
           if (process.env.NODE_ENV === 'development') {
-            console.warn('Cookie setting error (expected in some contexts):', error)
+            logger.warn('Cookie setting error (expected in some contexts)', { error: error })
           }
         }
       }
@@ -58,11 +58,11 @@ export function createAdminClient(): ReturnType<typeof createServerClient<Databa
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection')
   }
 
   if (!supabaseServiceRoleKey) {
-    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable')
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required. Please configure your database connection')
   }
 
   return createServerClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
@@ -87,3 +87,4 @@ export function createAdminClient(): ReturnType<typeof createServerClient<Databa
 export type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>
 export type AdminSupabaseClient = ReturnType<typeof createAdminClient>
 export type { Database }
+import { logger } from '@/lib/utils/logger'

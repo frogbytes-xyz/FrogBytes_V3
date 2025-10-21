@@ -15,6 +15,7 @@ interface CopilotRequest {
 }
 
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const body: CopilotRequest = await request.json()
     const { question, context = '', history = [] } = body
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[Copilot] Processing question with context length:', context?.length || 0, 'and history length:', history.length)
+    logger.info('[Copilot] Processing question with context length:', context?.length || 0, 'and history length:', history.length)
 
     // Build conversation history for Gemini
     const contents: Array<{ role: string; parts: Array<{ text: string }> }> = []
@@ -79,7 +80,7 @@ Please confirm you understand the lecture content.`
     })
 
     // Call Gemini API with streaming and automatic retry/fallback
-    console.log('[Copilot] Calling Gemini API with', contents.length, 'messages')
+    logger.info('[Copilot] Calling Gemini API with', contents.length, 'messages')
 
     const { response } = await retryStreamWithKeyRotation(
       async (apiKey: string) => {
@@ -100,12 +101,12 @@ Please confirm you understand the lecture content.`
       {
         maxRetries: 5,
         onRetry: (attempt, error) => {
-          console.log(`[Copilot] Retry attempt ${attempt} due to: ${error.message}`)
+          logger.info(`[Copilot] Retry attempt ${attempt} due to: ${error.message}`)
         }
       }
     )
 
-    console.log('[Copilot] Successfully connected to Gemini, starting stream')
+    logger.info('[Copilot] Successfully connected to Gemini, starting stream')
 
     // Create streaming response
     const stream = new ReadableStream({
@@ -143,7 +144,7 @@ Please confirm you understand the lecture content.`
             }
           }
         } catch (error) {
-          console.error('Stream error:', error)
+          logger.error('Stream error', error)
         } finally {
           controller.close()
         }
@@ -158,7 +159,7 @@ Please confirm you understand the lecture content.`
       },
     })
   } catch (error: any) {
-    console.error('[Copilot] API error after retries:', error)
+    logger.error('[Copilot] API error after retries', error)
 
     // Handle retry exhaustion gracefully
     if (error.exhaustedKeys) {

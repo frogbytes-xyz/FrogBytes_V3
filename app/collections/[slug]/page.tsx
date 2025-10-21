@@ -24,6 +24,7 @@ export default async function CollectionSharePage({ params }: { params: Promise<
  * Generate metadata for shared collections (SEO)
  */
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+import { logger } from '@/lib/utils/logger'
   const { slug } = await params
 
   try {
@@ -54,7 +55,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       }
     }
   } catch (error) {
-    console.error('Error generating metadata for shared collection:', error)
+    logger.error('Error generating metadata for shared collection', error)
     return {
       title: 'Shared Collection | FrogBytes',
       description: 'View shared collections on FrogBytes - AI-powered learning platform.'

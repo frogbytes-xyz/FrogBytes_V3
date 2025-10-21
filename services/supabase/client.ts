@@ -13,11 +13,11 @@ export function createClient(): ReturnType<typeof createBrowserClient<Database>>
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection')
   }
 
   if (!supabaseAnonKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable')
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please configure your database connection')
   }
 
   return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)

@@ -2,6 +2,7 @@ import { createClient } from '@/services/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(_request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient();
 
@@ -78,7 +79,7 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching platform stats:', error);
+    logger.error('Error fetching platform stats', error);
     return NextResponse.json(
       {
         success: false,

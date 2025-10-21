@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Redis Service for Cookie Storage and Session Management
  * Provides secure, temporary storage for authentication cookies
@@ -46,24 +48,24 @@ class RedisService {
       })
 
       this.client.on('error', (error) => {
-        console.error('Redis connection error:', error)
+        logger.error('Redis connection error', error)
         this.isConnected = false
       })
 
       this.client.on('connect', () => {
-        console.log('Connected to Redis')
+        logger.info('Connected to Redis')
         this.isConnected = true
       })
 
       this.client.on('disconnect', () => {
-        console.log('Disconnected from Redis')
+        logger.info('Disconnected from Redis')
         this.isConnected = false
       })
 
       await this.client.connect()
     } catch (error) {
-      console.error('Failed to connect to Redis:', error)
-      throw new Error('Redis connection failed')
+      logger.error('Failed to connect to Redis', error)
+      throw new Error('Redis connection failed. Please ensure Redis is running and accessible')
     }
   }
 
@@ -88,7 +90,7 @@ class RedisService {
     ttlSeconds: number = videoDownloadConfig.cookieExpiryHours * 3600
   ): Promise<void> {
     if (!this.client || !this.isConnected) {
-      throw new Error('Redis not connected')
+      throw new Error('Redis connection not available. Please try again')
     }
 
     const cookieData: CookieData = {
@@ -108,7 +110,7 @@ class RedisService {
    */
   async getCookies(userId: string, sessionId: string): Promise<string | null> {
     if (!this.client || !this.isConnected) {
-      throw new Error('Redis not connected')
+      throw new Error('Redis connection not available. Please try again')
     }
 
     const key = `cookies:${userId}:${sessionId}`
@@ -129,7 +131,7 @@ class RedisService {
 
       return cookieData.cookies
     } catch (error) {
-      console.error('Failed to parse cookie data:', error)
+      logger.error('Failed to parse cookie data', error)
       await this.deleteCookies(userId, sessionId)
       return null
     }
@@ -157,7 +159,7 @@ class RedisService {
     ttlSeconds: number = videoDownloadConfig.cookieExpiryHours * 3600
   ): Promise<void> {
     if (!this.client || !this.isConnected) {
-      throw new Error('Redis not connected')
+      throw new Error('Redis connection not available. Please try again')
     }
 
     const sessionData: SessionData = {
@@ -177,7 +179,7 @@ class RedisService {
    */
   async getSession(userId: string, sessionId: string): Promise<SessionData | null> {
     if (!this.client || !this.isConnected) {
-      throw new Error('Redis not connected')
+      throw new Error('Redis connection not available. Please try again')
     }
 
     const key = `session:${userId}:${sessionId}`
@@ -198,7 +200,7 @@ class RedisService {
 
       return sessionData
     } catch (error) {
-      console.error('Failed to parse session data:', error)
+      logger.error('Failed to parse session data', error)
       await this.deleteSession(userId, sessionId)
       return null
     }
@@ -269,10 +271,10 @@ class RedisService {
       }
 
       if (cleanedCount > 0) {
-        console.log(`Cleaned up ${cleanedCount} expired entries from Redis`)
+        logger.info(`Cleaned up ${cleanedCount} expired entries from Redis`)
       }
     } catch (error) {
-      console.error('Failed to cleanup Redis:', error)
+      logger.error('Failed to cleanup Redis', error)
     }
   }
 

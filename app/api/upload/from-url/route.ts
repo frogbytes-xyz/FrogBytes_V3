@@ -23,6 +23,7 @@ const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
  * @returns Upload confirmation with file metadata (same format as /api/upload)
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     // Get authenticated user
     const user = await getAuthUser(request)
@@ -128,14 +129,14 @@ export async function POST(request: NextRequest) {
               result.fileId
             )
             if (!updateResult.success) {
-              console.error('Failed to update Telegram file ID:', updateResult.error)
+              logger.error('Failed to update Telegram file ID', updateResult.error)
             }
           } else {
-            console.warn('Telegram backup failed:', result.error)
+            logger.warn('Telegram backup failed', { error: result.error })
           }
         })
         .catch((error) => {
-          console.error('Telegram upload error:', error)
+          logger.error('Telegram upload error', error)
         })
     }
 
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Unexpected download error:', error)
+    logger.error('Unexpected download error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createCollectionService } from '@/lib/services/collection-service'
 import { getSafeErrorMessage } from '@/lib/utils/errors'
 import { getAuthUser } from '@/lib/auth/helpers'
+import { logger } from '@/lib/utils/logger'
 
 // POST /api/collections/manage/items?id=[id] - Add items to collection
 export async function POST(
@@ -95,7 +96,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('Add items to collection error:', error)
+    logger.error('Add items to collection error', error)
     return NextResponse.json({ 
       success: false, 
       error: getSafeErrorMessage(error) 
@@ -152,7 +153,7 @@ export async function DELETE(
     return NextResponse.json({ success: true })
 
   } catch (error) {
-    console.error('Remove items from collection error:', error)
+    logger.error('Remove items from collection error', error)
     return NextResponse.json({ 
       success: false, 
       error: getSafeErrorMessage(error) 
@@ -230,7 +231,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('Get collection items error:', error)
+    logger.error('Get collection items error', error)
     return NextResponse.json({ 
       success: false, 
       error: getSafeErrorMessage(error) 

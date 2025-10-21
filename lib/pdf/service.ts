@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * PDF Generation and Storage Service
  * 
@@ -41,7 +43,7 @@ export async function generateAndStorePdf(
   const supabase = await createClient()
   
   try {
-    console.log('[PDF Service] Starting PDF generation for summary:', options.summaryId)
+    logger.info('[PDF Service] Starting PDF generation for summary:', options.summaryId)
     
     // Create temporary directory for PDF generation
     const tmpDir = join(process.cwd(), 'tmp', 'pdfs', options.userId)
@@ -51,26 +53,26 @@ export async function generateAndStorePdf(
     const txtPath = join(tmpDir, `${options.summaryId}.txt`)
     
     // Compile LaTeX to PDF
-    console.log('[PDF Service] Compiling LaTeX to PDF...')
+    logger.info('[PDF Service] Compiling LaTeX to PDF...')
     const compilationResult: CompilationResult = await compileToPDF(
       options.latexContent,
       { title: options.title ?? 'Document' }
     )
     
     if (!compilationResult.success || !compilationResult.pdf) {
-      throw new Error(`PDF compilation failed: ${compilationResult.error}`)
+      throw new Error(`Failed to generate PDF document: ${compilationResult.error}`)
     }
     
     // Save PDF to temporary file
     await fs.writeFile(pdfPath, compilationResult.pdf)
-    console.log('[PDF Service] PDF saved to:', pdfPath)
+    logger.info('[PDF Service] PDF saved to:', pdfPath)
     
     // Save transcription text to temporary file
     await fs.writeFile(txtPath, options.transcriptionText, 'utf-8')
-    console.log('[PDF Service] Transcription saved to:', txtPath)
+    logger.info('[PDF Service] Transcription saved to:', txtPath)
     
     // Upload complete package to Telegram
-    console.log('[PDF Service] Uploading to Telegram storage...')
+    logger.info('[PDF Service] Uploading to Telegram storage...')
     const uploadResult = await uploadCompletePackage(
       options.audioPath,
       txtPath,
@@ -84,12 +86,12 @@ export async function generateAndStorePdf(
     )
     
     if (!uploadResult.success) {
-      console.warn('[PDF Service] Telegram upload failed, continuing without Telegram links:', uploadResult.error)
+      logger.warn('[PDF Service] Telegram upload failed, continuing without Telegram links', { error: uploadResult.error })
     } else {
-      console.log('[PDF Service] Upload successful!')
+      logger.info('[PDF Service] Upload successful!')
     }
-    console.log('[PDF Service] Archive result:', uploadResult.archiveResult)
-    console.log('[PDF Service] PDF result:', uploadResult.pdfResult)
+    logger.info('[PDF Service] Archive result:', uploadResult.archiveResult)
+    logger.info('[PDF Service] PDF result:', uploadResult.pdfResult)
     
     // Generate Telegram links
     const archiveLink = uploadResult.archiveResult?.messageId
@@ -113,7 +115,7 @@ export async function generateAndStorePdf(
     }
     
     // Update database with Telegram information
-    console.log('[PDF Service] Updating database with Telegram links...')
+    logger.info('[PDF Service] Updating database with Telegram links...')
     const { error: updateError } = await (supabase
       .from('summaries') as any)
       .update({
@@ -129,19 +131,19 @@ export async function generateAndStorePdf(
       .eq('id', options.summaryId)
     
     if (updateError) {
-      console.error('[PDF Service] Database update error:', updateError)
+      logger.error('[PDF Service] Database update error', updateError)
       // Don't throw - upload was successful, just logging failed
     }
     
     // Clean up temporary files
     await fs.unlink(pdfPath).catch(err => 
-      console.warn('[PDF Service] Failed to delete temporary PDF:', err)
+      logger.warn('[PDF Service] Failed to delete temporary PDF', { error: err })
     )
     await fs.unlink(txtPath).catch(err => 
-      console.warn('[PDF Service] Failed to delete temporary text file:', err)
+      logger.warn('[PDF Service] Failed to delete temporary text file', { error: err })
     )
     
-    console.log('[PDF Service] Process complete!')
+    logger.info('[PDF Service] Process complete!')
     
     const result: PdfGenerationResult = { success: true }
 
@@ -160,7 +162,7 @@ export async function generateAndStorePdf(
 
     return result
   } catch (error) {
-    console.error('[PDF Service] Error:', error)
+    logger.error('[PDF Service] Error', error)
     
     // Update summary with error status
     try {
@@ -222,7 +224,7 @@ export async function getPdfUrl(summaryId: string): Promise<string | null> {
     // Fall back to message link
     return data.telegram_pdf_link || null
   } catch (error) {
-    console.error('[PDF Service] Error getting PDF URL:', error)
+    logger.error('[PDF Service] Error getting PDF URL', error)
     return null
   }
 }

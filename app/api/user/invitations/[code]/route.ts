@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
 import { createInvitationService } from '@/lib/services/invitation-service'
 import { getSafeErrorMessage, ValidationError } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/user/invitations/[code]
@@ -53,7 +54,7 @@ export async function GET(
       data: publicInvitation
     })
   } catch (error) {
-    console.error('Error fetching invitation:', error)
+    logger.error('Error fetching invitation', error)
     return NextResponse.json(
       { error: getSafeErrorMessage(error) },
       { status: 500 }
@@ -104,7 +105,7 @@ export async function POST(
       message: 'Invitation accepted successfully!'
     })
   } catch (error) {
-    console.error('Error accepting invitation:', error)
+    logger.error('Error accepting invitation', error)
 
     if (error instanceof ValidationError) {
       return NextResponse.json(

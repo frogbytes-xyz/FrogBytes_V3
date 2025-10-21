@@ -173,7 +173,7 @@ export class InvitationService {
         .eq('id', userId)
 
       if (profileError) {
-        console.warn('Failed to update user profile with invitation info:', profileError)
+        logger.warn('Failed to update user profile with invitation info', { error: profileError })
       }
 
       return true
@@ -381,6 +381,7 @@ export class InvitationService {
  * Factory function to create invitation service with server client
  */
 export async function createInvitationService(): Promise<InvitationService> {
+import { logger } from '@/lib/utils/logger'
   const supabase = await createClient()
   return new InvitationService(supabase)
 }
@@ -411,10 +412,10 @@ export function generateInvitationEmailContent(
 
       <p>With FrogBytes, you can:</p>
       <ul>
-        <li>📚 Upload and interact with PDF documents</li>
-        <li>🤖 Get instant answers to your questions</li>
-        <li>📝 Generate custom quizzes to test your knowledge</li>
-        <li>💬 Chat with an AI copilot for learning assistance</li>
+        <li>Upload and interact with PDF documents</li>
+        <li>Get instant answers to your questions</li>
+        <li>Generate custom quizzes to test your knowledge</li>
+        <li>Chat with an AI copilot for learning assistance</li>
       </ul>
 
       <p>By joining through this invitation, you'll help ${inviterName} unlock premium features!</p>

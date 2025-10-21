@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Database Logger Service for Scraper/Validator
  * Logs all operations to database for admin dashboard
@@ -62,19 +64,19 @@ export class ApiKeyLogger {
 
       switch (level) {
         case 'error':
-          console.error(consoleMessage, details);
+          logger.error(consoleMessage, details);
           break;
         case 'warn':
-          console.warn(consoleMessage, details);
+          logger.warn(consoleMessage, details);
           break;
         case 'success':
-          console.log(`✓ ${consoleMessage}`, details);
+          logger.info(`[SUCCESS] ${consoleMessage}`, details);
           break;
         default:
-          console.log(consoleMessage, details);
+          logger.info(consoleMessage, details);
       }
     } catch (error) {
-      console.error('Failed to log to database:', error);
+      logger.error('Failed to log to database', error);
     }
   }
 
@@ -116,7 +118,7 @@ export async function updateSystemStatus(
       p_error_message: errorMessage || null
     });
   } catch (error) {
-    console.error('Failed to update system status:', error);
+    logger.error('Failed to update system status', error);
   }
 }
 
@@ -146,7 +148,7 @@ export async function getRecentLogs(
 
     return data || [];
   } catch (error) {
-    console.error('Failed to get recent logs:', error);
+    logger.error('Failed to get recent logs', error);
     return [];
   }
 }
@@ -168,7 +170,7 @@ export async function getExecutionLogs(executionId: string): Promise<any[]> {
 
     return data || [];
   } catch (error) {
-    console.error('Failed to get execution logs:', error);
+    logger.error('Failed to get execution logs', error);
     return [];
   }
 }
@@ -196,7 +198,7 @@ export async function getSystemStatus(): Promise<{
 
     return { scraper, validator, revalidator };
   } catch (error) {
-    console.error('Failed to get system status:', error);
+    logger.error('Failed to get system status', error);
     return { scraper: null, validator: null, revalidator: null };
   }
 }
@@ -227,7 +229,7 @@ export async function getExecutionHistory(
 
     return data || [];
   } catch (error) {
-    console.error('Failed to get execution history:', error);
+    logger.error('Failed to get execution history', error);
     return [];
   }
 }

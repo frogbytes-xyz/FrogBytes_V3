@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       limit: 100,
       intervalMinutes: 60 // 1 hour intervals
     }).catch((error: any) => {
-      console.error('[API] Scraper error:', error);
+      logger.error('[API] Scraper error', error);
     });
 
     return NextResponse.json({
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       message: 'Background scraper started',
     });
   } catch (error: any) {
-    console.error('[API] Error starting scraper:', error);
+    logger.error('[API] Error starting scraper', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Background scraper stopped',
     });
   } catch (error: any) {
-    console.error('[API] Error stopping scraper:', error);
+    logger.error('[API] Error stopping scraper', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -75,6 +75,7 @@ export async function DELETE(request: NextRequest) {
  * Get scraper status
  */
 export async function GET(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const authHeader = request.headers.get('x-api-key');
     const adminKey = process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY;
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
       stats,
     });
   } catch (error: any) {
-    console.error('[API] Error getting scraper status:', error);
+    logger.error('[API] Error getting scraper status', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

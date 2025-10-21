@@ -7,6 +7,7 @@ import { getServicesStatus } from '@/lib/api-keys/startup';
  * Get real-time status of background services
  */
 export async function GET(_request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const status = getServicesStatus();
 
@@ -16,7 +17,7 @@ export async function GET(_request: NextRequest) {
       services: status,
     });
   } catch (error) {
-    console.error('Error getting services status:', error);
+    logger.error('Error getting services status', error);
     return NextResponse.json(
       {
         success: false,

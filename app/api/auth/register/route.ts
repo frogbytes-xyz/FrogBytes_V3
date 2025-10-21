@@ -45,6 +45,7 @@ export interface ErrorResponse {
  * @returns 201 on success, 400 for validation errors, 409 for duplicate email
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     // Parse and validate request body
     const body = await request.json()
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Generic error
-      console.error('Supabase signup error:', error)
+      logger.error('Supabase signup error', error)
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     // Handle unexpected errors
-    console.error('Unexpected registration error:', error)
+    logger.error('Unexpected registration error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

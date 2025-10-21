@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/services/supabase/client'
 import Menubar from '@/components/layout/Menubar'
@@ -169,7 +171,7 @@ export default function FeedbackPage() {
 
       setTablesExist(!error)
     } catch (error) {
-      console.error('Tables do not exist:', error)
+      logger.error('Tables do not exist', error)
       setTablesExist(false)
     }
   }
@@ -185,7 +187,7 @@ export default function FeedbackPage() {
         setLabels(data)
       }
     } catch (error) {
-      console.error('Error loading labels:', error)
+      logger.error('Error loading labels', error)
     }
   }
 
@@ -325,7 +327,7 @@ export default function FeedbackPage() {
         setFeedbacks([])
       }
     } catch (error) {
-      console.error('Error loading feedbacks:', error)
+      logger.error('Error loading feedbacks', error)
     } finally {
       setIsSearching(false)
     }
@@ -362,7 +364,7 @@ export default function FeedbackPage() {
 
       loadFeedbacks()
     } catch (error) {
-      console.error('Error handling reaction:', error)
+      logger.error('Error handling reaction', error)
     }
   }
 
@@ -396,7 +398,7 @@ export default function FeedbackPage() {
         setReplies(data || [])
       }
     } catch (error) {
-      console.error('Error loading replies:', error)
+      logger.error('Error loading replies', error)
     }
   }
 
@@ -427,7 +429,7 @@ export default function FeedbackPage() {
         .select()
 
       if (error) {
-        console.error('Database error:', error)
+        logger.error('Database error', error)
         alert(`Failed to create feedback: ${error.message}`)
         return
       }
@@ -456,7 +458,7 @@ export default function FeedbackPage() {
       setShowCreateForm(false)
       loadFeedbacks()
     } catch (error) {
-      console.error('Error creating feedback:', error)
+      logger.error('Error creating feedback', error)
       alert(`Failed to create feedback: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -495,7 +497,7 @@ export default function FeedbackPage() {
 
       loadFeedbacks()
     } catch (error) {
-      console.error('Error voting:', error)
+      logger.error('Error voting', error)
     }
   }
 
@@ -519,7 +521,7 @@ export default function FeedbackPage() {
       loadReplies(selectedFeedback.id)
       loadFeedbacks()
     } catch (error) {
-      console.error('Error creating reply:', error)
+      logger.error('Error creating reply', error)
       alert('Failed to create reply')
     }
   }

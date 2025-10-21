@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -114,7 +116,7 @@ export default function AICopilot({ documentContext, isFocusMode = false }: AICo
       if (err instanceof Error && err.name === 'AbortError') {
         return // Request was cancelled
       }
-      console.error('Copilot error:', err)
+      logger.error('Copilot error', err)
       setError(err instanceof Error ? err.message : 'Failed to get response')
       // Remove placeholder message on error
       setMessages((prev) => prev.slice(0, -1))

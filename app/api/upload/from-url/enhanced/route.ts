@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Enhanced POST /api/upload/from-url/enhanced
  * 
@@ -71,7 +73,7 @@ async function orchestrateVideoDownload(
   userId: string
 ): Promise<void> {
   try {
-    console.log(`Starting orchestration for job ${jobId}: ${url}`)
+    logger.info(`Starting orchestration for job ${jobId}: ${url}`)
 
     // Lazy import services to avoid stealth plugin initialization issues
     const { cookieService } = await import('@/lib/services/cookie-service')
@@ -86,7 +88,7 @@ async function orchestrateVideoDownload(
     const existingCookies = await cookieService.getNetscapeCookies(userId, sessionId)
     
     if (existingCookies.success && existingCookies.data) {
-      console.log(`Found cached cookies for ${domain}, proceeding with download`)
+      logger.info(`Found cached cookies for ${domain}, proceeding with download`)
       
       // Update job status
       jobStatus.set(jobId, {
@@ -102,12 +104,12 @@ async function orchestrateVideoDownload(
     }
 
     // Step 3: If no valid cookies, call isAuthRequired(url)
-    console.log(`No cached cookies found, checking if authentication is required for ${url}`)
+    logger.info(`No cached cookies found, checking if authentication is required for ${url}`)
     
     const authDetection = await authRequirementDetector.detectAuthRequirement(url)
     
     if (!authDetection.requiresAuth) {
-      console.log(`No authentication required for ${url}, proceeding with normal download`)
+      logger.info(`No authentication required for ${url}, proceeding with normal download`)
       
       // Update job status
       jobStatus.set(jobId, {
@@ -124,7 +126,7 @@ async function orchestrateVideoDownload(
 
     // Step 4: If auth is required, return authentication required status
     // The frontend will handle authentication via mini-browser
-    console.log(`Authentication required for ${url} (${authDetection.platform}), returning auth required status`)
+    logger.info(`Authentication required for ${url} (${authDetection.platform}), returning auth required status`)
     
     jobStatus.set(jobId, {
       status: 'authentication_required',
@@ -138,7 +140,7 @@ async function orchestrateVideoDownload(
     return
 
   } catch (error) {
-    console.error(`Job ${jobId} orchestration failed:`, error)
+    logger.error(`Job ${jobId} orchestration failed:`, error)
     jobStatus.set(jobId, {
       status: 'failed',
       userId,
@@ -159,7 +161,7 @@ async function triggerDownloadWithCookies(
   netscapeCookies: string
 ): Promise<void> {
   try {
-    console.log(`Starting download with cookies for job ${jobId}`)
+    logger.info(`Starting download with cookies for job ${jobId}`)
     
     jobStatus.set(jobId, {
       status: 'download_started',
@@ -228,14 +230,14 @@ async function triggerDownloadWithCookies(
               result.fileId
             )
             if (!updateResult.success) {
-              console.error('Failed to update Telegram file ID:', updateResult.error)
+              logger.error('Failed to update Telegram file ID', updateResult.error)
             }
           } else {
-            console.warn('Telegram backup failed:', result.error)
+            logger.warn('Telegram backup failed', { error: result.error })
           }
         })
         .catch((error) => {
-          console.error('Telegram upload error:', error)
+          logger.error('Telegram upload error', error)
         })
     }
 
@@ -259,10 +261,10 @@ async function triggerDownloadWithCookies(
       },
     })
 
-    console.log(`Job ${jobId} completed successfully`)
+    logger.info(`Job ${jobId} completed successfully`)
 
   } catch (error) {
-    console.error(`Download with cookies failed for job ${jobId}:`, error)
+    logger.error(`Download with cookies failed for job ${jobId}:`, error)
     jobStatus.set(jobId, {
       status: 'failed',
       userId,
@@ -282,7 +284,7 @@ async function triggerNormalDownload(
   userId: string
 ): Promise<void> {
   try {
-    console.log(`Starting normal download for job ${jobId}`)
+    logger.info(`Starting normal download for job ${jobId}`)
 
     // Lazy import enhanced download manager
     const { enhancedDownloadManager } = await import('@/lib/services/enhanced-download-manager')
@@ -344,14 +346,14 @@ async function triggerNormalDownload(
               result.fileId
             )
             if (!updateResult.success) {
-              console.error('Failed to update Telegram file ID:', updateResult.error)
+              logger.error('Failed to update Telegram file ID', updateResult.error)
             }
           } else {
-            console.warn('Telegram backup failed:', result.error)
+            logger.warn('Telegram backup failed', { error: result.error })
           }
         })
         .catch((error) => {
-          console.error('Telegram upload error:', error)
+          logger.error('Telegram upload error', error)
         })
     }
 
@@ -375,10 +377,10 @@ async function triggerNormalDownload(
       },
     })
 
-    console.log(`Job ${jobId} completed successfully`)
+    logger.info(`Job ${jobId} completed successfully`)
 
   } catch (error) {
-    console.error(`Normal download failed for job ${jobId}:`, error)
+    logger.error(`Normal download failed for job ${jobId}:`, error)
     jobStatus.set(jobId, {
       status: 'failed',
       userId,
@@ -445,7 +447,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     // Start background orchestration process
     orchestrateVideoDownload(jobId, url, user.id).catch((error) => {
-      console.error(`Background job ${jobId} failed:`, error)
+      logger.error(`Background job ${jobId} failed:`, error)
     })
 
   // Return immediate response with job ID

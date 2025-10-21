@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * GET /api/upload/from-url/enhanced/[jobId]
  * 
@@ -151,7 +153,7 @@ export async function GET(
     return NextResponse.json(response, { status: 200 })
 
   } catch (error) {
-    console.error('Unexpected job status error:', error)
+    logger.error('Unexpected job status error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

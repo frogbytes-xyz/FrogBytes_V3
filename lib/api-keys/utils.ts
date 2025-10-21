@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Utility functions for API key management
  */
@@ -60,16 +62,16 @@ export function formatDuration(startTime: Date): string {
 export function createLogger(prefix: string, verbose = false) {
   return {
     info: (message: string, ...args: any[]) => {
-      if (verbose) console.log(`[${prefix}] ${message}`, ...args);
+      if (verbose) logger.info(`[${prefix}] ${message}`, ...args);
     },
     warn: (message: string, ...args: any[]) => {
-      console.warn(`[${prefix}] ${message}`, ...args);
+      logger.warn(`[${prefix}] ${message}`, ...args);
     },
     error: (message: string, ...args: any[]) => {
-      console.error(`[${prefix}] ${message}`, ...args);
+      logger.error(`[${prefix}] ${message}`, ...args);
     },
     always: (message: string, ...args: any[]) => {
-      console.log(`[${prefix}] ${message}`, ...args);
+      logger.info(`[${prefix}] ${message}`, ...args);
     }
   };
 }

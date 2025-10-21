@@ -28,6 +28,7 @@ interface QuizResponse {
 }
 
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const body: QuizRequest = await request.json()
     const { content, questionCount = 5, difficulty = 'bachelor' } = body
@@ -101,7 +102,7 @@ Respond with ONLY the JSON array, no other text.`
       {
         maxRetries: 5,
         onRetry: (attempt, error) => {
-          console.log(`[Quiz] Retry attempt ${attempt} due to: ${error.message}`)
+          logger.info(`[Quiz] Retry attempt ${attempt} due to: ${error.message}`)
         }
       }
     )
@@ -122,7 +123,7 @@ Respond with ONLY the JSON array, no other text.`
       }
       questions = JSON.parse(jsonMatch[0])
     } catch (parseError) {
-      console.error('Failed to parse quiz JSON:', parseError)
+      logger.error('Failed to parse quiz JSON', parseError)
       return NextResponse.json<QuizResponse>(
         {
           success: false,
@@ -157,7 +158,7 @@ Respond with ONLY the JSON array, no other text.`
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('[Quiz] Generation error after retries:', error)
+    logger.error('[Quiz] Generation error after retries', error)
 
     // Handle retry exhaustion gracefully
     if (error.exhaustedKeys) {

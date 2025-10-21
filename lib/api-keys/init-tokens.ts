@@ -41,17 +41,17 @@ export async function initializeGitHubTokens(): Promise<void> {
       const result = await addGitHubToken(name, value);
       if (result.success) {
         added++;
-        logger.always(`✓ Added GitHub token: ${name}`);
+        logger.always(`[SUCCESS] Added GitHub token: ${name}`);
       } else {
-        logger.error(`✗ Failed to add ${name}: ${result.error}`);
+        logger.error(`[ERROR] Failed to add ${name}: ${result.error}`);
       }
     }
 
     if (added > 0) {
-      logger.always(`✓ Initialized ${added} new GitHub token(s)`);
+      logger.always(`[SUCCESS] Initialized ${added} new GitHub token(s)`);
     }
     if (skipped > 0) {
-      logger.always(`✓ Skipped ${skipped} existing token(s)`);
+      logger.always(`[INFO] Skipped ${skipped} existing token(s)`);
     }
     if (added === 0 && skipped === 0) {
       logger.warn('No GitHub tokens found in environment variables');
@@ -59,7 +59,7 @@ export async function initializeGitHubTokens(): Promise<void> {
     }
 
     const totalTokens = existingTokens.length + added;
-    logger.always(`✓ Total GitHub tokens available: ${totalTokens}`);
+    logger.always(`[INFO] Total GitHub tokens available: ${totalTokens}`);
 
   } catch (error: any) {
     logger.error(`Failed to initialize GitHub tokens: ${error.message}`);

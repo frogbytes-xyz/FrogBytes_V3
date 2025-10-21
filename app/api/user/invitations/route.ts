@@ -35,7 +35,7 @@ export async function GET(): Promise<NextResponse> {
       }
     })
   } catch (error) {
-    console.error('Error fetching invitations:', error)
+    logger.error('Error fetching invitations', error)
     return NextResponse.json(
       { error: getSafeErrorMessage(error) },
       { status: 500 }
@@ -48,6 +48,7 @@ export async function GET(): Promise<NextResponse> {
  * Create a new invitation
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     } catch (error) {
       // Profile table might not exist, use fallback
-      console.log('User profile lookup failed, using fallback name');
+      logger.info('User profile lookup failed, using fallback name');
     }
 
     const invitationService = await createInvitationService()
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // TODO: Send email using your preferred email service
     // For now, we'll just return the invitation details
-    console.log('Invitation email content:', emailContent)
+    logger.info('Invitation email content:', emailContent)
 
     return NextResponse.json({
       success: true,
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     })
   } catch (error) {
-    console.error('Error creating invitation:', error)
+    logger.error('Error creating invitation', error)
 
     if (error instanceof ValidationError) {
       return NextResponse.json(

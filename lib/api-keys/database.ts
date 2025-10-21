@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Database service for API key validation and storage
  * Uses the new clean 2-table system:
@@ -422,5 +424,5 @@ export async function getEnrichedScrapedKeys(limit = 50, offset = 0): Promise<an
 export async function markKeyAsValidating(apiKey: string): Promise<void> {
   // This could be implemented with a validation_status field if needed
   // For now, we'll just use the existing validated boolean
-  console.log(`Marking key as validating: ${apiKey.substring(0, 12)}...`);
+  logger.info(`Marking key as validating: ${apiKey.substring(0, 12)}...`);
 }

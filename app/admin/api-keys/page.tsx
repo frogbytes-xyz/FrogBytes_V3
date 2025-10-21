@@ -79,7 +79,7 @@ export default function AdminApiKeysDashboard() {
         fetchGithubTokens()
       ]);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      logger.error('Error fetching data', error);
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ export default function AdminApiKeysDashboard() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Control service error:', error);
+      logger.error('Control service error', error);
       alert('Failed to control service');
     } finally {
       setLoading(false);
@@ -201,7 +201,7 @@ export default function AdminApiKeysDashboard() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Add token error:', error);
+      logger.error('Add token error', error);
       alert('Failed to add token');
     }
   };
@@ -226,7 +226,7 @@ export default function AdminApiKeysDashboard() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Toggle token error:', error);
+      logger.error('Toggle token error', error);
     }
   };
 
@@ -246,7 +246,7 @@ export default function AdminApiKeysDashboard() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Delete token error:', error);
+      logger.error('Delete token error', error);
     }
   };
 
@@ -268,7 +268,7 @@ export default function AdminApiKeysDashboard() {
         alert(`Error: ${data.error}`);
       }
     } catch (error) {
-      console.error('Initialize tokens error:', error);
+      logger.error('Initialize tokens error', error);
     }
   };
 

@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Setup global error handlers for Node.js runtime environments
  * This should only be imported in Node.js runtime contexts (API routes, server components)
@@ -13,9 +15,9 @@ import { setupGlobalErrorHandlers } from './error-handler'
 export function initializeErrorHandling() {
   try {
     setupGlobalErrorHandlers()
-    console.log('Global error handlers initialized successfully')
+    logger.info('Global error handlers initialized successfully')
   } catch (error) {
-    console.warn('Failed to initialize global error handlers:', error)
+    logger.warn('Failed to initialize global error handlers', { error: error })
   }
 }
 

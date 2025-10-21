@@ -23,6 +23,7 @@ interface FlashcardResponse {
 }
 
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const body: FlashcardRequest = await request.json()
     const { content, cardCount = 10, difficulty = 'bachelor' } = body
@@ -96,7 +97,7 @@ Respond with ONLY the JSON array, no other text.`
       {
         maxRetries: 5,
         onRetry: (attempt, error) => {
-          console.log(`[Flashcards] Retry attempt ${attempt} due to: ${error.message}`)
+          logger.info(`[Flashcards] Retry attempt ${attempt} due to: ${error.message}`)
         }
       }
     )
@@ -117,7 +118,7 @@ Respond with ONLY the JSON array, no other text.`
       }
       flashcards = JSON.parse(jsonMatch[0])
     } catch (parseError) {
-      console.error('Failed to parse flashcards JSON:', parseError)
+      logger.error('Failed to parse flashcards JSON', parseError)
       return NextResponse.json<FlashcardResponse>(
         {
           success: false,
@@ -148,7 +149,7 @@ Respond with ONLY the JSON array, no other text.`
       { status: 200 }
     )
   } catch (error: any) {
-    console.error('[Flashcards] Generation error after retries:', error)
+    logger.error('[Flashcards] Generation error after retries', error)
 
     // Handle retry exhaustion gracefully
     if (error.exhaustedKeys) {

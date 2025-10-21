@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       batchSize: 10,
       intervalMinutes: 30 // 30 minute intervals
     }).catch((error: any) => {
-      console.error('[API] Validator error:', error);
+      logger.error('[API] Validator error', error);
     });
 
     return NextResponse.json({
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       message: 'Continuous validator started',
     });
   } catch (error: any) {
-    console.error('[API] Error starting validator:', error);
+    logger.error('[API] Error starting validator', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Continuous validator stopped',
     });
   } catch (error: any) {
-    console.error('[API] Error stopping validator:', error);
+    logger.error('[API] Error stopping validator', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -75,6 +75,7 @@ export async function DELETE(request: NextRequest) {
  * Get validator status
  */
 export async function GET(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const authHeader = request.headers.get('x-api-key');
     const adminKey = process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY;
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
       stats,
     });
   } catch (error: any) {
-    console.error('[API] Error getting validator status:', error);
+    logger.error('[API] Error getting validator status', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

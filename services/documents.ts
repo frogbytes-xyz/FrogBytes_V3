@@ -4,6 +4,7 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 
 export interface DocumentUploadResult {
+import { logger } from '@/lib/utils/logger'
   success: boolean
   fileId: string
   filePath: string
@@ -44,7 +45,7 @@ export async function uploadDocumentToFilesystem(
       filePath,
     }
   } catch (error) {
-    console.error('Filesystem upload error:', error)
+    logger.error('Filesystem upload error', error)
     return {
       success: false,
       fileId: '',
@@ -86,7 +87,7 @@ export async function saveUploadMetadata(
     })
 
     if (error) {
-      console.error('Database error:', error)
+      logger.error('Database error', error)
       return {
         success: false,
         error: 'Failed to save file metadata',
@@ -95,7 +96,7 @@ export async function saveUploadMetadata(
 
     return { success: true }
   } catch (error) {
-    console.error('Save metadata error:', error)
+    logger.error('Save metadata error', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -120,7 +121,7 @@ export async function updateTelegramBackupId(
       .eq('id', fileId)
 
     if (error) {
-      console.error('Failed to update Telegram file ID:', error)
+      logger.error('Failed to update Telegram file ID', error)
       return {
         success: false,
         error: 'Failed to update Telegram backup ID',
@@ -129,7 +130,7 @@ export async function updateTelegramBackupId(
 
     return { success: true }
   } catch (error) {
-    console.error('Update Telegram ID error:', error)
+    logger.error('Update Telegram ID error', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

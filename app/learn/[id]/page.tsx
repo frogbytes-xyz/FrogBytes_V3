@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
@@ -61,7 +63,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
       setUser(user)
       await loadSummary(user.id, summaryId)
     } catch (err) {
-      console.error('Auth check failed:', err)
+      logger.error('Auth check failed', err)
       // Guest mode fallback
       setUser(null)
       await loadSummary('', summaryId)
@@ -79,7 +81,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
         .single()
 
       if (dbError) {
-        console.error('Error loading summary:', dbError)
+        logger.error('Error loading summary', dbError)
         setError('Failed to load summary')
         return
       }
@@ -89,7 +91,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
         return
       }
 
-      console.log('Summary loaded:', {
+      logger.info('Summary loaded:', {
         id: summaryId,
         has_latex: !!(summary as any).latex_content,
         pdf_url: (summary as any).pdf_url,
@@ -109,17 +111,17 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
 
       // Set PDF URL if available
       if ((summary as any).pdf_url) {
-        console.log('Setting PDF URL:', (summary as any).pdf_url)
+        logger.info('Setting PDF URL:', (summary as any).pdf_url)
         setPdfUrl((summary as any).pdf_url)
       } else {
-        console.warn('No PDF URL found for summary')
+        logger.warn('No PDF URL found for summary')
         // For guest users, still allow viewing the page (with CTA overlay)
       }
 
       // Set title
       setSummaryTitle((summary as any).title || (summary as any).lecture_name || 'Untitled')
     } catch (err) {
-      console.error('Error loading content:', err)
+      logger.error('Error loading content', err)
       setError('Failed to load content')
     }
   }
@@ -127,7 +129,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
   // sign out handled by Menubar; no local handler required
 
   function handlePDFError(error: Error) {
-    console.error('PDF load error:', error)
+    logger.error('PDF load error', error)
     setError('Failed to load PDF document')
   }
 
@@ -196,7 +198,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
             {/* Expand/Collapse Arrow Button - Positioned on the border */}
             <button
               onClick={() => {
-                console.log('Toggling expand mode:', !isExpanded)
+                logger.info('Toggling expand mode:', !isExpanded)
                 setIsExpanded(!isExpanded)
               }}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-50 w-8 h-16 bg-background border-2 border-border rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group hover:scale-110"
@@ -221,7 +223,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
                 <div className="flex gap-1 flex-1 min-w-0 bg-muted/50 rounded-lg p-1">
                   <button
                     onClick={() => {
-                      console.log('Switching to copilot tab')
+                      logger.info('Switching to copilot tab')
                       setActiveTab('copilot')
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -238,7 +240,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
                   </button>
                   <button
                     onClick={() => {
-                      console.log('Switching to quiz tab')
+                      logger.info('Switching to quiz tab')
                       setActiveTab('quiz')
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -255,7 +257,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
                   </button>
                   <button
                     onClick={() => {
-                      console.log('Switching to flashcards tab')
+                      logger.info('Switching to flashcards tab')
                       setActiveTab('flashcards')
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${

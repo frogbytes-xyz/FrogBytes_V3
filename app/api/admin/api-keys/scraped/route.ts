@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin API: Get scraped keys statistics
  *
@@ -57,7 +59,7 @@ export async function GET(_request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Scraped keys stats API error:', error);
+    logger.error('Scraped keys stats API error', error);
     return NextResponse.json(
       {
         success: false,

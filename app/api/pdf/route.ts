@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * PDF Compilation API Endpoint
  * POST /api/pdf
@@ -126,7 +128,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('PDF compilation error:', error);
+    logger.error('PDF compilation error', error);
     
     return NextResponse.json(
       {

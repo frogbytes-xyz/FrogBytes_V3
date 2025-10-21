@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -128,7 +130,7 @@ export function InvitationManager(): JSX.Element {
       setCopiedCode(invitationCode)
       setTimeout(() => setCopiedCode(null), 2000)
     } catch (err) {
-      console.error('Failed to copy invitation link:', err)
+      logger.error('Failed to copy invitation link', err)
     }
   }
 

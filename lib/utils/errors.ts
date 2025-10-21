@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Custom error classes for type-safe error handling
  */
@@ -144,6 +146,6 @@ export function logError(error: unknown, context?: Record<string, unknown>): voi
   // In production, you would send this to your logging service
   // For now, we'll use console.error in development
   if (process.env.NODE_ENV === 'development') {
-    console.error('Error logged:', logData)
+    logger.error('Error logged', logData)
   }
 }

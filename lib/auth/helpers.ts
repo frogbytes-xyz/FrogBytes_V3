@@ -54,7 +54,7 @@ export async function getAuthUser(_request: NextRequest): Promise<AuthUser | nul
       reputation_score: profile?.reputation_score || 0,
     }
   } catch (error) {
-    console.error('Error getting auth user:', error)
+    logger.error('Error getting auth user', error)
     return null
   }
 }
@@ -115,6 +115,7 @@ export function hasPermission(user: AuthUser | null, _permission?: string): bool
  * @returns JWT token string or null
  */
 export function getBearerToken(request: NextRequest): string | null {
+import { logger } from '@/lib/utils/logger'
   const authHeader = request.headers.get('authorization')
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

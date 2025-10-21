@@ -262,7 +262,7 @@ export async function withRateLimit<T>(
   const rateLimitResult = await rateLimitService.checkRateLimit(userId, usageType)
 
   if (!rateLimitResult.allowed) {
-    throw new Error(rateLimitResult.reason ?? 'Rate limit exceeded')
+    throw new Error(rateLimitResult.reason ?? 'Daily usage limit exceeded. Please try again tomorrow or upgrade your account')
   }
 
   // Perform operation

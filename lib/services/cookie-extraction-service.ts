@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Cookie Extraction Service
  * Extracts cookies from Puppeteer and formats them for yt-dlp
@@ -382,7 +384,7 @@ class CookieExtractionService {
       await fs.unlink(filePath)
       return true
     } catch (error) {
-      console.warn(`Failed to cleanup temp cookie file ${filePath}:`, error)
+      logger.warn(`Failed to cleanup temp cookie file ${filePath}:`, error)
       return false
     }
   }

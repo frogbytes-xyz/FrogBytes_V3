@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createDocumentSharingService } from '@/lib/services/document-sharing-service'
 import { getSafeErrorMessage } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/share/[slug]
@@ -35,7 +36,7 @@ export async function GET(
       data: sharedDocument
     })
   } catch (error) {
-    console.error('Error fetching shared document:', error)
+    logger.error('Error fetching shared document', error)
     return NextResponse.json(
       { error: getSafeErrorMessage(error) },
       { status: 500 }

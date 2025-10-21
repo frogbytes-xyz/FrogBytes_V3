@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * API Route: Get API key validation statistics
  */
@@ -46,7 +48,7 @@ export async function GET(_request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Failed to get API key stats:', error);
+    logger.error('Failed to get API key stats', error);
     return NextResponse.json(
       { error: 'Failed to fetch statistics' },
       { status: 500 }

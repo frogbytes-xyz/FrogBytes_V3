@@ -21,14 +21,14 @@ export async function GET(request: NextRequest) {
           const newCollections = await service.getUserCollectionsWithCounts(user.id)
           return NextResponse.json({ success: true, collections: newCollections })
         } catch (provisionErr) {
-          console.warn('Auto-provision default collection failed:', provisionErr)
+          logger.warn('Auto-provision default collection failed', { error: provisionErr })
         }
       }
 
       return NextResponse.json({ success: true, collections })
     } catch (dbError) {
       // If the table doesn't exist yet or another DB error occurs, do not fail the dashboard.
-      console.warn('Collections query failed:', dbError)
+      logger.warn('Collections query failed', { error: dbError })
       return NextResponse.json({ success: true, collections: [] })
     }
   } catch (error) {
@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/collections - create a collection (folder)
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const user = await getAuthUser(request)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

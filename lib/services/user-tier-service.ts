@@ -238,7 +238,7 @@ export class UserTierService {
         })
 
       if (upgradeError) {
-        console.warn('Failed to record tier upgrade:', upgradeError)
+        logger.warn('Failed to record tier upgrade', { error: upgradeError })
       }
 
       return true
@@ -453,6 +453,7 @@ export async function createUserTierService(): Promise<UserTierService> {
  * Hook-like function to get user tier information (for use in components)
  */
 export async function getUserTierInfo(userId: string): Promise<{
+import { logger } from '@/lib/utils/logger'
   profile: UserProfile | null
   tierBenefits: TierBenefits
   canUpgrade: boolean

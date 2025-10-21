@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -90,7 +92,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
         }
       }
     } catch (err) {
-      console.error('Auth check failed:', err)
+      logger.error('Auth check failed', err)
       // Still allow viewing in guest mode
       setUser(null)
       const idToLoad = passedId || collectionId
@@ -180,7 +182,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
         }
       }
     } catch (err) {
-      console.error('Error loading collection:', err)
+      logger.error('Error loading collection', err)
       setError('Failed to load collection')
     }
   }
@@ -205,7 +207,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
       ))
       toast.success(currentStatus ? 'Made private' : 'Published to library')
     } catch (err) {
-      console.error('Error updating publish status:', err)
+      logger.error('Error updating publish status', err)
       toast.error('Failed to update publish status')
     }
   }
@@ -232,7 +234,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
       setSummaries(summaries.filter(s => s.id !== summaryId))
       toast.success('Summary removed from collection')
     } catch (err) {
-      console.error('Error removing summary:', err)
+      logger.error('Error removing summary', err)
       toast.error('Failed to remove summary')
     }
   }
@@ -261,7 +263,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
       // Refresh collection data to get the share_slug
       await loadCollectionData(collectionId, false)
     } catch (err) {
-      console.error('Error sharing collection:', err)
+      logger.error('Error sharing collection', err)
       toast.error('Failed to share collection')
     }
   }

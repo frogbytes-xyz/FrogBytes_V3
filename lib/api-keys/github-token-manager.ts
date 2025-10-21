@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * GitHub Token Manager
  * Manages multiple GitHub API tokens with automatic rotation and rate limit handling
@@ -41,7 +43,7 @@ export async function getAllGitHubTokens(): Promise<GitHubToken[]> {
 
     return data || [];
   } catch (error) {
-    console.error('Failed to get GitHub tokens:', error);
+    logger.error('Failed to get GitHub tokens', error);
     return [];
   }
 }
@@ -86,7 +88,7 @@ export async function getAvailableGitHubToken(): Promise<GitHubToken | null> {
 
     return null;
   } catch (error) {
-    console.error('Failed to get available GitHub token:', error);
+    logger.error('Failed to get available GitHub token', error);
     return null;
   }
 }
@@ -121,7 +123,7 @@ export async function getNextAvailableGitHubToken(currentTokenId?: string): Prom
 
     return data[0];
   } catch (error) {
-    console.error('Failed to get next available GitHub token:', error);
+    logger.error('Failed to get next available GitHub token', error);
     return null;
   }
 }
@@ -144,13 +146,13 @@ export async function getAllAvailableGitHubTokens(): Promise<GitHubToken[]> {
       .order('rate_limit_remaining', { ascending: false, nullsFirst: false });
 
     if (error) {
-      console.error('Failed to get available GitHub tokens:', error);
+      logger.error('Failed to get available GitHub tokens', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Failed to get available GitHub tokens:', error);
+    logger.error('Failed to get available GitHub tokens', error);
     return [];
   }
 }
@@ -174,7 +176,7 @@ export async function updateGitHubTokenStats(
       p_rate_limit_reset_at: rateLimitResetAt || null
     });
   } catch (error) {
-    console.error('Failed to update GitHub token stats:', error);
+    logger.error('Failed to update GitHub token stats', error);
   }
 }
 
@@ -307,11 +309,11 @@ export async function initializeTokensFromEnv(): Promise<void> {
     for (const { name, value } of envTokens) {
       if (value && !existingNames.has(name)) {
         await addGitHubToken(name, value);
-        console.log(`Initialized GitHub token: ${name}`);
+        logger.info(`Initialized GitHub token: ${name}`);
       }
     }
   } catch (error) {
-    console.error('Failed to initialize tokens from env:', error);
+    logger.error('Failed to initialize tokens from env', error);
   }
 }
 
@@ -350,7 +352,7 @@ export async function getTokenStatistics(): Promise<{
 
     return stats;
   } catch (error) {
-    console.error('Failed to get token statistics:', error);
+    logger.error('Failed to get token statistics', error);
     return {
       total: 0,
       active: 0,

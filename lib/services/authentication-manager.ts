@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Authentication Manager Service
  * Handles user login flows with Puppeteer browser automation
@@ -53,14 +55,14 @@ class AuthenticationManager {
     try {
       // Show popup to inform user about authentication requirement
       const popupResult = await authenticationPopupService.showAuthenticationPopup(url, userId, {
-        title: '🔐 Authentication Required',
+        title: 'Authentication Required',
         message: `
           <p>This video requires authentication to access.</p>
           <p><strong>URL:</strong> <code>${url}</code></p>
           <p>Please log in to your account to continue with the download.</p>
         `,
-        loginButtonText: '🔑 Login & Download',
-        cancelButtonText: '❌ Cancel',
+        loginButtonText: 'Login & Download',
+        cancelButtonText: 'Cancel',
         timeout: options.timeout || videoDownloadConfig.authSessionTimeout,
       })
 
@@ -183,7 +185,7 @@ class AuthenticationManager {
         timeout: 30000 
       })
 
-      console.log(`Authentication session ${sessionId} started. Browser opened to: ${options.authUrl}`)
+      logger.info(`Authentication session ${sessionId} started. Browser opened to: ${options.authUrl}`)
 
       // Wait for authentication to complete
       const authResult = await this.waitForAuthentication(page, session, options)
@@ -259,12 +261,12 @@ class AuthenticationManager {
     // Add authentication-specific event listeners
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
-        console.error(`Browser console error: ${msg.text()}`)
+        logger.error(`Browser console error: ${msg.text()}`)
       }
     })
 
     page.on('pageerror', (error) => {
-      console.error(`Page error: ${error.message}`)
+      logger.error(`Page error: ${error.message}`)
     })
   }
 
@@ -409,7 +411,7 @@ class AuthenticationManager {
 
       return false
     } catch (error) {
-      console.error('Error checking authentication success:', error)
+      logger.error('Error checking authentication success', error)
       return false
     }
   }
@@ -446,7 +448,7 @@ class AuthenticationManager {
 
       return [...header, ...netscapeCookies].join('\n')
     } catch (error) {
-      console.error('Failed to extract cookies:', error)
+      logger.error('Failed to extract cookies', error)
       return null
     }
   }
@@ -500,7 +502,7 @@ class AuthenticationManager {
 
       return true
     } catch (error) {
-      console.error('Error cancelling session:', error)
+      logger.error('Error cancelling session', error)
       return false
     }
   }

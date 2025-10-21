@@ -27,6 +27,7 @@ export interface FetchSummariesResult {
  * @returns Result with summaries array and success status
  */
 export async function getUserSummaries(userId: string): Promise<FetchSummariesResult> {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = createClient()
 
@@ -38,7 +39,7 @@ export async function getUserSummaries(userId: string): Promise<FetchSummariesRe
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching user summaries:', error)
+      logger.error('Error fetching user summaries', error)
       return {
         success: false,
         summaries: [],
@@ -51,7 +52,7 @@ export async function getUserSummaries(userId: string): Promise<FetchSummariesRe
       summaries: data || [],
     }
   } catch (error) {
-    console.error('Unexpected error fetching summaries:', error)
+    logger.error('Unexpected error fetching summaries', error)
     return {
       success: false,
       summaries: [],
@@ -80,7 +81,7 @@ export async function toggleSummaryPublishStatus(
       .eq('id', summaryId)
 
     if (error) {
-      console.error('Error updating summary status:', error)
+      logger.error('Error updating summary status', error)
       return {
         success: false,
         error: 'Failed to update summary status',
@@ -89,7 +90,7 @@ export async function toggleSummaryPublishStatus(
 
     return { success: true }
   } catch (error) {
-    console.error('Unexpected error updating summary:', error)
+    logger.error('Unexpected error updating summary', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -115,7 +116,7 @@ export async function deleteSummary(
       .eq('id', summaryId)
 
     if (error) {
-      console.error('Error deleting summary:', error)
+      logger.error('Error deleting summary', error)
       return {
         success: false,
         error: 'Failed to delete summary',
@@ -124,7 +125,7 @@ export async function deleteSummary(
 
     return { success: true }
   } catch (error) {
-    console.error('Unexpected error deleting summary:', error)
+    logger.error('Unexpected error deleting summary', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

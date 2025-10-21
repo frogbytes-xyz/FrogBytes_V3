@@ -2,6 +2,7 @@ import { createClient } from '@/services/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(_request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient();
 
@@ -71,7 +72,7 @@ export async function GET(_request: NextRequest) {
       activities: recentActivities,
     });
   } catch (error) {
-    console.error('Error fetching activity:', error);
+    logger.error('Error fetching activity', error);
     return NextResponse.json(
       {
         success: false,

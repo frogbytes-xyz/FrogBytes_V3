@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import dynamic from 'next/dynamic'
 
@@ -27,7 +29,7 @@ if (typeof window !== 'undefined') {
       const pdfjs = (mod as any).pdfjs
       
       if (!pdfjs) {
-        console.warn('PDF.js not available in react-pdf module')
+        logger.warn('PDF.js not available in react-pdf module')
         return
       }
       
@@ -36,9 +38,9 @@ if (typeof window !== 'undefined') {
       pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfVersion}/build/pdf.worker.min.mjs`
       
       workerConfigured = true
-      console.log(`PDF.js worker configured with version ${pdfVersion}`)
+      logger.info(`PDF.js worker configured with version ${pdfVersion}`)
     } catch (err) {
-      console.error('Failed to configure PDF.js worker:', err)
+      logger.error('Failed to configure PDF.js worker', err)
     }
   }
   
@@ -183,7 +185,7 @@ const PDFThumbnail = memo(function PDFThumbnail({
     try {
       new URL(pdfUrl)
     } catch {
-      console.error('Invalid PDF URL format:', pdfUrl)
+      logger.error('Invalid PDF URL format', pdfUrl)
       return null
     }
     
@@ -228,7 +230,7 @@ const PDFThumbnail = memo(function PDFThumbnail({
   function onDocumentLoadError(error: Error) {
     if (isUnmountingRef.current) return
     
-    console.error('PDF thumbnail load error:', {
+    logger.error('PDF thumbnail load error', {
       error: error.message,
       pdfUrl,
       errorStack: error.stack
@@ -241,7 +243,7 @@ const PDFThumbnail = memo(function PDFThumbnail({
   function onPageRenderError(error: Error) {
     if (isUnmountingRef.current) return
     
-    console.error('PDF page render error:', {
+    logger.error('PDF page render error', {
       error: error.message,
       pdfUrl,
       attempts: renderAttempts
@@ -281,7 +283,7 @@ const PDFThumbnail = memo(function PDFThumbnail({
 
   // Block Telegram URLs early (before Document component renders)
   if (isTelegramUrl) {
-    console.warn('Telegram PDF URL blocked (no CORS support):', pdfUrl)
+    logger.warn('Telegram PDF URL blocked (no CORS support)', { error: pdfUrl })
     return (
       <div
         className={`flex items-center justify-center bg-accent border-2 border-dashed border-border rounded-lg ${className}`}

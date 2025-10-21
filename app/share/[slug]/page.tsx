@@ -33,6 +33,7 @@ export default async function SharedDocumentPage({ params }: PageProps): Promise
  * Generate metadata for shared documents (SEO)
  */
 export async function generateMetadata({ params }: PageProps) {
+import { logger } from '@/lib/utils/logger'
   const { slug } = await params
 
   try {
@@ -63,7 +64,7 @@ export async function generateMetadata({ params }: PageProps) {
       }
     }
   } catch (error) {
-    console.error('Error generating metadata for shared document:', error)
+    logger.error('Error generating metadata for shared document', error)
     return {
       title: 'Shared Document | FrogBytes',
       description: 'View shared documents on FrogBytes - AI-powered learning platform.'

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import LoginPromptDialog from '@/components/auth/LoginPromptDialog'
 import MiniBrowser from '@/components/MiniBrowser'
 import { useMiniBrowserAuth } from '@/hooks/useMiniBrowserAuth'
+import { logger } from '@/lib/utils/logger'
 
 interface FileUploadProps {
   onUploadComplete?: (fileId: string) => void
@@ -110,7 +111,7 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         urlInputRef.current?.focus()
       }
     } catch (err) {
-      console.error('Failed to read clipboard:', err)
+      logger.error('Failed to read clipboard', err)
     }
   }, [])
 
@@ -272,13 +273,13 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         try {
           data = JSON.parse(raw)
         } catch {
-          throw new Error('Download succeeded but server returned unexpected response')
+          throw new Error('Server returned an unexpected response. Please try again')
         }
       }
 
       const result = data as { success: boolean; jobId: string; message: string; status: string }
       if (!result.success || !result.jobId) {
-        throw new Error(result.message || 'Upload failed')
+        throw new Error(result.message || 'Upload failed. Please check your file and try again')
       }
 
       // Start polling for job status
@@ -305,7 +306,7 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to check job status')
+          throw new Error(data.error || 'Failed to check download status. Please try again')
         }
 
         const jobData = data as {
@@ -338,7 +339,7 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
               url,
               userId: user.id,
               onSuccess: (cookies) => {
-                console.log('Authentication successful, retrying upload...')
+                logger.info('Authentication successful, retrying upload...')
                 setNeedsAuth(false)
                 // Retry upload after authentication
                 setTimeout(() => {
@@ -346,7 +347,7 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
                 }, 1000)
               },
               onError: (error) => {
-                console.error('Authentication failed:', error)
+                logger.error('Authentication failed', error)
                 setError(`Authentication failed: ${error}`)
                 setNeedsAuth(false)
                 onUploadError?.(error)
@@ -370,11 +371,11 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
             if (jobData.file?.id) {
               onUploadComplete(jobData.file.id)
             } else {
-              throw new Error('Download completed but no file ID received')
+              throw new Error('Download completed but file information is missing. Please try again')
             }
             return
           case 'failed':
-            throw new Error(jobData.error || 'Download failed')
+            throw new Error(jobData.error || 'Download failed. Please check the URL and try again')
           default:
             // Continue polling for unknown statuses
             break
@@ -385,12 +386,12 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         if (attempts < maxAttempts) {
           setTimeout(poll, 5000) // Poll every 5 seconds
         } else {
-          throw new Error('Download timeout - please try again')
+          throw new Error('Download is taking longer than expected. Please try again or contact support')
         }
       } catch (error) {
-        console.error('Job polling error:', error)
-        setError(error instanceof Error ? error.message : 'Failed to check download status')
-        onUploadError?.(error instanceof Error ? error.message : 'Failed to check download status')
+        logger.error('Job polling error', error)
+        setError(error instanceof Error ? error.message : 'Failed to check download status. Please try again')
+        onUploadError?.(error instanceof Error ? error.message : 'Failed to check download status. Please try again')
       }
     }
 
@@ -504,7 +505,7 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
         try {
           data = JSON.parse(raw)
         } catch {
-          throw new Error('Upload succeeded but server returned unexpected response')
+          throw new Error('Server returned an unexpected response. Please try again')
         }
       }
 
@@ -1084,11 +1085,11 @@ export default function FileUpload({ onUploadComplete, onUploadError, initialFil
           url={miniBrowserAuth.authUrl}
           onClose={miniBrowserAuth.closeAuth}
           onAuthenticationComplete={(cookies) => {
-            console.log('Mini-browser authentication completed')
+            logger.info('Mini-browser authentication completed')
             miniBrowserAuth.closeAuth()
           }}
           onAuthenticationError={(error) => {
-            console.error('Mini-browser authentication failed:', error)
+            logger.error('Mini-browser authentication failed', error)
             setError(`Authentication failed: ${error}`)
             miniBrowserAuth.closeAuth()
           }}

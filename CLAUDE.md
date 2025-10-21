@@ -61,12 +61,25 @@ This project enforces **senior-level, multi-billion company standards**:
    - ESLint warnings cause build failures
    - All code must be formatted with Prettier
 
-3. **Testing Requirements**:
+3. **Professional Code Standards**:
+   - **NO EMOJIS** in production code (comments, strings, logs, UI text)
+   - **NO console.log** in production code - use proper logging utilities
+   - **REQUIRED JSDoc comments** for:
+     - All exported functions and classes
+     - All public API endpoints
+     - All React components (purpose, props, behavior)
+     - Complex algorithms or business logic
+   - **Explicit return types** on all functions
+   - **Error messages** must be professional and user-friendly
+   - **No magic numbers** - use named constants
+   - **No abbreviations** in variable names unless industry standard
+
+4. **Testing Requirements**:
    - 90%+ code coverage (branches, functions, lines, statements)
    - Unit tests for all business logic
    - E2E tests for critical user flows
 
-4. **Performance**:
+5. **Performance**:
    - Minimize bundle size
    - Optimize re-renders
    - Use React Server Components where possible

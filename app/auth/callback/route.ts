@@ -9,6 +9,7 @@ import type { NextRequest } from 'next/server'
  * and magic link email confirmations. It exchanges the authorization code for a session.
  */
 export async function GET(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') ?? '/dashboard'
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   // Handle OAuth errors (e.g., user denied access, provider not configured)
   if (error) {
-    console.error('OAuth error:', error, errorDescription)
+    logger.error('OAuth error', error, errorDescription)
     return NextResponse.redirect(
       new URL(`/auth?error=${encodeURIComponent(error)}`, request.url)
     )
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
-      console.error('Code exchange error:', exchangeError)
+      logger.error('Code exchange error', exchangeError)
       return NextResponse.redirect(
         new URL(`/auth?error=${encodeURIComponent(exchangeError.message)}`, request.url)
       )
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     // Successful authentication - redirect to the next page
     return NextResponse.redirect(new URL(next, request.url))
   } catch (error) {
-    console.error('Callback error:', error)
+    logger.error('Callback error', error)
     return NextResponse.redirect(
       new URL('/auth?error=callback_failed', request.url)
     )

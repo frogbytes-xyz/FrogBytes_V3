@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import FileUpload from '@/components/FileUpload'
@@ -56,7 +58,7 @@ export default function UploadPage() {
   }, [router])
 
   const handleUploadComplete = async (fileId: string) => {
-    console.log('Upload complete:', fileId)
+    logger.info('Upload complete:', fileId)
     setUploadId(fileId)
     // Start processing immediately; we'll collect metadata after summary is generated
     setProcessingStep('transcribing')
@@ -64,7 +66,7 @@ export default function UploadPage() {
   }
 
   const handleMetadataComplete = async (metadata: LibraryMetadata) => {
-    console.log('Metadata collected:', metadata)
+    logger.info('Metadata collected:', metadata)
     setUploadMetadata(metadata)
 
     try {
@@ -100,7 +102,7 @@ export default function UploadPage() {
         .eq('id', summaryId)
 
       if (updateError) {
-        console.error('Failed to update summary with metadata:', updateError)
+        logger.error('Failed to update summary with metadata', updateError)
         throw new Error('Failed to save metadata')
       }
 
@@ -110,7 +112,7 @@ export default function UploadPage() {
         router.push(`/learn/${summaryId}`)
       }, 300)
     } catch (error) {
-      console.error('Metadata save error:', error)
+      logger.error('Metadata save error', error)
       setErrorMessage(error instanceof Error ? error.message : 'Failed to save metadata')
       setProcessingStep('error')
     }
@@ -145,7 +147,7 @@ export default function UploadPage() {
       }
 
       const transcribeData = await transcribeResponse.json()
-      console.log('Transcription complete:', transcribeData.transcription.id)
+      logger.info('Transcription complete:', transcribeData.transcription.id)
       setTranscriptionId(transcribeData.transcription.id)
       setProcessingStep('summarizing')
 
@@ -165,7 +167,7 @@ export default function UploadPage() {
       }
 
       const summarizeData = await summarizeResponse.json()
-      console.log('Summary complete:', summarizeData.summary.id)
+      logger.info('Summary complete:', summarizeData.summary.id)
       setSummaryId(summarizeData.summary.id)
 
       // Prefill metadata using AI-extracted title (from worker) and defaults
@@ -238,11 +240,11 @@ export default function UploadPage() {
         .eq('id', summarizeData.summary.id)
 
       if (updateError) {
-        console.error('Failed to update summary with PDF URL and metadata:', updateError)
+        logger.error('Failed to update summary with PDF URL and metadata', updateError)
         throw new Error('Failed to save PDF URL to database')
       }
 
-      console.log('PDF uploaded successfully:', {
+      logger.info('PDF uploaded successfully:', {
         summary_id: summarizeData.summary.id,
         pdf_url: publicUrl,
         file_size: pdfBlob.size
@@ -256,14 +258,14 @@ export default function UploadPage() {
       }, 2000)
 
     } catch (error) {
-      console.error('Processing error:', error)
+      logger.error('Processing error', error)
       setErrorMessage(error instanceof Error ? error.message : 'Processing failed')
       setProcessingStep('error')
     }
   }
 
   const handleUploadError = (error: string) => {
-    console.error('Upload error:', error)
+    logger.error('Upload error', error)
     
     // Check if this is an authentication error
     const isAuthError = error.toLowerCase().includes('authentication') || 
@@ -273,7 +275,7 @@ export default function UploadPage() {
     // For authentication errors, DON'T change processingStep
     // This keeps the FileUpload component visible with the extension button
     if (isAuthError) {
-      console.log('Authentication error detected - keeping FileUpload visible for cookie extraction')
+      logger.info('Authentication error detected - keeping FileUpload visible for cookie extraction')
       // The FileUpload component will handle showing the auth helper UI
       return
     }

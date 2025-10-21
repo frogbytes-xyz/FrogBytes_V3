@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/services/supabase/client'
@@ -121,7 +123,7 @@ export default function LibraryPage() {
         .limit(100)
 
       if (fetchError) {
-        console.error('Fetch error:', {
+        logger.error('Fetch error', {
           message: fetchError.message || 'No error message',
           details: fetchError.details || 'No details',
           hint: fetchError.hint || 'No hint',
@@ -176,7 +178,7 @@ export default function LibraryPage() {
         setSummaries(transformedData)
       }
     } catch (err) {
-      console.error('Error loading summaries:', {
+      logger.error('Error loading summaries', {
         message: err instanceof Error ? err.message : 'Unknown error',
         stack: err instanceof Error ? err.stack : undefined,
         error: err,
@@ -205,7 +207,7 @@ export default function LibraryPage() {
         setSubjects(uniqueSubjects.sort())
       }
     } catch (err) {
-      console.error('Error loading filter options:', err)
+      logger.error('Error loading filter options', err)
       // Set empty arrays on error
       setUniversities([])
       setSubjects([])

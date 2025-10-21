@@ -47,6 +47,7 @@ export interface ErrorResponse {
  * @returns 200 on success with JWT tokens, 400 for validation, 401 for auth failure
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     // Parse and validate request body
     const body = await request.json()
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Generic error
-      console.error('Supabase signin error:', error)
+      logger.error('Supabase signin error', error)
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     // Handle unexpected errors
-    console.error('Unexpected login error:', error)
+    logger.error('Unexpected login error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

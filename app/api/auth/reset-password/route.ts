@@ -14,6 +14,7 @@ export interface ResetPasswordResponse {
 }
 
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const body = await request.json()
     
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (error) {
-      console.error('Password reset error:', error)
+      logger.error('Password reset error', error)
       // Don't reveal if email exists or not for security
       return NextResponse.json(
         {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Password reset request error:', error)
+    logger.error('Password reset request error', error)
     return NextResponse.json(
       {
         success: false,

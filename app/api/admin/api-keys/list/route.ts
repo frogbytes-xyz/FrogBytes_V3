@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * API Route: List API keys with filtering and pagination
  */
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error: any) {
-    console.error('Failed to list API keys:', error);
+    logger.error('Failed to list API keys', error);
     return NextResponse.json(
       { error: 'Failed to fetch API keys' },
       { status: 500 }

@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Transcription Worker Logic
  * 
@@ -44,22 +46,22 @@ export async function processTranscriptionJob(
     const endpointInfo = getEndpointInfo()
     
     if (isConfigured() || isFreeEndpointAvailable()) {
-      console.log(`Using ElevenLabs ${endpointInfo.mode} endpoint for transcription`)
+      logger.info(`Using ElevenLabs ${endpointInfo.mode} endpoint for transcription`)
       try {
         result = await transcribeAudio(job.filePath, job.fileName)
       } catch (err: any) {
         const message = err?.message || String(err)
-        console.warn('[Worker] ElevenLabs transcription failed, falling back to mock:', message)
+        logger.warn('[Worker] ElevenLabs transcription failed, falling back to mock', { error: message })
         result = await mockTranscription(job.filePath, job.fileName)
       }
     } else {
-      console.warn('ElevenLabs API not available, using mock transcription')
+      logger.warn('ElevenLabs API not available, using mock transcription')
       result = await mockTranscription(job.filePath, job.fileName)
     }
 
     // Save transcription to database
-    console.log('[Worker] Saving transcription to database...')
-    console.log('[Worker] Transcription data:', {
+    logger.info('[Worker] Saving transcription to database...')
+    logger.info('[Worker] Transcription data:', {
       upload_id: job.uploadId,
       user_id: job.userId,
       text_length: result.text.length,
@@ -83,11 +85,11 @@ export async function processTranscriptionJob(
       .single()
 
     if (insertError) {
-      console.error('[Worker] Database insert error:', insertError)
-      throw new Error(`Failed to save transcription: ${insertError.message}`)
+      logger.error('[Worker] Database insert error', insertError)
+      throw new Error(`Failed to save transcription to database: ${insertError.message}`)
     }
     
-    console.log('[Worker] Transcription saved successfully:', transcription.id)
+    logger.info('[Worker] Transcription saved successfully:', transcription.id)
 
     // Update upload status to transcribed
     await (supabase
@@ -100,9 +102,9 @@ export async function processTranscriptionJob(
       transcriptionId: transcription.id,
     }
   } catch (error) {
-    console.error('[Worker] Transcription job failed:', error)
+    logger.error('[Worker] Transcription job failed', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('[Worker] Error message:', errorMessage)
+    logger.error('[Worker] Error message', errorMessage)
 
     // Update upload status to failed
     await (supabase

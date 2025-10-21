@@ -269,7 +269,7 @@ export default function AdminDashboard() {
         });
       }
     } catch (err) {
-      console.error('Error fetching platform stats:', err);
+      logger.error('Error fetching platform stats', err);
     }
   };
 
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
         setHealthMetrics(data);
       }
     } catch (err) {
-      console.error('Error fetching health metrics:', err);
+      logger.error('Error fetching health metrics', err);
     }
   };
 
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
         setAnalyticsData(data.data);
       }
     } catch (err) {
-      console.error('Error fetching analytics:', err);
+      logger.error('Error fetching analytics', err);
     }
   };
 
@@ -340,7 +340,7 @@ export default function AdminDashboard() {
         setServiceStatus(statusData?.services || null);
       }
     } catch (err) {
-      console.error('Error fetching API keys:', err);
+      logger.error('Error fetching API keys', err);
     }
   };
 

@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/services/supabase/client'
 import Link from 'next/link'
@@ -112,7 +114,7 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       const typedUserDocs = (userDocs || []) as DbSummaryRow[]
 
       if (userDocsError) {
-        console.error('Error loading user documents:', {
+        logger.error('Error loading user documents', {
           message: userDocsError.message || 'No error message',
           details: userDocsError.details || 'No details',
           hint: userDocsError.hint || 'No hint',
@@ -144,7 +146,7 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       const typedAllDocs = (allDocs || []) as DbSummaryRow[]
 
       if (allDocsError) {
-        console.error('Error loading all documents:', {
+        logger.error('Error loading all documents', {
           message: allDocsError.message || 'No error message',
           details: allDocsError.details || 'No details',
           hint: allDocsError.hint || 'No hint',
@@ -222,7 +224,7 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
         setRecommendations(recommendedDocs)
       }
     } catch (err) {
-      console.error('Error loading recommendations:', {
+      logger.error('Error loading recommendations', {
         message: err instanceof Error ? err.message : 'Unknown error',
         stack: err instanceof Error ? err.stack : undefined,
         error: err,

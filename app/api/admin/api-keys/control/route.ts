@@ -9,13 +9,14 @@ import { getContinuousValidator } from '@/lib/api-keys/continuous-validator';
  * Body: { action: 'start_scraper' | 'stop_scraper' | 'start_validator' | 'stop_validator' | 'restart_all' }
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     // Check authentication - allow if ADMIN_API_KEY is set and matches, or if not set at all
     const authHeader = request.headers.get('x-api-key');
     const adminKey = process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY;
     
     if (adminKey && authHeader !== adminKey) {
-      console.warn('[Control API] Unauthorized access attempt');
+      logger.warn('[Control API] Unauthorized access attempt');
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -25,27 +26,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
     
-    console.log(`[Control API] Received action: ${action}`);
+    logger.info(`[Control API] Received action: ${action}`);
 
     let result = { success: false, message: '' };
 
     switch (action) {
       case 'start_scraper':
         try {
-          console.log('[Control API] Starting background scraper...');
+          logger.info('[Control API] Starting background scraper...');
           const scraper = getBackgroundScraper();
           if (scraper.isActive()) {
             result = { success: false, message: 'Scraper is already running' };
           } else {
             // Start in background without blocking
             scraper.start().catch(error => {
-              console.error('[API] Scraper error:', error);
+              logger.error('[API] Scraper error', error);
             });
             result = { success: true, message: 'Background scraper started' };
-            console.log('[Control API] Background scraper started successfully');
+            logger.info('[Control API] Background scraper started successfully');
           }
         } catch (error: any) {
-          console.error('[Control API] Error starting scraper:', error);
+          logger.error('[Control API] Error starting scraper', error);
           result = { success: false, message: error.message };
         }
         break;
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
           const validator = getContinuousValidator();
           // Start in background without blocking
           validator.start().catch(error => {
-            console.error('[API] Validator error:', error);
+            logger.error('[API] Validator error', error);
           });
           result = { success: true, message: 'Continuous validator started' };
         } catch (error: any) {
@@ -94,10 +95,10 @@ export async function POST(request: NextRequest) {
           
           // Start both in background without blocking
           getBackgroundScraper().start().catch(error => {
-            console.error('[API] Scraper error:', error);
+            logger.error('[API] Scraper error', error);
           });
           getContinuousValidator().start().catch(error => {
-            console.error('[API] Validator error:', error);
+            logger.error('[API] Validator error', error);
           });
           
           result = { success: true, message: 'All services restarted' };
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error controlling services:', error);
+    logger.error('Error controlling services', error);
     return NextResponse.json(
       {
         success: false,

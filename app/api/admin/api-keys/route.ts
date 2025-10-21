@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin API: Get all API keys
  * Protected endpoint for viewing API key pool
@@ -27,7 +29,7 @@ export async function GET(request: NextRequest) {
     
     if (!apiKey && !authHeader) {
       // Allow access for now, but in production add proper auth
-      console.log('Warning: Admin endpoint accessed without authentication');
+      logger.info('Warning: Admin endpoint accessed without authentication');
     }
 
     const supabase = getSupabaseClient();
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching API keys:', error);
+      logger.error('Error fetching API keys', error);
       return NextResponse.json(
         { error: 'Failed to fetch API keys' },
         { status: 500 }
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Admin API error:', error);
+    logger.error('Admin API error', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
       key: data,
     });
   } catch (error: any) {
-    console.error('Add API key error:', error);
+    logger.error('Add API key error', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }
@@ -160,7 +162,7 @@ export async function DELETE(request: NextRequest) {
       message: 'API key deleted',
     });
   } catch (error: any) {
-    console.error('Delete API key error:', error);
+    logger.error('Delete API key error', error);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

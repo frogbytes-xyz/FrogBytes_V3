@@ -133,10 +133,10 @@ class ContinuousValidator {
 
           if (validationResult.isValid) {
             progress.valid++;
-            logger.always(`[CONTINUOUS] ✓ Valid key: ${key.key.substring(0, 12)}...`);
+            logger.always(`[CONTINUOUS] [VALID] Valid key: ${key.key.substring(0, 12)}...`);
           } else {
             progress.invalid++;
-            logger.always(`[CONTINUOUS] ✗ Invalid key: ${key.key.substring(0, 12)}...`);
+            logger.always(`[CONTINUOUS] [INVALID] Invalid key: ${key.key.substring(0, 12)}...`);
           }
         } catch (error) {
           progress.errors++;

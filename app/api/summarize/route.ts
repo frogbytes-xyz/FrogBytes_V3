@@ -42,6 +42,7 @@ export interface ErrorResponse {
  * @returns Summary result
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     // Get authenticated user
     const user = await getAuthUser(request)
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Unexpected summarization error:', error)
+    logger.error('Unexpected summarization error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

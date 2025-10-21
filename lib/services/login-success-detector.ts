@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Login Success Detection Service
  * Robust mechanism to automatically detect when a user has successfully logged in
@@ -249,7 +251,7 @@ class LoginSuccessDetector {
                 return
               }
             } catch (error) {
-              console.warn(`Detection method ${method.name} failed:`, error)
+              logger.warn(`Detection method ${method.name} failed:`, error)
             }
           }
 

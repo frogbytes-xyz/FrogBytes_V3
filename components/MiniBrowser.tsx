@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +47,7 @@ export default function MiniBrowser({
       // Try to access iframe content (will fail if cross-origin)
       try {
         const iframeUrl = iframe.contentWindow.location.href
-        console.log('Current iframe URL:', iframeUrl)
+        logger.info('Current iframe URL:', iframeUrl)
         
         // Check for authentication success indicators
         const successIndicators = [
@@ -76,10 +78,10 @@ export default function MiniBrowser({
         }
       } catch (e) {
         // Cross-origin access blocked, this is normal
-        console.log('Cross-origin iframe access blocked (normal)')
+        logger.info('Cross-origin iframe access blocked (normal)')
       }
     } catch (error) {
-      console.error('Error checking authentication:', error)
+      logger.error('Error checking authentication', error)
     }
   }, [isAuthenticated, onAuthenticationComplete])
 
@@ -103,7 +105,7 @@ export default function MiniBrowser({
     try {
       iframeRef.current?.contentWindow?.history.back()
     } catch (e) {
-      console.log('Cannot navigate back (cross-origin)')
+      logger.info('Cannot navigate back (cross-origin)')
     }
   }, [])
 
@@ -111,7 +113,7 @@ export default function MiniBrowser({
     try {
       iframeRef.current?.contentWindow?.history.forward()
     } catch (e) {
-      console.log('Cannot navigate forward (cross-origin)')
+      logger.info('Cannot navigate forward (cross-origin)')
     }
   }, [])
 

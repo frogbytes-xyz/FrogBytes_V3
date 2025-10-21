@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Enhanced Telegram Storage with Metadata Management
  * 
@@ -83,7 +85,7 @@ export interface CompletePackageResult {
  */
 function createBot(): Telegraf | null {
   if (!TELEGRAM_BOT_TOKEN) {
-    console.warn('TELEGRAM_BOT_TOKEN not configured')
+    logger.warn('TELEGRAM_BOT_TOKEN not configured')
     return null
   }
   return new Telegraf(TELEGRAM_BOT_TOKEN)
@@ -109,56 +111,56 @@ export async function calculateFileHash(filePath: string): Promise<string> {
 function formatMetadataCaption(metadata: DocumentMetadata, fileType: string): string {
   const lines: string[] = []
   
-  // Header with emoji based on type
-  const emoji = {
-    lecture: '🎓',
-    tutorial: '📝',
-    seminar: '💼',
-    exam: '📋',
-    notes: '📄',
-    other: '📁'
-  }[metadata.documentType || 'other'] || '📁'
-  
-  lines.push(`${emoji} ${fileType.toUpperCase()}`)
+  // Header based on type
+  const typeLabel = {
+    lecture: 'LECTURE',
+    tutorial: 'TUTORIAL',
+    seminar: 'SEMINAR',
+    exam: 'EXAM',
+    notes: 'NOTES',
+    other: 'DOCUMENT'
+  }[metadata.documentType || 'other'] || 'DOCUMENT'
+
+  lines.push(`[${typeLabel}] ${fileType.toUpperCase()}`)
   lines.push('')
-  
+
   // Title and basic info
-  if (metadata.title) lines.push(`📌 ${metadata.title}`)
-  if (metadata.documentType) lines.push(`📑 Type: ${metadata.documentType}`)
-  
+  if (metadata.title) lines.push(`Title: ${metadata.title}`)
+  if (metadata.documentType) lines.push(`Type: ${metadata.documentType}`)
+
   // Course information
   if (metadata.courseCode || metadata.courseName) {
     const course = [metadata.courseCode, metadata.courseName].filter(Boolean).join(' - ')
-    lines.push(`📚 ${course}`)
+    lines.push(`Course: ${course}`)
   }
-  
-  if (metadata.subject) lines.push(`📖 Subject: ${metadata.subject}`)
-  if (metadata.professor) lines.push(`👨‍🏫 Professor: ${metadata.professor}`)
-  
+
+  if (metadata.subject) lines.push(`Subject: ${metadata.subject}`)
+  if (metadata.professor) lines.push(`Professor: ${metadata.professor}`)
+
   // Academic context
-  if (metadata.university) lines.push(`🏛️ ${metadata.university}`)
-  if (metadata.semester) lines.push(`📅 ${metadata.semester}`)
-  if (metadata.academicYear) lines.push(`🗓️ ${metadata.academicYear}`)
-  if (metadata.lectureNumber) lines.push(`#️⃣ Lecture ${metadata.lectureNumber}`)
-  if (metadata.lectureDate) lines.push(`📆 ${metadata.lectureDate}`)
-  
+  if (metadata.university) lines.push(`University: ${metadata.university}`)
+  if (metadata.semester) lines.push(`Semester: ${metadata.semester}`)
+  if (metadata.academicYear) lines.push(`Academic Year: ${metadata.academicYear}`)
+  if (metadata.lectureNumber) lines.push(`Lecture ${metadata.lectureNumber}`)
+  if (metadata.lectureDate) lines.push(`Date: ${metadata.lectureDate}`)
+
   // Classification
-  if (metadata.difficultyLevel) lines.push(`⚡ Level: ${metadata.difficultyLevel}`)
-  if (metadata.language && metadata.language !== 'en') lines.push(`🌐 Language: ${metadata.language}`)
-  
+  if (metadata.difficultyLevel) lines.push(`Level: ${metadata.difficultyLevel}`)
+  if (metadata.language && metadata.language !== 'en') lines.push(`Language: ${metadata.language}`)
+
   // Tags
   if (metadata.tags && metadata.tags.length > 0) {
-    lines.push(`🏷️ ${metadata.tags.slice(0, 5).join(', ')}`)
+    lines.push(`Tags: ${metadata.tags.slice(0, 5).join(', ')}`)
   }
-  
+
   // Technical details
   lines.push('')
-  lines.push(`🔑 ID: ${metadata.summaryId}`)
+  lines.push(`ID: ${metadata.summaryId}`)
   if (metadata.fileSize) {
-    lines.push(`💾 Size: ${(metadata.fileSize / 1024 / 1024).toFixed(2)}MB`)
+    lines.push(`Size: ${(metadata.fileSize / 1024 / 1024).toFixed(2)}MB`)
   }
   if (metadata.fileHash) {
-    lines.push(`🔐 Hash: ${metadata.fileHash.substring(0, 16)}...`)
+    lines.push(`Hash: ${metadata.fileHash.substring(0, 16)}...`)
   }
   
   return lines.join('\n')
@@ -181,7 +183,7 @@ export async function createEnhancedArchive(
     })
 
     output.on('close', () => {
-      console.log(`Enhanced archive created: ${archive.pointer()} bytes`)
+      logger.info(`Enhanced archive created: ${archive.pointer()} bytes`)
       resolve(true)
     })
 
@@ -334,7 +336,7 @@ export async function uploadWithMetadata(
     uploadResult.messageLink = messageLink
     return uploadResult
   } catch (error) {
-    console.error('Telegram upload error:', error)
+    logger.error('Telegram upload error', error)
     return {
       success: false,
       error: (error as Error).message || 'Upload failed',
@@ -363,7 +365,7 @@ export async function uploadCompletePackageWithMetadata(
     const archivePath = join(tmpDir, `${metadata.uploadId}.zip`)
     
     // Create enhanced archive with metadata
-    console.log('Creating enhanced archive with metadata...')
+    logger.info('Creating enhanced archive with metadata...')
     await createEnhancedArchive(audioPath, transcriptionPath, pdfPath, archivePath, metadata)
     
     // Get file stats
@@ -375,7 +377,7 @@ export async function uploadCompletePackageWithMetadata(
     const totalSize = archiveStats.size + pdfStats.size + audioStats.size + transcriptStats.size
     
     // Upload archive to Archive topic
-    console.log('Uploading archive to Topic 1 (Archive)...')
+    logger.info('Uploading archive to Topic 1 (Archive)...')
     const archiveResult = await uploadWithMetadata(
       archivePath,
       `${metadata.uploadId}.zip`,
@@ -386,11 +388,11 @@ export async function uploadCompletePackageWithMetadata(
     )
     
     if (!archiveResult.success) {
-      throw new Error(`Archive upload failed: ${archiveResult.error}`)
+      throw new Error(`Failed to upload archive to storage: ${archiveResult.error}`)
     }
     
     // Upload PDF to PDF topic
-    console.log('Uploading PDF to Topic 2 (PDFs)...')
+    logger.info('Uploading PDF to Topic 2 (PDFs)...')
     const pdfResult = await uploadWithMetadata(
       pdfPath,
       `${metadata.summaryId}.pdf`,
@@ -401,13 +403,13 @@ export async function uploadCompletePackageWithMetadata(
     )
     
     if (!pdfResult.success) {
-      console.warn('PDF upload failed:', pdfResult.error)
+      logger.warn('PDF upload failed', { error: pdfResult.error })
     }
 
     // Upload audio to Audio topic if configured
     let audioResult: EnhancedUploadResult | undefined
     if (TELEGRAM_AUDIO_TOPIC_ID) {
-      console.log('Uploading audio to Topic 3 (Audio)...')
+      logger.info('Uploading audio to Topic 3 (Audio)...')
       audioResult = await uploadWithMetadata(
         audioPath,
         metadata.originalFilename || `${metadata.uploadId}.mp3`,
@@ -418,14 +420,14 @@ export async function uploadCompletePackageWithMetadata(
       )
       
       if (!audioResult.success) {
-        console.warn('Audio upload failed:', audioResult.error)
+        logger.warn('Audio upload failed', { error: audioResult.error })
       }
     }
 
     // Upload transcript to Transcript topic if configured
     let transcriptResult: EnhancedUploadResult | undefined
     if (TELEGRAM_TRANSCRIPT_TOPIC_ID) {
-      console.log('Uploading transcript to Topic 4 (Transcripts)...')
+      logger.info('Uploading transcript to Topic 4 (Transcripts)...')
       transcriptResult = await uploadWithMetadata(
         transcriptionPath,
         `${metadata.summaryId}.txt`,
@@ -436,13 +438,13 @@ export async function uploadCompletePackageWithMetadata(
       )
       
       if (!transcriptResult.success) {
-        console.warn('Transcript upload failed:', transcriptResult.error)
+        logger.warn('Transcript upload failed', { error: transcriptResult.error })
       }
     }
     
     // Clean up archive file
     await fs.unlink(archivePath).catch(err => 
-      console.warn('Failed to delete temporary archive:', err)
+      logger.warn('Failed to delete temporary archive', { error: err })
     )
     
     const result: CompletePackageResult = { success: true }
@@ -453,7 +455,7 @@ export async function uploadCompletePackageWithMetadata(
     if (transcriptResult) result.transcriptResult = transcriptResult
     return result
   } catch (error) {
-    console.error('Complete package upload error:', error)
+    logger.error('Complete package upload error', error)
     return {
       success: false,
       error: (error as Error).message || 'Package upload failed',
@@ -490,7 +492,7 @@ export async function getTelegramFileLink(fileId: string): Promise<string | null
     }
     return null
   } catch (error) {
-    console.error('Error getting Telegram file link:', error)
+    logger.error('Error getting Telegram file link', error)
     return null
   }
 }

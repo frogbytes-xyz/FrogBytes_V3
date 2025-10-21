@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin Dashboard API: System Status
  * GET - Get current status of scraper and validator
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error: any) {
-    console.error('Dashboard status API error:', error);
+    logger.error('Dashboard status API error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

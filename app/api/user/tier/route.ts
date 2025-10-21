@@ -8,6 +8,7 @@ import { getSafeErrorMessage } from '@/lib/utils/errors'
  * Get user's tier information and benefits
  */
 export async function GET(): Promise<NextResponse> {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -67,7 +68,7 @@ export async function GET(): Promise<NextResponse> {
       }
     })
   } catch (error) {
-    console.error('Error fetching tier information:', error)
+    logger.error('Error fetching tier information', error)
     return NextResponse.json(
       { error: getSafeErrorMessage(error) },
       { status: 500 }

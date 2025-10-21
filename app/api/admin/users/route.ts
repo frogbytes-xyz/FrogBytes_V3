@@ -2,6 +2,7 @@ import { createClient } from '@/services/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient();
     const searchParams = request.nextUrl.searchParams;
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       users: users || [],
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    logger.error('Error fetching users', error);
     return NextResponse.json(
       {
         success: false,

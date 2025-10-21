@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import { validateGeminiKey } from './validator';
 import type { ApiKeyRecord } from './types';
 import { delay } from './utils';
+import { logger } from '../utils/logger';
 
 function getSupabaseClient() {
   return createClient(
@@ -124,7 +125,7 @@ export async function markKeySuccess(apiKey: string): Promise<void> {
       })
       .eq('api_key', apiKey);
   } catch (error: any) {
-    console.error('Error marking key success:', error.message);
+    logger.error('Error marking key success', error);
   }
 }
 
@@ -155,7 +156,7 @@ export async function markKeyFailure(
       })
       .eq('api_key', apiKey);
   } catch (error: any) {
-    console.error('Error marking key failure:', error.message);
+    logger.error('Error marking key failure', error);
   }
 }
 

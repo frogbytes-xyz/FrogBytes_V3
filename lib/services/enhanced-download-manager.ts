@@ -13,6 +13,7 @@ import { cookieService } from './cookie-service'
 import { authRequirementDetector } from './auth-requirement-detector'
 import { authenticationManager } from './authentication-manager'
 import { loadVideoDownloadConfig } from '../config/video-download'
+import { logger } from '../utils/logger'
 
 const videoDownloadConfig = loadVideoDownloadConfig()
 
@@ -81,7 +82,7 @@ class EnhancedDownloadManager {
         platform = authDetection.platform
 
         if (authRequired && authDetection.confidence === 'high') {
-          console.log(`Authentication required for ${url} (${authDetection.platform || 'unknown platform'})`)
+          logger.info(`Authentication required for ${url}`, { platform: authDetection.platform || 'unknown' })
         }
       }
 
@@ -115,7 +116,7 @@ class EnhancedDownloadManager {
             }
           }
         } else {
-          console.warn(`Authentication failed for ${url}: ${authResult.error}`)
+          logger.warn(`Authentication failed for ${url}`, { error: authResult.error })
           // Continue with download attempt without authentication
         }
       }
@@ -128,9 +129,9 @@ class EnhancedDownloadManager {
           downloadResult.errorType === 'auth' && 
           !authPerformed && 
           !options.skipAuthDetection) {
-        
-        console.log(`Download failed with auth error for ${url}, showing authentication popup`)
-        
+
+        logger.info(`Download failed with auth error for ${url}, showing authentication popup`)
+
         // Show popup and try authentication
         const popupAuthResult = await this.handleAuthenticationWithPopup(url, userId, options)
         
@@ -225,7 +226,7 @@ class EnhancedDownloadManager {
       try {
         await unlink(cookieFilePath)
       } catch (error) {
-        console.warn(`Failed to cleanup temp cookie file ${cookieFilePath}:`, error)
+        logger.warn(`Failed to cleanup temp cookie file`, { path: cookieFilePath, error })
       }
     }
   }
@@ -309,7 +310,7 @@ class EnhancedDownloadManager {
     // Step 1: Check for existing stored cookies
     const storedCookies = await this.getStoredCookies(userId, url)
     if (storedCookies.success && storedCookies.cookies) {
-      console.log(`Using stored cookies for ${url}`)
+      logger.info(`Using stored cookies for ${url}`)
       return {
         success: true,
         cookies: storedCookies.cookies,
@@ -405,7 +406,7 @@ class EnhancedDownloadManager {
       
       await cookieService.set(userId, domain, cookies, sessionId)
     } catch (error) {
-      console.warn(`Failed to store cookies for ${userId} and ${url}:`, error)
+      logger.warn(`Failed to store cookies`, { userId, url, error })
     }
   }
 
@@ -509,15 +510,15 @@ class EnhancedDownloadManager {
       if (sessionId) {
         // Delete specific session cookies
         await cookieService.delete(userId, sessionId)
-        console.log(`Invalidated cookies for user ${userId}, domain ${domain}, session ${sessionId}`)
+        logger.info(`Invalidated cookies`, { userId, domain, sessionId })
       } else {
         // Delete all cookies for the user and domain
         // This would require implementing a method to get all sessions for a user
         // For now, we'll log the attempt
-        console.log(`Attempted to invalidate all cookies for user ${userId}, domain ${domain}`)
+        logger.info(`Attempted to invalidate all cookies`, { userId, domain })
       }
     } catch (error) {
-      console.error(`Failed to invalidate cookies for user ${userId}, domain ${domain}:`, error)
+      logger.error(`Failed to invalidate cookies`, error, { userId, domain })
     }
   }
 
@@ -537,9 +538,9 @@ class EnhancedDownloadManager {
     if (errorType === 'auth') {
       const domain = new URL(url).hostname
       await this.invalidateCookies(userId, domain)
-      
-      console.log(`Authentication error detected for ${url}, cookies invalidated. Consider re-authentication.`)
-      
+
+      logger.info(`Authentication error detected, cookies invalidated`, { url })
+
       return {
         success: false,
         fileId: '',

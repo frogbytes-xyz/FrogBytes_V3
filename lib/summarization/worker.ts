@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Summarization Worker Logic
  * 
@@ -45,7 +47,7 @@ export async function processSummarizationJob(
       .maybeSingle()
 
     if (fetchError || !transcriptionData) {
-      throw new Error('Transcription not found')
+      throw new Error('Transcription not found. It may have been deleted or does not exist')
     }
 
     const transcription = transcriptionData as { 
@@ -58,13 +60,13 @@ export async function processSummarizationJob(
     let summResult: any
     const configured = await isConfigured()
     if (configured) {
-      console.log('[Worker] Using Gemini for summarization')
+      logger.info('[Worker] Using Gemini for summarization')
       summResult = await summarizeWithGemini({
         text: transcription.raw_text,
         summaryType: job.summaryType,
       })
     } else {
-      console.warn('[Worker] Gemini API key not configured, using mock summarization')
+      logger.warn('[Worker] Gemini API key not configured, using mock summarization')
       summResult = await mockSummarization({
         text: transcription.raw_text,
         summaryType: job.summaryType,
@@ -95,13 +97,13 @@ export async function processSummarizationJob(
       .single()
 
     if (insertError) {
-      throw new Error(`Failed to save summary: ${insertError.message}`)
+      throw new Error(`Failed to save summary to database: ${insertError.message}`)
     }
 
-    console.log('[Worker] Summary saved successfully:', summary.id)
+    logger.info('[Worker] Summary saved successfully:', summary.id)
 
     // Generate PDF and upload to Telegram storage
-    console.log('[Worker] Generating PDF and uploading to Telegram...')
+    logger.info('[Worker] Generating PDF and uploading to Telegram...')
     const pdfResult = await generateAndStorePdf({
       summaryId: summary.id,
       uploadId: transcription.upload_id,
@@ -113,13 +115,13 @@ export async function processSummarizationJob(
     })
 
     if (!pdfResult.success) {
-      console.error('[Worker] PDF generation/upload failed:', pdfResult.error)
+      logger.error('[Worker] PDF generation/upload failed', pdfResult.error)
       // Don't fail the entire job - summary was created successfully
     } else {
-      console.log('[Worker] PDF generation and upload successful')
-      console.log('[Worker] PDF URL:', pdfResult.pdfUrl)
-      console.log('[Worker] Archive link:', pdfResult.telegramArchiveLink)
-      console.log('[Worker] PDF link:', pdfResult.telegramPdfLink)
+      logger.info('[Worker] PDF generation and upload successful')
+      logger.info('[Worker] PDF URL:', pdfResult.pdfUrl)
+      logger.info('[Worker] Archive link:', pdfResult.telegramArchiveLink)
+      logger.info('[Worker] PDF link:', pdfResult.telegramPdfLink)
     }
 
     const result: SummarizationJobResult = { success: true, summaryId: summary.id }
@@ -129,7 +131,7 @@ export async function processSummarizationJob(
     return result
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('[Worker] Summarization job failed:', errorMessage)
+    logger.error('[Worker] Summarization job failed', errorMessage)
 
     // Try to save error in summaries table
     try {

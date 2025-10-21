@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
 import { createDocumentSharingService } from '@/lib/services/document-sharing-service'
 import { getSafeErrorMessage, ValidationError, AuthorizationError } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/documents/[id]/share
@@ -39,7 +40,7 @@ export async function GET(
       data: shareInfo
     })
   } catch (error) {
-    console.error('Error fetching document share info:', error)
+    logger.error('Error fetching document share info', error)
 
     if (error instanceof AuthorizationError) {
       return NextResponse.json(
@@ -118,7 +119,7 @@ export async function POST(
         : 'Document sharing disabled'
     })
   } catch (error) {
-    console.error('Error toggling document sharing:', error)
+    logger.error('Error toggling document sharing', error)
 
     if (error instanceof ValidationError) {
       return NextResponse.json(

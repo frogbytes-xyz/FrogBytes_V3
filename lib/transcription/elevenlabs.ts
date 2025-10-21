@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * ElevenLabs API Integration for Speech-to-Text
  * 
@@ -81,7 +83,7 @@ export async function transcribeAudio(
     : `${ELEVENLABS_BASE_URL}?allow_unauthenticated=1`
 
   try {
-    console.log(`[ElevenLabs] Transcribing with ${shouldUseAuth ? 'authenticated' : 'free'} endpoint`)
+    logger.info(`[ElevenLabs] Transcribing with ${shouldUseAuth ? 'authenticated' : 'free'} endpoint`)
     
     // Read the audio file
     const fileBuffer = await readFile(filePath)
@@ -107,9 +109,9 @@ export async function transcribeAudio(
     // Enable audio event tagging (laughter, applause, etc.)
     formData.append('tag_audio_events', 'true')
     
-    console.log(`[ElevenLabs] Using model: ${ELEVENLABS_MODEL}`)
-    console.log(`[ElevenLabs] Using ${shouldUseAuth ? 'authenticated' : 'FREE'} endpoint`)
-    console.log(`[ElevenLabs] Sending request to: ${apiUrl}`)
+    logger.info(`[ElevenLabs] Using model: ${ELEVENLABS_MODEL}`)
+    logger.info(`[ElevenLabs] Using ${shouldUseAuth ? 'authenticated' : 'FREE'} endpoint`)
+    logger.info(`[ElevenLabs] Sending request to: ${apiUrl}`)
     
     // Parse URL for https.request
     const url = new URL(apiUrl)
@@ -133,9 +135,9 @@ export async function transcribeAudio(
     // Add API key ONLY for authenticated endpoint
     if (shouldUseAuth && ELEVENLABS_API_KEY) {
       options.headers['xi-api-key'] = ELEVENLABS_API_KEY
-      console.log('[ElevenLabs] Using API key authentication')
+      logger.info('[ElevenLabs] Using API key authentication')
     } else {
-      console.log('[ElevenLabs] Using FREE public endpoint (no API key)')
+      logger.info('[ElevenLabs] Using FREE public endpoint (no API key)')
     }
 
     // Make request using https module which properly handles form-data streams
@@ -148,7 +150,7 @@ export async function transcribeAudio(
         })
         
         res.on('end', () => {
-          console.log(`[ElevenLabs] Response status: ${res.statusCode} ${res.statusMessage}`)
+          logger.info(`[ElevenLabs] Response status: ${res.statusCode} ${res.statusMessage}`)
           
           if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
             try {
@@ -161,7 +163,7 @@ export async function transcribeAudio(
               })
             }
           } else {
-            console.error(`[ElevenLabs] API error response:`, data)
+            logger.error(`[ElevenLabs] API error response:`, data)
             reject({
               message: `ElevenLabs API error: ${res.statusMessage}`,
               statusCode: res.statusCode,
@@ -185,20 +187,20 @@ export async function transcribeAudio(
 
     // If we get here with an error status and should retry
     if (!result && shouldUseAuth && useAuth !== false) {
-      console.warn('[ElevenLabs] Authenticated endpoint failed, trying free endpoint...')
+      logger.warn('[ElevenLabs] Authenticated endpoint failed, trying free endpoint...')
       return transcribeAudio(filePath, fileName, false)
     }
 
-    console.log(`[ElevenLabs] Transcription successful`)
-    console.log(`[ElevenLabs] Language: ${result.language_code} (${(result.language_probability * 100).toFixed(1)}% confidence)`)
-    console.log(`[ElevenLabs] Word count: ${result.words?.length || 0} words with timestamps`)
+    logger.info(`[ElevenLabs] Transcription successful`)
+    logger.info(`[ElevenLabs] Language: ${result.language_code} (${(result.language_probability * 100).toFixed(1)}% confidence)`)
+    logger.info(`[ElevenLabs] Word count: ${result.words?.length || 0} words with timestamps`)
 
     // Extract text from response
     // ElevenLabs API returns: { text, language_code, language_probability, words, transcription_id, additional_formats }
     const text = result.text || result.transcript || ''
     
     if (!text) {
-      console.error('[ElevenLabs] No text in response:', JSON.stringify(result, null, 2))
+      logger.error('[ElevenLabs] No text in response', JSON.stringify(result, null, 2))
       throw {
         message: 'No transcription text returned from API',
         code: 'EMPTY_TRANSCRIPTION',
@@ -224,11 +226,11 @@ export async function transcribeAudio(
       additionalFormats: result.additional_formats,
     }
   } catch (error: any) {
-    console.error('[ElevenLabs] Transcription error:', error)
+    logger.error('[ElevenLabs] Transcription error', error)
     
     // If authenticated endpoint failed and we can retry with free
     if (error.statusCode && shouldUseAuth && useAuth !== false) {
-      console.warn('[ElevenLabs] Authenticated endpoint failed, trying free endpoint...')
+      logger.warn('[ElevenLabs] Authenticated endpoint failed, trying free endpoint...')
       return transcribeAudio(filePath, fileName, false)
     }
     

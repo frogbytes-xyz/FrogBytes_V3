@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Enhanced Health API Endpoint
  * GET - Comprehensive system health check with performance metrics
@@ -258,7 +260,7 @@ export async function GET() {
       }
     });
   } catch (error: any) {
-    console.error('Health check error:', error);
+    logger.error('Health check error', error);
     return NextResponse.json(
       { 
         error: 'Health check failed',

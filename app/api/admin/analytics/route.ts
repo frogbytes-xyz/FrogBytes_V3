@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Enhanced Analytics API Endpoint
  * GET - Comprehensive platform analytics with detailed metrics
@@ -158,7 +160,7 @@ async function getUserAnalytics(supabase: any) {
       }
     };
   } catch (error) {
-    console.error('User analytics error:', error);
+    logger.error('User analytics error', error);
     return {
       total: 0, activeToday: 0, activeWeek: 0, activeMonth: 0,
       newToday: 0, newWeek: 0, newMonth: 0,
@@ -233,7 +235,7 @@ async function getContentAnalytics(supabase: any) {
       }
     };
   } catch (error) {
-    console.error('Content analytics error:', error);
+    logger.error('Content analytics error', error);
     return {
       uploads: {
         total: 0, today: 0, week: 0, month: 0,
@@ -303,7 +305,7 @@ export async function GET(request: NextRequest) {
       data: analyticsData
     });
   } catch (error: any) {
-    console.error('Analytics API error:', error);
+    logger.error('Analytics API error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

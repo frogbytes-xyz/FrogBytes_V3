@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * Error types for classification
@@ -187,7 +188,7 @@ export function createErrorResponse(
   }
   
   // Log error for monitoring
-  console.error('Global error handler:', {
+  logger.error('Global error handler', {
     error: error instanceof Error ? error.message : 'Unknown error',
     stack: error instanceof Error ? error.stack : undefined,
     type: classification.type,
@@ -232,7 +233,7 @@ export function setupGlobalErrorHandlers() {
   if (typeof process !== 'undefined' && typeof process.on === 'function') {
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
-      console.error('Unhandled Promise Rejection:', {
+      logger.error('Unhandled Promise Rejection', {
         reason: reason instanceof Error ? reason.message : reason,
         stack: reason instanceof Error ? reason.stack : undefined,
         promise: promise.toString(),
@@ -242,7 +243,7 @@ export function setupGlobalErrorHandlers() {
     
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
-      console.error('Uncaught Exception:', {
+      logger.error('Uncaught Exception', {
         message: error.message,
         stack: error.stack,
         timestamp: new Date().toISOString()
@@ -254,6 +255,6 @@ export function setupGlobalErrorHandlers() {
   } else {
     // In Edge Runtime, we can't set up global handlers
     // The error handling will be done at the individual route level
-    console.warn('Global error handlers not available in Edge Runtime')
+    logger.warn('Global error handlers not available in Edge Runtime')
   }
 }

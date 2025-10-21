@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * API Route: Trigger validation of pending API keys
  */
@@ -52,12 +54,12 @@ export async function POST(request: NextRequest) {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
       } catch (error) {
-        console.error(`Failed to validate key ${key.key.substring(0, 12)}...`, error);
+        logger.error(`Failed to validate key ${key.key.substring(0, 12)}...`, error);
 
         try {
           await storeValidationError(key.key, String(error));
         } catch (storeError) {
-          console.error('Failed to store validation error:', storeError);
+          logger.error('Failed to store validation error', storeError);
         }
 
         results.errors++;
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Failed to validate API keys:', error);
+    logger.error('Failed to validate API keys', error);
     return NextResponse.json(
       { error: 'Failed to start validation process' },
       { status: 500 }
@@ -89,7 +91,7 @@ export async function GET(_request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Failed to get validation status:', error);
+    logger.error('Failed to get validation status', error);
     return NextResponse.json(
       { error: 'Failed to get validation status' },
       { status: 500 }

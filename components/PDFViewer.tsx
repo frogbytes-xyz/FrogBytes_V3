@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
@@ -27,11 +29,11 @@ if (typeof window !== 'undefined') {
         // Use CDN with the correct version to avoid version mismatch
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfVersion}/build/pdf.worker.min.mjs`
       } catch (err) {
-        console.warn('Failed to configure PDF.js worker for react-pdf:', err)
+        logger.warn('Failed to configure PDF.js worker for react-pdf', { error: err })
       }
     })
     .catch((err) => {
-      console.warn('Failed to dynamically import react-pdf for worker setup:', err)
+      logger.warn('Failed to dynamically import react-pdf for worker setup', { error: err })
     })
 }
 
@@ -80,7 +82,7 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
   }, [])
 
   useEffect(() => {
-    console.log('PDFViewer: URL changed to:', pdfUrl)
+    logger.info('PDFViewer: URL changed to:', pdfUrl)
     setLoading(true)
     setLoadError(null)
   }, [pdfUrl])
@@ -144,10 +146,10 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
 
     const pdfContainer = containerRef.current
     if (pdfContainer) {
-      console.log('Adding wheel event listener to PDF container')
+      logger.info('Adding wheel event listener to PDF container')
       pdfContainer.addEventListener('wheel', handleWheel, { passive: false, capture: true })
       return () => {
-        console.log('Removing wheel event listener from PDF container')
+        logger.info('Removing wheel event listener from PDF container')
         if (scaleUpdateTimeoutRef.current) {
           clearTimeout(scaleUpdateTimeoutRef.current)
         }
@@ -200,7 +202,7 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        console.log('Touch start with 2 fingers detected')
+        logger.info('Touch start with 2 fingers detected')
         e.preventDefault()
         e.stopPropagation()
         initialDistance = getDistance(e.touches)
@@ -233,12 +235,12 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
 
     const pdfContainer = containerRef.current
     if (pdfContainer) {
-      console.log('Adding touch event listeners to PDF container')
+      logger.info('Adding touch event listeners to PDF container')
       pdfContainer.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true })
       pdfContainer.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true })
       pdfContainer.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true })
       return () => {
-        console.log('Removing touch event listeners from PDF container')
+        logger.info('Removing touch event listeners from PDF container')
         if (scaleUpdateTimeoutRef.current) {
           clearTimeout(scaleUpdateTimeoutRef.current)
         }
@@ -251,14 +253,14 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
   }, [scale, visualScale, isMounted])
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    console.log('PDFViewer: Document loaded successfully with', numPages, 'pages')
+    logger.info('PDFViewer: Document loaded successfully with', numPages, 'pages')
     setNumPages(numPages)
     setLoading(false)
     setLoadError(null)
   }
 
   function onDocumentLoadError(error: Error) {
-    console.error('PDFViewer: Failed to load document:', error)
+    logger.error('PDFViewer: Failed to load document', error)
     setLoading(false)
     setLoadError(error)
     onLoadError?.(error)

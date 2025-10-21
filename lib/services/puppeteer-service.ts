@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Puppeteer Service for Browser Automation
  * Handles browser launching, authentication flows, and cookie extraction
@@ -15,10 +17,10 @@ try {
   const StealthPlugin = require('puppeteer-extra-plugin-stealth')
   puppeteerExtra.use(StealthPlugin())
   stealthPluginInitialized = true
-  console.log('[PUPPETEER] Stealth plugin initialized successfully')
+  logger.info('[PUPPETEER] Stealth plugin initialized successfully')
 } catch (error) {
-  console.warn('[PUPPETEER] Failed to initialize stealth plugin:', error instanceof Error ? error.message : 'Unknown error')
-  console.warn('[PUPPETEER] Continuing without stealth plugin - some sites may detect automation')
+  logger.warn('[PUPPETEER] Failed to initialize stealth plugin', { error: error instanceof Error ? error.message : 'Unknown error' })
+  logger.warn('[PUPPETEER] Continuing without stealth plugin - some sites may detect automation')
 }
 
 export interface AuthSession {
@@ -294,7 +296,7 @@ class PuppeteerService {
 
       return [...header, ...netscapeCookies].join('\n')
     } catch (error) {
-      console.error('Failed to extract cookies:', error)
+      logger.error('Failed to extract cookies', error)
       return null
     }
   }
@@ -314,7 +316,7 @@ class PuppeteerService {
         await session.browser.close()
       }
     } catch (error) {
-      console.error('Error closing browser:', error)
+      logger.error('Error closing browser', error)
     } finally {
       this.activeSessions.delete(sessionId)
     }
@@ -345,7 +347,7 @@ class PuppeteerService {
     }
 
     if (expiredSessions.length > 0) {
-      console.log(`Cleaned up ${expiredSessions.length} expired authentication sessions`)
+      logger.info(`Cleaned up ${expiredSessions.length} expired authentication sessions`)
     }
   }
 

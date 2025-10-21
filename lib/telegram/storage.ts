@@ -13,6 +13,7 @@ import { join } from 'path'
 import archiver from 'archiver'
 import * as https from 'https'
 import * as http from 'http'
+import { logger } from '@/lib/utils/logger'
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const TELEGRAM_GROUP_ID = process.env.TELEGRAM_GROUP_ID || ''
@@ -39,7 +40,7 @@ export interface TelegramArchiveUploadResult {
  */
 function createBot(): Telegraf | null {
   if (!TELEGRAM_BOT_TOKEN) {
-    console.warn('TELEGRAM_BOT_TOKEN not configured')
+    logger.warn('TELEGRAM_BOT_TOKEN not configured')
     return null
   }
 
@@ -54,7 +55,7 @@ function createBot(): Telegraf | null {
   if (apiUrl.protocol === 'https:') {
     const agentOptions: https.AgentOptions = {}
     if (process.env.TELEGRAM_INSECURE_TLS === '1' || process.env.TELEGRAM_INSECURE_TLS === 'true') {
-      console.warn('Telegram: TLS verification disabled via TELEGRAM_INSECURE_TLS')
+      logger.warn('Telegram: TLS verification disabled via TELEGRAM_INSECURE_TLS')
       agentOptions.rejectUnauthorized = false
     }
     selectedAgent = new https.Agent(agentOptions)
@@ -87,7 +88,7 @@ export async function createArchive(
     })
 
     output.on('close', () => {
-      console.log(`Archive created: ${archive.pointer()} bytes`)
+      logger.debug(`Archive created: ${archive.pointer()} bytes`)
       resolve(true)
     })
 
@@ -189,7 +190,7 @@ export async function uploadToTelegramTopic(
     if (message.message_thread_id) res.messageThreadId = message.message_thread_id
     return res
   } catch (error) {
-    console.error('Telegram upload error:', error)
+    logger.error('Telegram upload error', error)
     return {
       success: false,
       error: (error as Error).message || 'Upload failed',
@@ -221,7 +222,7 @@ export async function uploadCompletePackage(
     const archivePath = join(tmpDir, `${metadata.uploadId}.zip`)
     
     // Create ZIP archive
-    console.log('Creating archive...')
+    logger.info('Creating archive...')
     await createArchive(audioPath, transcriptionPath, pdfPath, archivePath)
     
     // Get file stats
@@ -229,7 +230,7 @@ export async function uploadCompletePackage(
     const pdfStats = await fs.stat(pdfPath)
     
     // Upload archive to Archive topic
-    console.log('Uploading archive to Topic 1 (Archive)...')
+    logger.info('Uploading archive to Topic 1 (Archive)...')
     const archiveCaption = [
       `📦 Complete Package`,
       `ID: ${metadata.uploadId}`,
@@ -248,13 +249,13 @@ export async function uploadCompletePackage(
     )
     
     if (!archiveResult.success) {
-      throw new Error(`Archive upload failed: ${archiveResult.error}`)
+      throw new Error(`Failed to upload archive to storage: ${archiveResult.error}`)
     }
     
     // Upload PDF to PDF topic for quick access
-    console.log('Uploading PDF to Topic 2 (PDFs)...')
+    logger.info('Uploading PDF to Topic 2 (PDFs)...')
     const pdfCaption = [
-      `📄 ${metadata.title || 'Untitled'}`,
+      `${metadata.title || 'Untitled'}`,
       `ID: ${metadata.summaryId}`,
       `Upload: ${metadata.uploadId}`,
       `Size: ${(pdfStats.size / 1024 / 1024).toFixed(2)}MB`
@@ -269,12 +270,12 @@ export async function uploadCompletePackage(
     )
     
     if (!pdfResult.success) {
-      console.warn('PDF upload failed, but archive was successful:', pdfResult.error)
+      logger.warn('PDF upload failed, but archive was successful', { error: pdfResult.error })
     }
-    
+
     // Clean up archive file
-    await fs.unlink(archivePath).catch(err => 
-      console.warn('Failed to delete temporary archive:', err)
+    await fs.unlink(archivePath).catch(err =>
+      logger.warn('Failed to delete temporary archive', err)
     )
     
     return {
@@ -283,7 +284,7 @@ export async function uploadCompletePackage(
       pdfResult,
     }
   } catch (error) {
-    console.error('Complete package upload error:', error)
+    logger.error('Complete package upload error', error)
     return {
       success: false,
       error: (error as Error).message || 'Package upload failed',
@@ -301,9 +302,9 @@ export async function uploadToTelegram(
   sourceUrl?: string
 ): Promise<TelegramUploadResult> {
   // Build caption with optional source URL
-  const caption = sourceUrl 
-    ? `📁 ${fileName}\n📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB\n🔗 Source: ${sourceUrl}`
-    : `📁 ${fileName}\n📦 ${(fileSize / 1024 / 1024).toFixed(2)} MB`
+  const caption = sourceUrl
+    ? `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)} MB\nSource: ${sourceUrl}`
+    : `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)} MB`
   
   // Use archive topic as default
   return uploadToTelegramTopic(
@@ -345,7 +346,7 @@ export async function getTelegramFileLink(fileId: string): Promise<string | null
     }
     return null
   } catch (error) {
-    console.error('Error getting Telegram file link:', error)
+    logger.error('Error getting Telegram file link', error)
     return null
   }
 }

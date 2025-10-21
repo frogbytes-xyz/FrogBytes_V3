@@ -1,5 +1,6 @@
 import { createClient } from '@/services/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ suggestions: data })
   } catch (error) {
-    console.error('Autocomplete error:', error)
+    logger.error('Autocomplete error', error)
     return NextResponse.json(
       { error: 'Failed to fetch suggestions' },
       { status: 500 }

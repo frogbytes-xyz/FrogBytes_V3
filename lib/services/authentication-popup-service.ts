@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Authentication Popup Service
  * Shows user-friendly popup dialogs when authentication is required for media access
@@ -104,12 +106,12 @@ class AuthenticationPopupService {
     // Set up page event listeners
     page.on('console', (msg) => {
       if (msg.type() === 'error') {
-        console.error(`Popup console error: ${msg.text()}`)
+        logger.error(`Popup console error: ${msg.text()}`)
       }
     })
 
     page.on('pageerror', (error) => {
-      console.error(`Popup page error: ${error.message}`)
+      logger.error(`Popup page error: ${error.message}`)
     })
 
     // Add custom styles if provided
@@ -126,14 +128,14 @@ class AuthenticationPopupService {
    * Generate popup HTML content
    */
   private generatePopupHTML(url: string, options: PopupOptions): string {
-    const title = options.title || '🔐 Authentication Required'
+    const title = options.title || 'Authentication Required'
     const message = options.message || `
       <p>This video requires authentication to access.</p>
       <p><strong>URL:</strong> <code>${url}</code></p>
       <p>Please log in to your account to continue with the download.</p>
     `
-    const loginButtonText = options.loginButtonText || '🔑 Login & Download'
-    const cancelButtonText = options.cancelButtonText || '❌ Cancel'
+    const loginButtonText = options.loginButtonText || 'Login & Download'
+    const cancelButtonText = options.cancelButtonText || 'Cancel'
 
     return `
       <!DOCTYPE html>
@@ -301,25 +303,25 @@ class AuthenticationPopupService {
       </head>
       <body>
         <div class="popup-container">
-          <div class="icon">🔐</div>
+          <div class="icon">[AUTH]</div>
           <h1>${title}</h1>
           <div class="message">${message}</div>
-          
+
           <div class="button-group">
             <button class="btn btn-primary" id="loginBtn">${loginButtonText}</button>
             <button class="btn btn-secondary" id="cancelBtn">${cancelButtonText}</button>
           </div>
-          
+
           <div class="progress-container" id="progressContainer">
             <div class="progress-bar">
               <div class="progress-fill" id="progressFill"></div>
             </div>
             <div class="status-text" id="statusText">Preparing authentication...</div>
           </div>
-          
+
           <div class="footer">
-            <p>🔒 Your credentials are secure and never stored</p>
-            <p>⏱️ Session will timeout after 5 minutes</p>
+            <p>[SECURE] Your credentials are secure and never stored</p>
+            <p>[TIMEOUT] Session will timeout after 5 minutes</p>
           </div>
         </div>
 

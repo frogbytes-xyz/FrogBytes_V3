@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Advanced Bulk Scraping & Validation API
  * Long-running endpoint for comprehensive key discovery and validation
@@ -44,8 +46,8 @@ export async function POST(request: NextRequest) {
       autoAdd = true,
     } = body;
 
-    console.log('[BULK SCRAPE API] Starting bulk scrape operation');
-    console.log(`[BULK SCRAPE API] Target: ${targetKeys} keys, Max duration: ${maxDuration}ms`);
+    logger.info('[BULK SCRAPE API] Starting bulk scrape operation');
+    logger.info(`[BULK SCRAPE API] Target: ${targetKeys} keys, Max duration: ${maxDuration}ms`);
 
     const progressUpdates: any[] = [];
     const validatedKeys: { key: string; valid: boolean; timestamp: Date }[] = [];
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
         
         // Log every 10 processed
         if (progress.processed % 10 === 0) {
-          console.log(
+          logger.info(
             `[BULK SCRAPE API] Progress: ${progress.processed}/${progress.total} ` +
             `(Found: ${progress.found}, Duplicates: ${progress.duplicates})`
           );
@@ -78,16 +80,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('[BULK SCRAPE API] Scraping completed');
-    console.log(`[BULK SCRAPE API] Found ${result.scraped.length} keys`);
-    console.log(`[BULK SCRAPE API] Valid: ${result.stats.validKeys || 0}`);
+    logger.info('[BULK SCRAPE API] Scraping completed');
+    logger.info(`[BULK SCRAPE API] Found ${result.scraped.length} keys`);
+    logger.info(`[BULK SCRAPE API] Valid: ${result.stats.validKeys || 0}`);
 
     // Auto-add valid keys to database if requested
     const addedKeys: string[] = [];
     const addErrors: string[] = [];
 
     if (autoAdd) {
-      console.log('[BULK SCRAPE API] Adding valid keys to database');
+      logger.info('[BULK SCRAPE API] Adding valid keys to database');
       
       for (const keyData of result.scraped) {
         const isValid = result.validated?.get(keyData.key) || false;
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      console.log(`[BULK SCRAPE API] Added ${addedKeys.length} new valid keys to database`);
+      logger.info(`[BULK SCRAPE API] Added ${addedKeys.length} new valid keys to database`);
     }
 
     // Calculate statistics
@@ -143,7 +145,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('[BULK SCRAPE API] Error:', error);
+    logger.error('[BULK SCRAPE API] Error', error);
     
     return NextResponse.json(
       {

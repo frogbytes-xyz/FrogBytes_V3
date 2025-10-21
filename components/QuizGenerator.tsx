@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -59,7 +61,7 @@ export default function QuizGenerator({ documentContext, isFocusMode = false }: 
       setSelectedAnswers(new Array(data.quiz.questions.length).fill(null))
       setShowAnswers(new Array(data.quiz.questions.length).fill(false))
     } catch (err) {
-      console.error('Quiz generation error:', err)
+      logger.error('Quiz generation error', err)
       setError(err instanceof Error ? err.message : 'Failed to generate quiz')
     } finally {
       setLoading(false)

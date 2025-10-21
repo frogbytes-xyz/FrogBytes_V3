@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useEffect, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 
@@ -69,7 +71,7 @@ export function AutocompleteInput({
         setShowSuggestions(data.suggestions.length > 0)
       }
     } catch (error) {
-      console.error('Failed to fetch suggestions:', error)
+      logger.error('Failed to fetch suggestions', error)
       setSuggestions([])
     } finally {
       setIsLoading(false)

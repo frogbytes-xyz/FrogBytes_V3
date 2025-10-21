@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -61,7 +63,7 @@ export default function DashboardPage() {
           const res = await fetch(`/api/collections/${encodeURIComponent(slug)}/accept`, { method: 'POST' })
           if (!res.ok) throw new Error('Failed to import collection')
         } catch (e) {
-          console.error('Import collection failed:', e)
+          logger.error('Import collection failed', e)
           setError('Failed to import shared folder')
         } finally {
           // Clean query param from URL
@@ -94,7 +96,7 @@ export default function DashboardPage() {
         loadUserCollections()
       ])
     } catch (err) {
-      console.error('Auth check failed:', err)
+      logger.error('Auth check failed', err)
       router.push('/login')
     } finally {
       setLoading(false)
@@ -109,7 +111,7 @@ export default function DashboardPage() {
         // Treat as an empty state instead of crashing the UI
         try {
           const errData = await response.json().catch(() => null)
-          console.warn('Collections API returned non-OK:', response.status, errData)
+          logger.warn('Collections API returned non-OK', { error: response.status, errData })
         } catch {}
         setCollections([])
         return
@@ -117,7 +119,7 @@ export default function DashboardPage() {
       const data = await response.json()
       setCollections(Array.isArray(data.collections) ? data.collections : [])
     } catch (err) {
-      console.error('Error loading collections:', err)
+      logger.error('Error loading collections', err)
       // Do not surface a blocking error; show empty state instead
       setCollections([])
     }
@@ -159,7 +161,7 @@ export default function DashboardPage() {
       await loadUserCollections()
       return true
     } catch (e) {
-      console.error(e)
+      logger.error(e)
       setError(e instanceof Error ? e.message : 'Failed to create collection')
       return false
     }
@@ -182,7 +184,7 @@ export default function DashboardPage() {
       await loadUserCollections()
       return true
     } catch (e) {
-      console.error(e)
+      logger.error(e)
       setError(e instanceof Error ? e.message : 'Failed to update collection')
       return false
     }
@@ -207,7 +209,7 @@ export default function DashboardPage() {
       await loadUserCollections()
       return true
     } catch (e) {
-      console.error(e)
+      logger.error(e)
       setError(e instanceof Error ? e.message : 'Failed to delete collection')
       return false
     }
@@ -229,7 +231,7 @@ export default function DashboardPage() {
 
       return true
     } catch (e) {
-      console.error(e)
+      logger.error(e)
       setError(e instanceof Error ? e.message : 'Failed to add items to collection')
       return false
     }
@@ -277,7 +279,7 @@ export default function DashboardPage() {
         s.id === summaryId ? { ...s, is_public: !currentStatus } : s
       ))
     } catch (err) {
-      console.error('Error updating publish status:', err)
+      logger.error('Error updating publish status', err)
       setError('Failed to update publish status')
     }
   }
@@ -306,16 +308,16 @@ export default function DashboardPage() {
         })
 
         if (error) {
-          console.error('RPC error:', error)
+          logger.error('RPC error', error)
           throw new Error(error.message || 'Failed to orphan summary')
         }
 
         if (data && !data.success) {
-          console.error('Orphan function error:', data.error)
+          logger.error('Orphan function error', data.error)
           throw new Error(data.error || 'Failed to orphan summary')
         }
 
-        console.log('Summary successfully orphaned:', data)
+        logger.info('Summary successfully orphaned:', data)
       } else {
         // If not published: Completely delete it
         const { error } = await supabase
@@ -324,7 +326,7 @@ export default function DashboardPage() {
           .eq('id', summaryId)
 
         if (error) {
-          console.error('Delete error details:', {
+          logger.error('Delete error details', {
             message: error.message,
             details: error.details,
             hint: error.hint,
@@ -337,7 +339,7 @@ export default function DashboardPage() {
       // Update local state to remove from dashboard
       setSummaries(summaries.filter(s => s.id !== summaryId))
     } catch (err) {
-      console.error('Error deleting summary:', err)
+      logger.error('Error deleting summary', err)
       if (err && typeof err === 'object' && 'message' in err) {
         setError(`Failed to delete summary: ${(err as any).message}`)
       } else {

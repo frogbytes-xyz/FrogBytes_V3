@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/services/supabase/client'
 import type { User, Session } from '@supabase/supabase-js'
@@ -26,7 +28,7 @@ export function useAuth() {
         const { data: { session } } = await supabase.auth.getSession()
         setSession(session)
       } catch (error) {
-        console.error('Error initializing auth:', error)
+        logger.error('Error initializing auth', error)
       } finally {
         setLoading(false)
       }

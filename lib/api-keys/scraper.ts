@@ -38,7 +38,7 @@ class DatabaseGitHubTokenManager {
     }
 
     if (this.availableTokens.length === 0) {
-      logger.error('[TOKEN] ✗ No available GitHub tokens in database!');
+      logger.error('[TOKEN] [ERROR] No available GitHub tokens in database!');
       logger.error('[TOKEN] Make sure migration is applied and tokens are initialized');
       return null;
     }
@@ -51,7 +51,7 @@ class DatabaseGitHubTokenManager {
       return this.availableTokens[0]?.token_value || null;
     }
 
-    logger.always(`[TOKEN] ✓ Using token: ${currentToken.token_name} (rate limit: ${currentToken.rate_limit_remaining || 'unknown'}) [${this.currentTokenIndex + 1}/${this.availableTokens.length}]`);
+    logger.always(`[TOKEN] [ACTIVE] Using token: ${currentToken.token_name} (rate limit: ${currentToken.rate_limit_remaining || 'unknown'}) [${this.currentTokenIndex + 1}/${this.availableTokens.length}]`);
     return currentToken.token_value;
   }
 
@@ -62,11 +62,11 @@ class DatabaseGitHubTokenManager {
     this.rotationAttempts = 0;
 
     if (this.availableTokens.length > 0) {
-      logger.always(`[TOKEN] ✓ Found ${this.availableTokens.length} available token(s)`);
+      logger.always(`[TOKEN] [SUCCESS] Found ${this.availableTokens.length} available token(s)`);
       // Reset index to start from the best token (highest rate limit)
       this.currentTokenIndex = 0;
     } else {
-      logger.warn('[TOKEN] ⚠ No available tokens found');
+      logger.warn('[TOKEN] [WARNING] No available tokens found');
     }
   }
 
@@ -504,7 +504,7 @@ export async function scrapeGitHubKeys(
               seenKeys.add(key);
               progress.found++;
 
-              logger.always(`[GITHUB-ENHANCED] ✓ New key found: ${key.substring(0, 12)}... from ${item.repository?.full_name}`);
+              logger.always(`[GITHUB-ENHANCED] [NEW] Key found: ${key.substring(0, 12)}... from ${item.repository?.full_name}`);
 
               results.push({
                 key,
@@ -546,9 +546,9 @@ export async function scrapeGitHubKeys(
     try {
       logger.always(`[DB] Storing ${results.length} keys to 'potential_keys' table...`);
       await storeScrapedKeys(results);
-      logger.always(`[DB] ✓ Successfully stored ${results.length} keys to database`);
+      logger.always(`[DB] [SUCCESS] Successfully stored ${results.length} keys to database`);
     } catch (error: any) {
-      logger.error(`[DB] ✗ Failed to store scraped keys: ${error.message}`);
+      logger.error(`[DB] [ERROR] Failed to store scraped keys: ${error.message}`);
     }
   } else if (results.length > 0) {
     logger.always(`[DB] Skipping database storage (storeInDatabase=false)`);
@@ -647,13 +647,13 @@ export async function scrapeAllSources(
       logger.always(`[DB] Storing ${results.length} keys to database...`);
       await dbLogger?.info(`Storing ${results.length} keys in database`);
       await storeScrapedKeys(results);
-      logger.always(`[DB] ✓ Successfully stored ${results.length} keys to 'potential_keys' table`);
+      logger.always(`[DB] [SUCCESS] Successfully stored ${results.length} keys to 'potential_keys' table`);
       await dbLogger?.success(`Stored ${results.length} keys in database`, {
         stored: results.length,
         unique: results.length
       });
     } catch (error: any) {
-      logger.error(`[DB] ✗ Failed to store scraped keys: ${error.message}`);
+      logger.error(`[DB] [ERROR] Failed to store scraped keys: ${error.message}`);
       logger.error(`[DB] Stack: ${error.stack}`);
       await dbLogger?.error(`Failed to store keys: ${error.message}`);
     }

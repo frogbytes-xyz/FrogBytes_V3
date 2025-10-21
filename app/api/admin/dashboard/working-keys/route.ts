@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin Dashboard API: Working Keys (valid/quota_exceeded)
  */
@@ -66,7 +68,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Working keys API error:', error)
+    logger.error('Working keys API error', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

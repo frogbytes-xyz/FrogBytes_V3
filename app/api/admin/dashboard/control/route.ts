@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin Dashboard API: Service Control
  * POST - Start/restart/stop scraper or validator
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
       data: result
     });
   } catch (error: any) {
-    console.error('Service control error:', error);
+    logger.error('Service control error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

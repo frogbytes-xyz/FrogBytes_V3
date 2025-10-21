@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Video Download System Configuration
  * Centralized configuration for the video download system including
@@ -80,7 +82,7 @@ export function loadVideoDownloadConfig(): VideoDownloadConfig {
  */
 function generateDefaultEncryptionKey(): string {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('COOKIE_ENCRYPTION_KEY must be set in production environment')
+    throw new Error('COOKIE_ENCRYPTION_KEY environment variable is required in production. Please set a secure 32+ character encryption key')
   }
   
   // Generate a random 32-character key for development
@@ -90,7 +92,7 @@ function generateDefaultEncryptionKey(): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   
-  console.warn('⚠️  Using auto-generated encryption key for development. Set COOKIE_ENCRYPTION_KEY in production!')
+  logger.warn('[WARNING] Using auto-generated encryption key for development. Set COOKIE_ENCRYPTION_KEY in production!')
   return result
 }
 

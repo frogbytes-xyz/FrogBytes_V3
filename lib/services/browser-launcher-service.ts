@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Browser Launcher Service
  * Dedicated service for launching and managing Puppeteer browser instances
@@ -15,10 +17,10 @@ try {
   const StealthPlugin = require('puppeteer-extra-plugin-stealth')
   puppeteerExtra.use(StealthPlugin())
   stealthPluginInitialized = true
-  console.log('[BROWSER] Stealth plugin initialized successfully')
+  logger.info('[BROWSER] Stealth plugin initialized successfully')
 } catch (error) {
-  console.warn('[BROWSER] Failed to initialize stealth plugin:', error instanceof Error ? error.message : 'Unknown error')
-  console.warn('[BROWSER] Continuing without stealth plugin - some sites may detect automation')
+  logger.warn('[BROWSER] Failed to initialize stealth plugin', { error: error instanceof Error ? error.message : 'Unknown error' })
+  logger.warn('[BROWSER] Continuing without stealth plugin - some sites may detect automation')
 }
 
 export interface BrowserLaunchOptions {
@@ -136,7 +138,7 @@ class BrowserLauncherService {
       // Set up browser event handlers
       this.setupBrowserEventHandlers(browser, instanceId)
 
-      console.log(`Browser launched successfully with instance ID: ${instanceId}`)
+      logger.info(`Browser launched successfully with instance ID: ${instanceId}`)
 
       return {
         success: true,
@@ -144,7 +146,7 @@ class BrowserLauncherService {
         instanceId,
       }
     } catch (error) {
-      console.error('Failed to launch browser:', error)
+      logger.error('Failed to launch browser', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -182,7 +184,7 @@ class BrowserLauncherService {
     const instance = this.activeBrowsers.get(instanceId)
     
     if (!instance || !instance.isActive) {
-      console.error(`Browser instance ${instanceId} not found or inactive`)
+      logger.error(`Browser instance ${instanceId} not found or inactive`)
       return null
     }
 
@@ -197,7 +199,7 @@ class BrowserLauncherService {
       
       return page
     } catch (error) {
-      console.error(`Failed to create page for instance ${instanceId}:`, error)
+      logger.error(`Failed to create page for instance ${instanceId}:`, error)
       return null
     }
   }
@@ -248,7 +250,7 @@ class BrowserLauncherService {
     const instance = this.activeBrowsers.get(instanceId)
     
     if (!instance) {
-      console.warn(`Browser instance ${instanceId} not found`)
+      logger.warn(`Browser instance ${instanceId} not found`)
       return false
     }
 
@@ -256,10 +258,10 @@ class BrowserLauncherService {
       await instance.browser.close()
       instance.isActive = false
       this.activeBrowsers.delete(instanceId)
-      console.log(`Browser instance ${instanceId} closed successfully`)
+      logger.info(`Browser instance ${instanceId} closed successfully`)
       return true
     } catch (error) {
-      console.error(`Failed to close browser instance ${instanceId}:`, error)
+      logger.error(`Failed to close browser instance ${instanceId}:`, error)
       return false
     }
   }
@@ -274,7 +276,7 @@ class BrowserLauncherService {
       await this.closeBrowser(instanceId)
     }
     
-    console.log(`Closed ${instanceIds.length} browser instances`)
+    logger.info(`Closed ${instanceIds.length} browser instances`)
   }
 
   /**
@@ -342,7 +344,7 @@ class BrowserLauncherService {
    */
   private setupBrowserEventHandlers(browser: Browser, instanceId: string): void {
     browser.on('disconnected', () => {
-      console.log(`Browser instance ${instanceId} disconnected`)
+      logger.info(`Browser instance ${instanceId} disconnected`)
       const instance = this.activeBrowsers.get(instanceId)
       if (instance) {
         instance.isActive = false
@@ -350,11 +352,11 @@ class BrowserLauncherService {
     })
 
     browser.on('targetcreated', (target) => {
-      console.log(`New target created in browser instance ${instanceId}: ${target.url()}`)
+      logger.info(`New target created in browser instance ${instanceId}: ${target.url()}`)
     })
 
     browser.on('targetdestroyed', (target) => {
-      console.log(`Target destroyed in browser instance ${instanceId}: ${target.url()}`)
+      logger.info(`Target destroyed in browser instance ${instanceId}: ${target.url()}`)
     })
   }
 
@@ -377,12 +379,12 @@ class BrowserLauncherService {
    */
   private validateLaunchOptions(options: BrowserLaunchOptions): boolean {
     if (options.timeout && options.timeout < 1000) {
-      console.warn('Browser timeout should be at least 1000ms')
+      logger.warn('Browser timeout should be at least 1000ms')
       return false
     }
 
     if (options.viewport && (options.viewport.width < 100 || options.viewport.height < 100)) {
-      console.warn('Viewport dimensions should be at least 100x100')
+      logger.warn('Viewport dimensions should be at least 100x100')
       return false
     }
 

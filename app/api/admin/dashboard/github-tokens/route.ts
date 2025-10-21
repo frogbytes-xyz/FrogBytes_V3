@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger'
+
 /**
  * Admin Dashboard API: GitHub Tokens Management
  * GET - List all tokens
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
       data: maskedTokens
     });
   } catch (error: any) {
-    console.error('Get GitHub tokens error:', error);
+    logger.error('Get GitHub tokens error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest) {
       message: 'GitHub token added successfully'
     });
   } catch (error: any) {
-    console.error('Add GitHub token error:', error);
+    logger.error('Add GitHub token error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -126,7 +128,7 @@ export async function PUT(request: NextRequest) {
       message: 'GitHub token updated successfully'
     });
   } catch (error: any) {
-    console.error('Update GitHub token error:', error);
+    logger.error('Update GitHub token error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -164,7 +166,7 @@ export async function DELETE(request: NextRequest) {
       message: 'GitHub token deleted successfully'
     });
   } catch (error: any) {
-    console.error('Delete GitHub token error:', error);
+    logger.error('Delete GitHub token error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

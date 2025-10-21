@@ -31,6 +31,7 @@ export interface ErrorResponse {
  * @returns Transcription result
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   let uploadId: string | undefined
   
   try {
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!result.success) {
-      console.error('[TranscribeAPI] Transcription worker failed:', result.error)
+      logger.error('[TranscribeAPI] Transcription worker failed', result.error)
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
@@ -149,8 +150,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[TranscribeAPI] Transcription completed, fetching result...')
-    console.log('[TranscribeAPI] Transcription ID:', result.transcriptionId)
+    logger.info('[TranscribeAPI] Transcription completed, fetching result...')
+    logger.info('[TranscribeAPI] Transcription ID:', result.transcriptionId)
 
     // Get the transcription result
     const { data: transcriptionData, error: fetchError } = await supabase
@@ -160,13 +161,13 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)  // Add explicit user_id filter for RLS
       .maybeSingle()
 
-    console.log('[TranscribeAPI] Fetch result:', {
+    logger.info('[TranscribeAPI] Fetch result:', {
       hasData: !!transcriptionData,
       error: fetchError,
     })
 
     if (fetchError) {
-      console.error('[TranscribeAPI] Error fetching transcription:', fetchError)
+      logger.error('[TranscribeAPI] Error fetching transcription', fetchError)
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!transcriptionData) {
-      console.error('[TranscribeAPI] Transcription not found in database')
+      logger.error('[TranscribeAPI] Transcription not found in database')
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
@@ -208,13 +209,13 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('[TranscribeAPI] Unexpected transcription error:', error)
+    logger.error('[TranscribeAPI] Unexpected transcription error', error)
     
     // Extract detailed error information
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     const errorStack = error instanceof Error ? error.stack : undefined
     
-    console.error('[TranscribeAPI] Error details:', {
+    logger.error('[TranscribeAPI] Error details', {
       message: errorMessage,
       stack: errorStack,
       uploadId,

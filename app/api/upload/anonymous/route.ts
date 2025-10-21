@@ -47,6 +47,7 @@ export interface ErrorResponse {
  * @returns Upload confirmation with anonymous upload ID
  */
 export async function POST(request: NextRequest) {
+import { logger } from '@/lib/utils/logger'
   try {
     // Parse form data
     const formData = await request.formData()
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (dbError) {
-      console.error('Database error:', dbError)
+      logger.error('Database error', dbError)
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Anonymous upload error:', error)
+    logger.error('Anonymous upload error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

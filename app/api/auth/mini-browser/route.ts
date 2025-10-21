@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth/helpers'
 import { authenticationManager } from '@/lib/services/authentication-manager'
+import { logger } from '@/lib/utils/logger'
 
 export interface MiniBrowserAuthRequest {
   url: string
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MiniBrows
       )
     }
 
-    console.log(`Starting mini-browser authentication for user ${userId} and URL: ${url}`)
+    logger.info(`Starting mini-browser authentication for user ${userId} and URL: ${url}`)
 
     // For mini-browser, we don't need to start a Puppeteer session
     // The frontend mini-browser will handle the authentication directly
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<MiniBrows
     })
 
   } catch (error) {
-    console.error('Mini-browser authentication error:', error)
+    logger.error('Mini-browser authentication error', error)
     
     return NextResponse.json<MiniBrowserAuthResponse>(
       {
@@ -160,7 +161,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MiniBrowse
     })
 
   } catch (error) {
-    console.error('Mini-browser status check error:', error)
+    logger.error('Mini-browser status check error', error)
     
     return NextResponse.json<MiniBrowserStatusResponse>(
       {

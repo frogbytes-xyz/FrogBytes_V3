@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/lib/utils/logger'
+
 import { useState, useCallback, useRef } from 'react'
 import { createClient } from '@/services/supabase/client'
 
@@ -121,7 +123,7 @@ export function useVoting(options: UseVotingOptions = {}) {
           [summaryId]: { isVoting: false, error: null }
         }))
       } catch (error) {
-        console.error('Vote error:', error)
+        logger.error('Vote error', error)
 
         // Rollback optimistic update
         voteCache.current.delete(summaryId)

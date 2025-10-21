@@ -6,6 +6,7 @@ import {
   updateTelegramBackupId,
 } from '@/services/documents'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/utils/logger'
 
 // Supported file types
 const SUPPORTED_MIME_TYPES = [
@@ -157,14 +158,14 @@ export async function POST(request: NextRequest) {
             // Update database with Telegram file ID
             const updateResult = await updateTelegramBackupId(fileId, result.fileId)
             if (!updateResult.success) {
-              console.error('Failed to update Telegram file ID:', updateResult.error)
+              logger.error('Failed to update Telegram file ID', updateResult.error, { fileId })
             }
           } else {
-            console.warn('Telegram backup failed:', result.error)
+            logger.warn('Telegram backup failed', { error: result.error })
           }
         })
         .catch((error) => {
-          console.error('Telegram upload error:', error)
+          logger.error('Telegram upload error', error)
         })
     }
 
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Unexpected upload error:', error)
+    logger.error('Unexpected upload error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,

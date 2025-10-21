@@ -54,7 +54,7 @@ export async function GET(): Promise<NextResponse> {
       }
     })
   } catch (error) {
-    console.error('Error fetching user usage:', error)
+    logger.error('Error fetching user usage', error)
     return NextResponse.json(
       { error: getSafeErrorMessage(error) },
       { status: 500 }
@@ -67,6 +67,7 @@ export async function GET(): Promise<NextResponse> {
  * Record usage for a specific type
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       data: result.usage
     })
   } catch (error) {
-    console.error('Error recording usage:', error)
+    logger.error('Error recording usage', error)
     return NextResponse.json(
       { error: getSafeErrorMessage(error) },
       { status: 500 }

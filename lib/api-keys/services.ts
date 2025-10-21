@@ -128,7 +128,7 @@ class KeyScraperService {
         workingCount = workingResult.data.length;
       }
 
-      scraperLogger.always(`[INIT] ✓ Loaded ${this.seenKeys.size} existing keys (${potentialCount} potential, ${workingCount} working)`);
+      scraperLogger.always(`[INIT] [SUCCESS] Loaded ${this.seenKeys.size} existing keys (${potentialCount} potential, ${workingCount} working)`);
       scraperLogger.always(`[INIT] Scraper will skip any keys already in this set`);
     } catch (error: any) {
       scraperLogger.error(`[INIT] Error loading existing keys: ${error.message}`);
@@ -162,13 +162,13 @@ class KeyScraperService {
 
         // Keys are now saved immediately in scrapePhase
         if (newKeys.length > 0) {
-          scraperLogger.always(`[LOOP] ✅ ${newKeys.length} new keys were saved immediately during scraping`);
+          scraperLogger.always(`[LOOP] [SUCCESS] ${newKeys.length} new keys were saved immediately during scraping`);
         } else {
           scraperLogger.always(`[LOOP] No new keys found this iteration`);
         }
 
         // End of iteration summary
-        scraperLogger.always(`[LOOP] 📊 Iteration ${iteration} Summary: ${newKeys.length} new keys saved immediately, ${this.stats.totalSaved} total in DB`);
+        scraperLogger.always(`[LOOP] [STATS] Iteration ${iteration} Summary: ${newKeys.length} new keys saved immediately, ${this.stats.totalSaved} total in DB`);
 
         if (!this.config.continuousScraping) break;
 
@@ -217,7 +217,7 @@ class KeyScraperService {
       
       // Debug: Log the actual keys returned by enhanced GitHub search
       if (codeKeys.length > 0) {
-        scraperLogger.always(`[SCRAPE] 🔍 Keys returned by enhanced GitHub search:`);
+        scraperLogger.always(`[SCRAPE] [DEBUG] Keys returned by enhanced GitHub search:`);
         codeKeys.slice(0, 3).forEach((key, i) => {
           scraperLogger.always(`[SCRAPE]   ${i + 1}. ${key.key.substring(0, 25)}... from ${key.source}`);
         });
@@ -261,9 +261,9 @@ class KeyScraperService {
           
           pendingKeys.push(newKey);
           newKeys.push(newKey);
-          
-          scraperLogger.always(`[SCRAPE] ✓ NEW key #${newKeys.length}: ${item.key.substring(0, 20)}... (not in DB)`);
-          
+
+          scraperLogger.always(`[SCRAPE] [NEW] Key #${newKeys.length}: ${item.key.substring(0, 20)}... (not in DB)`);
+
           // Save immediately when we reach batch size
           if (pendingKeys.length >= IMMEDIATE_SAVE_BATCH_SIZE) {
             await this.saveKeysImmediately(pendingKeys);
@@ -274,7 +274,7 @@ class KeyScraperService {
           this.seenKeys.add(item.key); // Add to memory to avoid checking again
           
           if (duplicatesInThisBatch <= 3) {
-            scraperLogger.always(`[SCRAPE] ✗ Duplicate #${duplicatesInThisBatch}: ${item.key.substring(0, 20)}... (already in DB)`);
+            scraperLogger.always(`[SCRAPE] [DUPLICATE] #${duplicatesInThisBatch}: ${item.key.substring(0, 20)}... (already in DB)`);
           }
         }
       }
@@ -284,13 +284,13 @@ class KeyScraperService {
         await this.saveKeysImmediately(pendingKeys);
       }
       
-      scraperLogger.always(`[SCRAPE] ━━━ Result: ${newKeys.length} NEW keys saved immediately, ${duplicatesInThisBatch} duplicates ━━━`);
+      scraperLogger.always(`[SCRAPE] [RESULT] ${newKeys.length} NEW keys saved immediately, ${duplicatesInThisBatch} duplicates`);
 
       this.stats.totalScraped += newKeys.length;
       this.stats.duplicates += duplicatesInThisBatch;
 
       if (newKeys.length > 0) {
-        scraperLogger.always(`[SCRAPE] ✓ Found and saved ${newKeys.length} NEW keys immediately, ${duplicatesInThisBatch} duplicates skipped`);
+        scraperLogger.always(`[SCRAPE] [SUCCESS] Found and saved ${newKeys.length} NEW keys immediately, ${duplicatesInThisBatch} duplicates skipped`);
       } else if (duplicatesInThisBatch > 0) {
         scraperLogger.always(`[SCRAPE] Found 0 new keys, ${duplicatesInThisBatch} duplicates (all already in database)`);
       } else {
@@ -310,10 +310,10 @@ class KeyScraperService {
 
   private async saveKeysImmediately(keys: Array<{ key: string; source: string; sourceUrl: string }>): Promise<void> {
     if (keys.length === 0) return;
-    
+
     try {
-      scraperLogger.always(`[SAVE] 💾 Saving ${keys.length} keys immediately to database...`);
-      
+      scraperLogger.always(`[SAVE] Saving ${keys.length} keys immediately to database...`);
+
       // Prepare data for database insertion (align with potential_keys schema)
       const keysToInsert = keys.map(k => ({
         api_key: k.key,
@@ -322,34 +322,34 @@ class KeyScraperService {
         found_at: new Date().toISOString(),
         validated: false
       }));
-      
+
       // Insert into potential_keys table
       const { error } = await this.supabase
         .from('potential_keys')
         .insert(keysToInsert);
-        
+
       if (error) {
-        scraperLogger.error(`[SAVE] ❌ Error saving keys: ${error.message}`);
+        scraperLogger.error(`[SAVE] [ERROR] Error saving keys: ${error.message}`);
         return;
       }
-      
+
       // Update stats
       this.stats.totalSaved += keys.length;
-      
+
       // Add keys to seenKeys to prevent re-processing
       keys.forEach(k => this.seenKeys.add(k.key));
-      
-      scraperLogger.always(`[SAVE] ✅ Successfully saved ${keys.length} keys to database. Total saved: ${this.stats.totalSaved}`);
-      
+
+      scraperLogger.always(`[SAVE] [SUCCESS] Successfully saved ${keys.length} keys to database. Total saved: ${this.stats.totalSaved}`);
+
       // Log sample of saved keys
       if (keys.length > 0) {
         keys.slice(0, 3).forEach((key, i) => {
           scraperLogger.always(`[SAVE]   ${i + 1}. ${key.key.substring(0, 25)}... from ${key.source}`);
         });
       }
-      
+
     } catch (error: any) {
-      scraperLogger.error(`[SAVE] ❌ Exception saving keys: ${error.message}`);
+      scraperLogger.error(`[SAVE] [ERROR] Exception saving keys: ${error.message}`);
     }
   }
 
@@ -392,10 +392,10 @@ class KeyScraperService {
           // Check if it's a unique constraint violation (expected for duplicates)
           if (error.code === '23505') {
             // Duplicate key - this is EXPECTED and FINE
-            scraperLogger.always(`[SAVE] ✓ Batch ${i + 1}/${batches.length}: Some/all keys already exist (database prevented duplicates)`);
+            scraperLogger.always(`[SAVE] [SUCCESS] Batch ${i + 1}/${batches.length}: Some/all keys already exist (database prevented duplicates)`);
           } else if (error.code === '42P01' || error.message.includes('does not exist')) {
             // Table doesn't exist
-            scraperLogger.error(`[SAVE] ⚠⚠⚠ TABLE 'potential_keys' DOES NOT EXIST! ⚠⚠⚠`);
+            scraperLogger.error(`[SAVE] [ERROR] TABLE 'potential_keys' DOES NOT EXIST!`);
             scraperLogger.error(`[SAVE] You need to run the migration: npx supabase db push`);
             scraperLogger.error(`[SAVE] See: supabase/migrations/20250118000000_final_clean_key_tables.sql`);
             totalErrors += batch.length;
@@ -410,7 +410,7 @@ class KeyScraperService {
           const inserted = count || batch.length;
           this.stats.totalSaved += inserted;
           
-          scraperLogger.always(`[SAVE] ✓ Batch ${i + 1}/${batches.length}: ${inserted} keys inserted successfully`);
+          scraperLogger.always(`[SAVE] [SUCCESS] Batch ${i + 1}/${batches.length}: ${inserted} keys inserted successfully`);
           
           // Add to seenKeys so we don't check them again in this session
           batch.forEach(item => this.seenKeys.add(item.key));
@@ -428,9 +428,9 @@ class KeyScraperService {
     }
 
     if (totalErrors > 0) {
-      scraperLogger.error(`[SAVE] ⚠ Completed with ${totalErrors} errors - those keys will be retried next iteration`);
+      scraperLogger.error(`[SAVE] [WARNING] Completed with ${totalErrors} errors - those keys will be retried next iteration`);
     } else {
-      scraperLogger.always(`[SAVE] ✓ All batches processed successfully - ${this.stats.totalSaved} total keys in database`);
+      scraperLogger.always(`[SAVE] [SUCCESS] All batches processed successfully - ${this.stats.totalSaved} total keys in database`);
     }
   }
 */
@@ -587,25 +587,25 @@ class KeyProcessorService {
       // Store validation result (this moves valid/quota_exceeded keys to working_gemini_keys)
       processorLogger.always(`[VALIDATE] Storing validation result to database...`);
       await storeValidationResult(validationResult);
-      processorLogger.always(`[VALIDATE] ✓ Validation result stored`);
+      processorLogger.always(`[VALIDATE] [SUCCESS] Validation result stored`);
 
       if (validationResult.isValid || validationResult.status?.includes('quota')) {
         this.stats.validKeys++;
         const status = (validationResult.status === 'quota_reached' || validationResult.status === 'quota_exceeded') ? 'QUOTA EXCEEDED' : 'VALID';
-        processorLogger.always(`[VALIDATE] ✓ Key is ${status} - Moved to working_gemini_keys table`);
+        processorLogger.always(`[VALIDATE] [SUCCESS] Key is ${status} - Moved to working_gemini_keys table`);
         if (validationResult.status === 'quota_reached' || validationResult.status === 'quota_exceeded') {
           this.stats.quotaKeys++;
         }
       } else {
         this.stats.invalidKeys++;
-        processorLogger.warn(`[VALIDATE] ✗ Key is INVALID - Marked as validated but not added to working keys`);
+        processorLogger.warn(`[VALIDATE] [INVALID] Key is INVALID - Marked as validated but not added to working keys`);
       }
 
       processorLogger.always(`[VALIDATE] Key ${keyPreview}... processed successfully`);
 
     } catch (error: any) {
       this.stats.errors++;
-      processorLogger.error(`[VALIDATE] ✗ Error processing key ${keyPreview}...: ${error.message}`);
+      processorLogger.error(`[VALIDATE] [ERROR] Error processing key ${keyPreview}...: ${error.message}`);
       processorLogger.error(`[VALIDATE] Stack: ${error.stack}`);
     }
   }
@@ -751,16 +751,16 @@ class KeyValidatorService {
 
       if (isValid && !isQuotaExceeded) {
         this.stats.stillValid++;
-        validatorLogger.always(`[REVALIDATOR] ✓ Key ${keyPreview}... is still VALID`);
+        validatorLogger.always(`[REVALIDATOR] [VALID] Key ${keyPreview}... is still VALID`);
         await this.updateKey(keyRecord.api_key, 'valid');
       } else if (isQuotaExceeded) {
         this.stats.quotaReached++;
-        validatorLogger.warn(`[REVALIDATOR] ⚠ Key ${keyPreview}... has QUOTA EXCEEDED`);
+        validatorLogger.warn(`[REVALIDATOR] [QUOTA] Key ${keyPreview}... has QUOTA EXCEEDED`);
         await this.updateKey(keyRecord.api_key, 'quota_exceeded');
       } else {
         this.stats.becameInvalid++;
-        validatorLogger.error(`[REVALIDATOR] ✗ Key ${keyPreview}... became INVALID`);
-        
+        validatorLogger.error(`[REVALIDATOR] [INVALID] Key ${keyPreview}... became INVALID`);
+
         if (this.config.deleteInvalidKeys) {
           await this.deleteKey(keyRecord.api_key);
           this.stats.keysDeleted++;
