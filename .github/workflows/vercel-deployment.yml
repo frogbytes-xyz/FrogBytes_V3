@@ -1,0 +1,291 @@
+name: Vercel Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'feature/*'
+  pull_request:
+    branches:
+      - main
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy-preview:
+    name: Deploy Preview (Feature Branch)
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log deployment start
+        run: |
+          echo "=================================================="
+          echo "Starting Preview Deployment"
+          echo "=================================================="
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: |
+          echo "Installing Vercel CLI..."
+          npm install --global vercel@latest
+          echo "Vercel CLI version: $(vercel --version)"
+
+      - name: Pull Vercel Environment Information
+        run: |
+          echo "=================================================="
+          echo "Pulling Vercel environment configuration..."
+          echo "Environment: preview"
+          echo "Organization ID: ${{ env.VERCEL_ORG_ID }}"
+          echo "Project ID: ${{ env.VERCEL_PROJECT_ID }}"
+          echo "=================================================="
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          echo "Environment configuration pulled successfully"
+
+      - name: Build Project Artifacts
+        run: |
+          echo "=================================================="
+          echo "Building project for preview deployment..."
+          echo "Build started at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          echo "=================================================="
+          echo "Build completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+
+      - name: Deploy Preview to Vercel
+        id: deploy
+        run: |
+          echo "=================================================="
+          echo "Deploying to Vercel preview environment..."
+          echo "Deployment started at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "=================================================="
+          echo "DEPLOYMENT SUCCESSFUL"
+          echo "Preview URL: $url"
+          echo "Deployment completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+
+      - name: Display Deployment URL in Actions Summary
+        if: success()
+        run: |
+          echo "## Preview Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Preview" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Preview URL" >> $GITHUB_STEP_SUMMARY
+          echo "**${{ steps.deploy.outputs.url }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[Open Preview Deployment](${{ steps.deploy.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment Preview URL on Commit
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const branch = context.ref.replace('refs/heads/', '');
+
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `## Preview Deployment Successful\n\n**URL:** ${url}\n\n**Branch:** \`${branch}\`\n**Commit:** \`${context.sha.substring(0, 7)}\`\n**Deployed at:** ${new Date().toUTCString()}\n\n[Open Preview](${ url})`
+            });
+
+      - name: Deployment Status Summary
+        if: success()
+        run: |
+          echo "=================================================="
+          echo "DEPLOYMENT SUMMARY"
+          echo "=================================================="
+          echo "Status: SUCCESS"
+          echo "Environment: Preview"
+          echo "URL: ${{ steps.deploy.outputs.url }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "=================================================="
+
+  deploy-production:
+    name: Deploy Production (Main Branch)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log deployment start
+        run: |
+          echo "=================================================="
+          echo "Starting Production Deployment"
+          echo "=================================================="
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: |
+          echo "Installing Vercel CLI..."
+          npm install --global vercel@latest
+          echo "Vercel CLI version: $(vercel --version)"
+
+      - name: Pull Vercel Environment Information
+        run: |
+          echo "=================================================="
+          echo "Pulling Vercel environment configuration..."
+          echo "Environment: production"
+          echo "Organization ID: ${{ env.VERCEL_ORG_ID }}"
+          echo "Project ID: ${{ env.VERCEL_PROJECT_ID }}"
+          echo "=================================================="
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          echo "Environment configuration pulled successfully"
+
+      - name: Build Project Artifacts
+        run: |
+          echo "=================================================="
+          echo "Building project for production deployment..."
+          echo "Build started at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "=================================================="
+          echo "Build completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+
+      - name: Deploy Production to Vercel
+        id: deploy
+        run: |
+          echo "=================================================="
+          echo "Deploying to Vercel production environment..."
+          echo "Deployment started at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "=================================================="
+          echo "PRODUCTION DEPLOYMENT SUCCESSFUL"
+          echo "Production URL: $url"
+          echo "Deployment completed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=================================================="
+
+      - name: Display Deployment URL in Actions Summary
+        if: success()
+        run: |
+          echo "## Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Production URL" >> $GITHUB_STEP_SUMMARY
+          echo "**${{ steps.deploy.outputs.url }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[Open Production Deployment](${{ steps.deploy.outputs.url }})" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment Production URL on Commit
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `## Production Deployment Successful\n\n**URL:** ${url}\n\n**Branch:** \`main\`\n**Commit:** \`${context.sha.substring(0, 7)}\`\n**Deployed at:** ${new Date().toUTCString()}\n\n[Open Production](${ url})`
+            });
+
+      - name: Deployment Status Summary
+        if: success()
+        run: |
+          echo "=================================================="
+          echo "DEPLOYMENT SUMMARY"
+          echo "=================================================="
+          echo "Status: SUCCESS"
+          echo "Environment: Production"
+          echo "URL: ${{ steps.deploy.outputs.url }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "=================================================="
+
+  deployment-status:
+    name: Check Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-preview, deploy-production]
+    if: always()
+
+    steps:
+      - name: Check Deployment Results
+        run: |
+          echo "=================================================="
+          echo "DEPLOYMENT STATUS CHECK"
+          echo "=================================================="
+          echo "Preview Deployment Status: ${{ needs.deploy-preview.result }}"
+          echo "Production Deployment Status: ${{ needs.deploy-production.result }}"
+          echo "=================================================="
+
+          if [ "${{ needs.deploy-preview.result }}" == "failure" ] || [ "${{ needs.deploy-production.result }}" == "failure" ]; then
+            echo "STATUS: FAILED"
+            echo "One or more deployments failed. Check logs above for details."
+            echo "=================================================="
+            exit 1
+          elif [ "${{ needs.deploy-preview.result }}" == "success" ] || [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "STATUS: SUCCESS"
+            echo "Deployment completed successfully!"
+            echo "=================================================="
+          else
+            echo "STATUS: SKIPPED"
+            echo "No deployment was triggered for this push."
+            echo "=================================================="
+          fi
+
+      - name: Deployment Status Summary
+        if: always()
+        run: |
+          echo "## Deployment Status Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Preview Deployment | ${{ needs.deploy-preview.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production Deployment | ${{ needs.deploy-production.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.deploy-preview.result }}" == "success" ]; then
+            echo "Preview deployment completed successfully." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "Production deployment completed successfully." >> $GITHUB_STEP_SUMMARY
+          fi

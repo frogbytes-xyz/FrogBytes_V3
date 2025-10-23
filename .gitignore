@@ -100,9 +100,11 @@ Thumbs.db
 # Project Management Tools
 # ============================================
 .taskmaster/
-.github/
+## Ensure we can track GitHub Actions workflow files
+ # .github/  # commented out to allow tracking workflows via the negation rules below
 # Allow GitHub Actions workflow files (we want to track CI workflows)
 !.github/workflows/
+!.github/workflows/*
 .claude/
 
 # ============================================
