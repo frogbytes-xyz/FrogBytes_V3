@@ -17,12 +17,12 @@ const SUPPORTED_PLATFORMS = [
   { domain: 'tiktok.com', name: 'TikTok' },
   { domain: 'instagram.com', name: 'Instagram' },
   { domain: 'reddit.com', name: 'Reddit' },
-  { domain: 'soundcloud.com', name: 'SoundCloud' },
+  { domain: 'soundcloud.com', name: 'SoundCloud' }
 ] as const
 
 /**
  * Validate if a URL is supported for video download
- * 
+ *
  * NOTE: This validation is intentionally permissive. We accept any valid HTTP/HTTPS URL
  * because yt-dlp supports 1500+ video platforms. Rather than maintaining a whitelist,
  * we let yt-dlp attempt the download and handle failures gracefully.
@@ -31,7 +31,7 @@ export function isValidVideoUrl(url: string): ValidationResult {
   try {
     // Parse URL
     const parsed = new URL(url)
-    
+
     // Check protocol
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       return {
@@ -39,12 +39,12 @@ export function isValidVideoUrl(url: string): ValidationResult {
         error: 'Only HTTP and HTTPS URLs are supported'
       }
     }
-    
+
     // Check if it's a known platform (for better user feedback)
-    const platform = SUPPORTED_PLATFORMS.find(p => 
+    const platform = SUPPORTED_PLATFORMS.find(p =>
       parsed.hostname.includes(p.domain)
     )
-    
+
     // Accept the URL regardless of whether we recognize the platform
     // yt-dlp supports 1500+ sites, so we let it try
     const result: ValidationResult = {
@@ -75,7 +75,7 @@ export function getSupportedPlatforms(): string[] {
 export function detectPlatform(url: string): string | undefined {
   try {
     const parsed = new URL(url)
-    const platform = SUPPORTED_PLATFORMS.find(p => 
+    const platform = SUPPORTED_PLATFORMS.find(p =>
       parsed.hostname.includes(p.domain)
     )
     return platform?.name
@@ -83,4 +83,3 @@ export function detectPlatform(url: string): string | undefined {
     return undefined
   }
 }
-

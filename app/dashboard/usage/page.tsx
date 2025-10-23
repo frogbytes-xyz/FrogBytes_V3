@@ -1,7 +1,13 @@
 import { createClient } from '@/services/supabase/server'
 import { redirect } from 'next/navigation'
 import { UserTierDisplay } from '@/components/features/user-tier-display'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Gift, Users, Zap } from 'lucide-react'
 import Link from 'next/link'
@@ -14,7 +20,10 @@ export default async function UsagePage(): Promise<JSX.Element> {
   const supabase = await createClient()
 
   // Check authentication
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser()
 
   if (error || !user) {
     redirect('/auth/signin')
@@ -25,9 +34,12 @@ export default async function UsagePage(): Promise<JSX.Element> {
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold tracking-tight">Usage & Tier Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Usage & Tier Management
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Monitor your daily usage, manage your tier, and invite friends to unlock unlimited access.
+            Monitor your daily usage, manage your tier, and invite friends to
+            unlock unlimited access.
           </p>
         </div>
 
@@ -100,7 +112,8 @@ export default async function UsagePage(): Promise<JSX.Element> {
           <CardHeader>
             <CardTitle>How to Get Unlimited Access</CardTitle>
             <CardDescription>
-              Follow these steps to unlock unlimited questions, quiz generation, and copilot interactions
+              Follow these steps to unlock unlimited questions, quiz generation,
+              and copilot interactions
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -112,7 +125,8 @@ export default async function UsagePage(): Promise<JSX.Element> {
                 <div>
                   <h3 className="font-semibold">Send Invitations</h3>
                   <p className="text-gray-600 text-sm">
-                    Invite 3 friends to join FrogBytes using your unique invitation links.
+                    Invite 3 friends to join FrogBytes using your unique
+                    invitation links.
                   </p>
                 </div>
               </div>
@@ -124,7 +138,8 @@ export default async function UsagePage(): Promise<JSX.Element> {
                 <div>
                   <h3 className="font-semibold">Friends Sign Up</h3>
                   <p className="text-gray-600 text-sm">
-                    Your friends need to create accounts using your invitation links within 7 days.
+                    Your friends need to create accounts using your invitation
+                    links within 7 days.
                   </p>
                 </div>
               </div>
@@ -136,7 +151,8 @@ export default async function UsagePage(): Promise<JSX.Element> {
                 <div>
                   <h3 className="font-semibold">Automatic Upgrade</h3>
                   <p className="text-gray-600 text-sm">
-                    Once 3 friends successfully sign up, you'll automatically get unlimited access for 30 days!
+                    Once 3 friends successfully sign up, you&apos;ll
+                    automatically get unlimited access for 30 days!
                   </p>
                 </div>
               </div>
@@ -148,8 +164,10 @@ export default async function UsagePage(): Promise<JSX.Element> {
                 Pro Tip
               </div>
               <p className="text-green-700 text-sm">
-                Share your invitations with friends who are interested in AI-powered learning, studying, or
-                professional development. They'll get access to our powerful PDF analysis and quiz generation tools!
+                Share your invitations with friends who are interested in
+                AI-powered learning, studying, or professional development.
+                They&apos;ll get access to our powerful PDF analysis and quiz
+                generation tools!
               </p>
             </div>
           </CardContent>

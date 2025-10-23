@@ -30,7 +30,7 @@ export function AutocompleteInput({
   field,
   onChange,
   onSelect,
-  className,
+  className
 }: AutocompleteInputProps) {
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -42,7 +42,10 @@ export function AutocompleteInput({
   // Close suggestions when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
         setShowSuggestions(false)
       }
     }
@@ -111,12 +114,12 @@ export function AutocompleteInput({
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveSuggestionIndex((prev) =>
+      setActiveSuggestionIndex(prev =>
         prev < suggestions.length - 1 ? prev + 1 : prev
       )
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1))
+      setActiveSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1))
     } else if (e.key === 'Enter') {
       e.preventDefault()
       if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
@@ -177,6 +180,3 @@ export function AutocompleteInput({
     </div>
   )
 }
-
-
-

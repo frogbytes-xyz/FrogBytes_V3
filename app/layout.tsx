@@ -5,11 +5,12 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'FrogBytes - AI-Powered Lecture Transcription',
-  description: 'Transform your lectures into comprehensive study materials with AI-powered transcription, summaries, and interactive learning tools.',
+  description:
+    'Transform your lectures into comprehensive study materials with AI-powered transcription, summaries, and interactive learning tools.'
 }
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode
 }>) {
@@ -25,8 +26,8 @@ export default function RootLayout({
               style: {
                 background: 'hsl(var(--background))',
                 color: 'hsl(var(--foreground))',
-                border: '1px solid hsl(var(--border))',
-              },
+                border: '1px solid hsl(var(--border))'
+              }
             }}
           />
         </ThemeProvider>

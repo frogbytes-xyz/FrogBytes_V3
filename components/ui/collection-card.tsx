@@ -2,7 +2,13 @@ import { useCallback, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import {
   Folder,
   Users,
@@ -43,7 +49,13 @@ interface CollectionMenuProps {
   isLoading: boolean
 }
 
-function CollectionMenu({ collection, onEdit, onDelete, onToggleVisibility, isLoading }: CollectionMenuProps) {
+function CollectionMenu({
+  collection,
+  onEdit,
+  onDelete,
+  onToggleVisibility,
+  isLoading
+}: CollectionMenuProps) {
   const [showMenu, setShowMenu] = useState(false)
 
   return (
@@ -132,13 +144,16 @@ export default function CollectionCard({
   onToggleVisibility,
   isLoading
 }: CollectionCardProps) {
-  const handleCardClick = useCallback((e: React.MouseEvent) => {
-    // Don't trigger click if clicking on the menu button
-    if ((e.target as Element).closest('[data-menu-trigger]')) {
-      return
-    }
-    onClick()
-  }, [onClick])
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don&apos;t trigger click if clicking on the menu button
+      if ((e.target as Element).closest('[data-menu-trigger]')) {
+        return
+      }
+      onClick()
+    },
+    [onClick]
+  )
 
   return (
     <Card
@@ -152,7 +167,9 @@ export default function CollectionCard({
               <Folder className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1">
-              <CardTitle className="text-sm line-clamp-1">{collection.name}</CardTitle>
+              <CardTitle className="text-sm line-clamp-1">
+                {collection.name}
+              </CardTitle>
               <p className="text-xs text-muted-foreground">
                 {new Date(collection.created_at).toLocaleDateString()}
               </p>
@@ -179,7 +196,10 @@ export default function CollectionCard({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Badge variant={collection.is_public ? 'default' : 'secondary'} className="text-[10px]">
+            <Badge
+              variant={collection.is_public ? 'default' : 'secondary'}
+              className="text-[10px]"
+            >
               {collection.is_public ? (
                 <>
                   <Users className="w-3 h-3 mr-1" />

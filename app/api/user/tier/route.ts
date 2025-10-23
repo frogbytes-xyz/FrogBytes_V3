@@ -2,22 +2,22 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
 import { createUserTierService } from '@/lib/services/user-tier-service'
 import { getSafeErrorMessage } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/user/tier
  * Get user's tier information and benefits
  */
 export async function GET(): Promise<NextResponse> {
-import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const tierService = await createUserTierService()
@@ -37,8 +37,13 @@ import { logger } from '@/lib/utils/logger'
 
     const tierBenefits = tierService.getTierBenefits(profile.tier)
     const allTierBenefits = tierService.getAllTierBenefits()
-    const tierDisplay = tierService.getTierDisplay(profile.tier, profile.tierExpiresAt)
-    const daysUntilExpiration = tierService.getDaysUntilExpiration(profile.tierExpiresAt)
+    const tierDisplay = tierService.getTierDisplay(
+      profile.tier,
+      profile.tierExpiresAt
+    )
+    const daysUntilExpiration = tierService.getDaysUntilExpiration(
+      profile.tierExpiresAt
+    )
     const isExpiringSoon = tierService.isTierExpiringSoon(profile.tierExpiresAt)
 
     return NextResponse.json({
@@ -62,7 +67,10 @@ import { logger } from '@/lib/utils/logger'
           canUpgrade: upgradeInfo.canUpgrade,
           successfulInvitations: upgradeInfo.successfulInvitations,
           requiredInvitations: upgradeInfo.requiredInvitations,
-          invitationsNeeded: Math.max(0, upgradeInfo.requiredInvitations - upgradeInfo.successfulInvitations)
+          invitationsNeeded: Math.max(
+            0,
+            upgradeInfo.requiredInvitations - upgradeInfo.successfulInvitations
+          )
         },
         tierHistory: tierHistory.slice(0, 5) // Last 5 upgrades
       }

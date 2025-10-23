@@ -3,7 +3,7 @@
  * Creates simple error PDFs when LaTeX compilation fails
  */
 
-import { compileToPDF } from './compiler';
+import { compileToPDF } from './compiler'
 
 /**
  * Generate a fallback error PDF with compilation error details
@@ -23,43 +23,50 @@ export async function generateErrorPDF(
 
 \\textbf{Error:} ${escapeForLatex(errorMessage)}
 
-${latexLogs ? `
+${
+  latexLogs
+    ? `
 \\subsection*{Compilation Logs}
 \\begin{verbatim}
 ${truncateText(latexLogs, 2000)}
 \\end{verbatim}
-` : ''}
+`
+    : ''
+}
 
-${originalLatex ? `
+${
+  originalLatex
+    ? `
 \\subsection*{Original LaTeX Source}
 \\textit{(truncated to first 1000 characters)}
 \\begin{verbatim}
 ${truncateText(originalLatex, 1000)}
 \\end{verbatim}
-` : ''}
+`
+    : ''
+}
 
 \\vspace{1cm}
 
 \\textit{Please check your LaTeX syntax and try again.}
 \\\\
 \\textit{Common issues: missing packages, undefined commands, mismatched braces.}
-`;
+`
 
   try {
     const result = await compileToPDF(errorLatex, {
       title: 'Compilation Error',
-      passes: 1,
-    });
-    
+      passes: 1
+    })
+
     if (result.success && result.pdf) {
-      return result.pdf;
+      return result.pdf
     }
-    
+
     // If even error PDF fails, return minimal text PDF
-    return generateMinimalTextPDF(errorMessage);
-    
+    return generateMinimalTextPDF(errorMessage)
   } catch {
-    return generateMinimalTextPDF(errorMessage);
+    return generateMinimalTextPDF(errorMessage)
   }
 }
 
@@ -84,13 +91,13 @@ Error: ${escapeForLatex(message)}
 
 Please check your LaTeX syntax.
 \\end{document}
-`;
+`
 
   try {
-    const result = await compileToPDF(minimalLatex, { passes: 1 });
-    return result.success && result.pdf ? result.pdf : null;
+    const result = await compileToPDF(minimalLatex, { passes: 1 })
+    return result.success && result.pdf ? result.pdf : null
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -104,7 +111,7 @@ function escapeForLatex(text: string): string {
     .replace(/\\/g, '\\textbackslash{}')
     .replace(/[&%$#_{}]/g, '\\$&')
     .replace(/~/g, '\\textasciitilde{}')
-    .replace(/\^/g, '\\textasciicircum{}');
+    .replace(/\^/g, '\\textasciicircum{}')
 }
 
 /**
@@ -115,9 +122,9 @@ function escapeForLatex(text: string): string {
  */
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) {
-    return text;
+    return text
   }
-  return text.substring(0, maxLength) + '\n... (truncated)';
+  return text.substring(0, maxLength) + '\n... (truncated)'
 }
 
 /**
@@ -130,23 +137,23 @@ export async function createErrorResponse(
   error: { message: string; logs?: string },
   originalLatex?: string
 ): Promise<{
-  error: string;
-  message: string;
-  logs?: string;
-  fallbackPdf?: Buffer;
+  error: string
+  message: string
+  logs?: string
+  fallbackPdf?: Buffer
 }> {
   const fallbackPdf = await generateErrorPDF(
     error.message,
     error.logs,
     originalLatex
-  );
-  
+  )
+
   return {
     error: 'Compilation failed',
     message: error.message,
     logs: error.logs ?? 'No logs available',
-    ...(fallbackPdf && { fallbackPdf }),
-  };
+    ...(fallbackPdf && { fallbackPdf })
+  }
 }
 
 /**
@@ -159,12 +166,12 @@ export function isMissingLatexError(error: string): boolean {
     'pdflatex not found',
     'command not found',
     'ENOENT',
-    'spawn pdflatex',
-  ];
-  
-  return missingPatterns.some(pattern => 
+    'spawn pdflatex'
+  ]
+
+  return missingPatterns.some(pattern =>
     error.toLowerCase().includes(pattern.toLowerCase())
-  );
+  )
 }
 
 /**
@@ -175,19 +182,19 @@ export function isMissingLatexError(error: string): boolean {
 export function extractLatexError(logs: string): string {
   // Look for common error patterns
   const errorPatterns = [
-    /! (.+)/,  // Standard LaTeX error
+    /! (.+)/, // Standard LaTeX error
     /Error: (.+)/i,
     /Undefined control sequence(.+)/i,
-    /Missing (.+)/i,
-  ];
-  
+    /Missing (.+)/i
+  ]
+
   for (const pattern of errorPatterns) {
-    const match = logs.match(pattern);
+    const match = logs.match(pattern)
     if (match) {
-      return match[0];
+      return match[0]
     }
   }
-  
+
   // Return first 200 characters if no pattern matches
-  return logs.substring(0, 200) + '...';
+  return logs.substring(0, 200) + '...'
 }

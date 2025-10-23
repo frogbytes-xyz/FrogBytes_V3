@@ -1,14 +1,18 @@
 import { createClient } from '@/services/supabase/server'
 import { getAuthUser } from '@/lib/auth/helpers'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { processSummarizationJob } from '@/lib/summarization/worker'
 import { z } from 'zod'
+import { logger } from '@/lib/utils/logger'
 
 const summarizeSchema = z.object({
   transcriptionId: z.string().uuid('Invalid transcription ID'),
   summaryType: z.enum(['compact', 'detailed', 'expanded'], {
-    errorMap: () => ({ message: 'Summary type must be: compact, detailed, or expanded' }),
-  }),
+    errorMap: () => ({
+      message: 'Summary type must be: compact, detailed, or expanded'
+    })
+  })
 })
 
 export interface SummarizeResponse {
@@ -31,18 +35,17 @@ export interface ErrorResponse {
 
 /**
  * POST /api/summarize
- * 
+ *
  * Protected endpoint to generate AI summary of a transcription.
  * Requires authentication via middleware.
- * 
+ *
  * Body:
  * - transcriptionId: UUID of the transcription
  * - summaryType: 'compact', 'detailed', or 'expanded'
- * 
+ *
  * @returns Summary result
  */
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     // Get authenticated user
     const user = await getAuthUser(request)
@@ -52,7 +55,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Unauthorized',
-          details: ['Authentication required'],
+          details: ['Authentication required']
         },
         { status: 401 }
       )
@@ -67,7 +70,9 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Validation failed',
-          details: validation.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+          details: validation.error.errors.map(
+            e => `${e.path.join('.')}: ${e.message}`
+          )
         },
         { status: 400 }
       )
@@ -89,7 +94,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Not found',
-          details: ['Transcription not found or access denied'],
+          details: ['Transcription not found or access denied']
         },
         { status: 404 }
       )
@@ -114,8 +119,8 @@ import { logger } from '@/lib/utils/logger'
             latexContent: (existingSummary as any).latex_content,
             summaryType: (existingSummary as any).summary_type,
             chunkCount: (existingSummary as any).chunk_count,
-            title: (existingSummary as any).title,
-          },
+            title: (existingSummary as any).title
+          }
         },
         { status: 200 }
       )
@@ -126,7 +131,7 @@ import { logger } from '@/lib/utils/logger'
     const result = await processSummarizationJob({
       transcriptionId: (transcription as any).id,
       userId: user.id,
-      summaryType,
+      summaryType
     })
 
     if (!result.success) {
@@ -134,7 +139,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Summarization failed',
-          details: [result.error || 'Unknown error'],
+          details: [result.error || 'Unknown error']
         },
         { status: 500 }
       )
@@ -156,8 +161,8 @@ import { logger } from '@/lib/utils/logger'
           latexContent: (summary as any)!.latex_content,
           summaryType: (summary as any)!.summary_type,
           chunkCount: (summary as any)!.chunk_count,
-          title: (summary as any)!.title,
-        },
+          title: (summary as any)!.title
+        }
       },
       { status: 201 }
     )
@@ -167,7 +172,7 @@ import { logger } from '@/lib/utils/logger'
       {
         success: false,
         error: 'Internal server error',
-        details: ['An unexpected error occurred during summarization'],
+        details: ['An unexpected error occurred during summarization']
       },
       { status: 500 }
     )

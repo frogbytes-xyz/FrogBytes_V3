@@ -2,18 +2,25 @@ import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/upload/from-url/enhanced/[jobId]
- * 
+ *
  * Get the status of a video download job
  */
 
 import { getAuthUser } from '@/lib/auth/helpers'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export interface JobStatusResponse {
   success: boolean
   message: string
   jobId: string
-  status: 'processing' | 'authentication_required' | 'authentication_successful' | 'download_started' | 'completed' | 'failed'
+  status:
+    | 'processing'
+    | 'authentication_required'
+    | 'authentication_successful'
+    | 'download_started'
+    | 'completed'
+    | 'failed'
   authRequired?: boolean
   authPerformed?: boolean
   platform?: string
@@ -43,23 +50,8 @@ export interface ErrorResponse {
   details?: string[]
 }
 
-// Import job status from the main route (in production, use Redis or database)
-// For now, we'll create a simple in-memory store
-const jobStatus = new Map<string, {
-  status: JobStatusResponse['status']
-  userId: string
-  url: string
-  startTime: number
-  result?: any
-  error?: string
-  progress?: {
-    percentage: number
-    downloaded: number
-    total: number
-    speed?: string
-    eta?: string
-  }
-}>()
+// Import shared job store
+import { jobStore } from '@/lib/services/job-store'
 
 export async function GET(
   request: NextRequest,
@@ -74,7 +66,7 @@ export async function GET(
         {
           success: false,
           error: 'Unauthorized',
-          details: ['Authentication required'],
+          details: ['Authentication required']
         },
         { status: 401 }
       )
@@ -87,21 +79,21 @@ export async function GET(
         {
           success: false,
           error: 'Validation failed',
-          details: ['No job ID provided'],
+          details: ['No job ID provided']
         },
         { status: 400 }
       )
     }
 
     // Get job status
-    const job = jobStatus.get(jobId)
+    const job = jobStore.get(jobId)
 
     if (!job) {
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
           error: 'Job not found',
-          details: ['Invalid job ID'],
+          details: ['Invalid job ID']
         },
         { status: 404 }
       )
@@ -113,7 +105,7 @@ export async function GET(
         {
           success: false,
           error: 'Forbidden',
-          details: ['Job does not belong to user'],
+          details: ['Job does not belong to user']
         },
         { status: 403 }
       )
@@ -124,7 +116,7 @@ export async function GET(
       success: job.status === 'completed',
       message: getStatusMessage(job.status),
       jobId,
-      status: job.status,
+      status: job.status
     }
 
     if (job.error) {
@@ -141,7 +133,7 @@ export async function GET(
         filename: job.result.filename,
         size: job.result.size,
         mimeType: job.result.mimeType,
-        path: job.result.path,
+        path: job.result.path
       }
       response.authRequired = job.result.authRequired
       response.authPerformed = job.result.authPerformed
@@ -151,14 +143,13 @@ export async function GET(
     }
 
     return NextResponse.json(response, { status: 200 })
-
   } catch (error) {
     logger.error('Unexpected job status error', error)
     return NextResponse.json<ErrorResponse>(
       {
         success: false,
         error: 'Internal server error',
-        details: ['An unexpected error occurred while checking job status'],
+        details: ['An unexpected error occurred while checking job status']
       },
       { status: 500 }
     )
@@ -186,6 +177,3 @@ function getStatusMessage(status: JobStatusResponse['status']): string {
       return 'Unknown status'
   }
 }
-
-// Export job status map for use in the main route
-export { jobStatus }

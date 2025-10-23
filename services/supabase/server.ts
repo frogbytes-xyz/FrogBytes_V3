@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from './database.types'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * Creates a Supabase client for use in Server Components and Server Actions
@@ -9,16 +10,22 @@ import type { Database } from './database.types'
  * SECURITY NOTE: This client uses the anon key and respects RLS.
  * For admin operations, use createAdminClient() instead.
  */
-export async function createClient(): Promise<ReturnType<typeof createServerClient<Database>>> {
+export async function createClient(): Promise<
+  ReturnType<typeof createServerClient<Database>>
+> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection')
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection'
+    )
   }
 
   if (!supabaseAnonKey) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please configure your database connection')
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is required. Please configure your database connection'
+    )
   }
 
   const cookieStore = await cookies()
@@ -38,7 +45,9 @@ export async function createClient(): Promise<ReturnType<typeof createServerClie
           // This can happen when cookies are set in Server Components
           // The error is expected and can be safely ignored in some contexts
           if (process.env.NODE_ENV === 'development') {
-            logger.warn('Cookie setting error (expected in some contexts)', { error: error })
+            logger.warn('Cookie setting error (expected in some contexts)', {
+              error: error
+            })
           }
         }
       }
@@ -53,16 +62,22 @@ export async function createClient(): Promise<ReturnType<typeof createServerClie
  * Only use for admin operations, migrations, or system-level tasks.
  * Never expose this client to the frontend.
  */
-export function createAdminClient(): ReturnType<typeof createServerClient<Database>> {
+export function createAdminClient(): ReturnType<
+  typeof createServerClient<Database>
+> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection')
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection'
+    )
   }
 
   if (!supabaseServiceRoleKey) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required. Please configure your database connection')
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY environment variable is required. Please configure your database connection'
+    )
   }
 
   return createServerClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
@@ -87,4 +102,3 @@ export function createAdminClient(): ReturnType<typeof createServerClient<Databa
 export type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>
 export type AdminSupabaseClient = ReturnType<typeof createAdminClient>
 export type { Database }
-import { logger } from '@/lib/utils/logger'

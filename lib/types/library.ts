@@ -2,8 +2,24 @@
  * Type definitions for enhanced library system
  */
 
-export type DocumentType = 'lecture' | 'tutorial' | 'seminar' | 'exam' | 'notes' | 'other'
-export type FileCategory = 'lecture' | 'notes' | 'slides' | 'handout' | 'assignment' | 'exam' | 'tutorial' | 'project' | 'other' | 'uncategorized'
+export type DocumentType =
+  | 'lecture'
+  | 'tutorial'
+  | 'seminar'
+  | 'exam'
+  | 'notes'
+  | 'other'
+export type FileCategory =
+  | 'lecture'
+  | 'notes'
+  | 'slides'
+  | 'handout'
+  | 'assignment'
+  | 'exam'
+  | 'tutorial'
+  | 'project'
+  | 'other'
+  | 'uncategorized'
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
 
 export interface DocumentCategory {
@@ -50,7 +66,7 @@ export interface EnhancedSummary {
   user_id: string
   upload_id: string
   transcription_id: string
-  
+
   // Content
   title?: string
   lecture_name?: string
@@ -58,7 +74,7 @@ export interface EnhancedSummary {
   latex_content?: string
   keywords?: string[]
   tags?: string[]
-  
+
   // Course information
   university?: string
   subject?: string
@@ -69,27 +85,27 @@ export interface EnhancedSummary {
   academic_year?: string
   lecture_number?: number
   lecture_date?: string
-  
+
   // Classification
   document_type?: DocumentType
   file_category?: FileCategory
   difficulty_level?: DifficultyLevel
   language?: string
-  
+
   // Quality & verification
   file_quality_score?: number
   content_verified: boolean
   metadata_complete: boolean
-  
+
   // Relationships
   institution_id?: string
   course_id?: string
-  
+
   // Storage
   pdf_url?: string
   file_size_bytes?: number
   storage_size_mb?: number
-  
+
   // Telegram storage
   telegram_link?: string
   telegram_archive_message_id?: number
@@ -101,11 +117,11 @@ export interface EnhancedSummary {
   telegram_audio_file_id?: string
   telegram_transcript_message_id?: number
   telegram_transcript_file_id?: string
-  
+
   // Sharing & voting
   is_public: boolean
   reputation_score: number
-  
+
   // Timestamps
   created_at: string
   updated_at: string
@@ -122,11 +138,11 @@ export interface EnhancedUpload {
   file_hash?: string
   status: 'uploaded' | 'processing' | 'transcribed' | 'failed'
   upload_metadata?: Record<string, any>
-  
+
   // Telegram backup
   telegram_backup_message_id?: number
   telegram_backup_file_id?: string
-  
+
   created_at: string
   updated_at: string
 }

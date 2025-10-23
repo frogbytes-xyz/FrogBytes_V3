@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -65,7 +72,11 @@ export function DocumentShareButton({
 
       setShareInfo(result.data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load sharing information')
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to load sharing information'
+      )
     } finally {
       setLoading(false)
     }
@@ -97,7 +108,9 @@ export function DocumentShareButton({
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update sharing status')
+      setError(
+        err instanceof Error ? err.message : 'Failed to update sharing status'
+      )
     } finally {
       setLoading(false)
     }
@@ -129,11 +142,7 @@ export function DocumentShareButton({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={className}
-        >
+        <Button variant="outline" size="sm" className={className}>
           <Share2 className="h-4 w-4 mr-2" />
           Share
         </Button>
@@ -145,7 +154,8 @@ export function DocumentShareButton({
             Share Document
           </DialogTitle>
           <DialogDescription>
-            Share "{documentTitle}" with others so they can view and learn from it.
+            Share "{documentTitle}" with others so they can view and learn from
+            it.
           </DialogDescription>
         </DialogHeader>
 
@@ -169,7 +179,9 @@ export function DocumentShareButton({
           {success && (
             <Alert>
               <Check className="h-4 w-4" />
-              <AlertDescription className="text-green-700">{success}</AlertDescription>
+              <AlertDescription className="text-green-700">
+                {success}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -191,7 +203,7 @@ export function DocumentShareButton({
                     </>
                   )}
                 </div>
-                <Badge variant={shareInfo.isPublic ? "default" : "secondary"}>
+                <Badge variant={shareInfo.isPublic ? 'default' : 'secondary'}>
                   {shareInfo.isPublic ? 'Shared' : 'Not Shared'}
                 </Badge>
               </div>
@@ -207,7 +219,9 @@ export function DocumentShareButton({
               {/* Share Link */}
               {shareInfo.isPublic && shareInfo.shareUrl && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Share Link</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Share Link
+                  </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -247,8 +261,13 @@ export function DocumentShareButton({
                     <div className="flex items-start gap-2 p-3 bg-green-50 rounded-lg">
                       <Users className="h-4 w-4 text-green-600 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium text-green-800">Document is publicly shared</p>
-                        <p className="text-green-700">Anyone with the link can view this document and must login to access it.</p>
+                        <p className="font-medium text-green-800">
+                          Document is publicly shared
+                        </p>
+                        <p className="text-green-700">
+                          Anyone with the link can view this document and must
+                          login to access it.
+                        </p>
                       </div>
                     </div>
                     <Button
@@ -266,8 +285,13 @@ export function DocumentShareButton({
                     <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
                       <Globe className="h-4 w-4 text-blue-600 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium text-blue-800">Share with friends</p>
-                        <p className="text-blue-700">Generate a public link that requires login to view. Perfect for sharing with study groups!</p>
+                        <p className="font-medium text-blue-800">
+                          Share with friends
+                        </p>
+                        <p className="text-blue-700">
+                          Generate a public link that requires login to view.
+                          Perfect for sharing with study groups!
+                        </p>
                       </div>
                     </div>
                     <Button
@@ -288,7 +312,10 @@ export function DocumentShareButton({
                   <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
                   <div className="text-sm text-yellow-800">
                     <p className="font-medium">Authentication Required</p>
-                    <p>Viewers must be logged in to FrogBytes to access shared documents. This helps build our learning community!</p>
+                    <p>
+                      Viewers must be logged in to FrogBytes to access shared
+                      documents. This helps build our learning community!
+                    </p>
                   </div>
                 </div>
               </div>

@@ -4,15 +4,19 @@ import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/hooks/use-toast'
 import PDFThumbnail from '@/components/PDFThumbnail'
-import { 
-  Plus,
-  Search
-} from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 
 interface Summary {
   id: string
@@ -41,7 +45,10 @@ interface Collection {
 interface LectureSelectorProps {
   availableSummaries: Summary[]
   collections: Collection[]
-  onAddToCollection: (collectionId: string, summaryIds: string[]) => Promise<boolean>
+  onAddToCollection: (
+    collectionId: string,
+    summaryIds: string[]
+  ) => Promise<boolean>
   onRefresh: () => Promise<void>
 }
 
@@ -51,7 +58,9 @@ export default function LectureSelector({
   onAddToCollection,
   onRefresh
 }: LectureSelectorProps) {
-  const [selectedSummaries, setSelectedSummaries] = useState<Set<string>>(new Set())
+  const [selectedSummaries, setSelectedSummaries] = useState<Set<string>>(
+    new Set()
+  )
   const [searchTerm, setSearchTerm] = useState('')
   const [filterSubject, setFilterSubject] = useState('')
   const [showSelector, setShowSelector] = useState(false)
@@ -59,11 +68,12 @@ export default function LectureSelector({
 
   // Filter summaries based on search and subject filter
   const filteredSummaries = availableSummaries.filter(summary => {
-    const matchesSearch = !searchTerm || 
-      (summary.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       summary.lecture_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       summary.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       summary.university?.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesSearch =
+      !searchTerm ||
+      summary.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      summary.lecture_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      summary.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      summary.university?.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesSubject = !filterSubject || summary.subject === filterSubject
 
@@ -71,7 +81,9 @@ export default function LectureSelector({
   })
 
   // Get unique subjects for filter
-  const uniqueSubjects = [...new Set(availableSummaries.map(s => s.subject).filter(Boolean))]
+  const uniqueSubjects = [
+    ...new Set(availableSummaries.map(s => s.subject).filter(Boolean))
+  ]
 
   const toggleSummarySelection = useCallback((summaryId: string) => {
     setSelectedSummaries(prev => {
@@ -93,27 +105,35 @@ export default function LectureSelector({
     setSelectedSummaries(new Set(filteredSummaries.map(s => s.id)))
   }, [filteredSummaries])
 
-  const handleAddToCollection = useCallback(async (collectionId: string) => {
-    if (selectedSummaries.size === 0) {
-      toast.error('Please select at least one lecture')
-      return
-    }
-
-    setIsAdding(true)
-    try {
-      const success = await onAddToCollection(collectionId, Array.from(selectedSummaries))
-      if (success) {
-        toast.success(`Added ${selectedSummaries.size} lecture(s) to collection`)
-        clearSelection()
-        setShowSelector(false)
-        await onRefresh()
+  const handleAddToCollection = useCallback(
+    async (collectionId: string) => {
+      if (selectedSummaries.size === 0) {
+        toast.error('Please select at least one lecture')
+        return
       }
-    } catch (error) {
-      toast.error('Failed to add lectures to collection')
-    } finally {
-      setIsAdding(false)
-    }
-  }, [selectedSummaries, onAddToCollection, clearSelection, onRefresh])
+
+      setIsAdding(true)
+      try {
+        const success = await onAddToCollection(
+          collectionId,
+          Array.from(selectedSummaries)
+        )
+        if (success) {
+          toast.success(
+            `Added ${selectedSummaries.size} lecture(s) to collection`
+          )
+          clearSelection()
+          setShowSelector(false)
+          await onRefresh()
+        }
+      } catch (error) {
+        toast.error('Failed to add lectures to collection')
+      } finally {
+        setIsAdding(false)
+      }
+    },
+    [selectedSummaries, onAddToCollection, clearSelection, onRefresh]
+  )
 
   if (availableSummaries.length === 0) {
     return null
@@ -140,18 +160,20 @@ export default function LectureSelector({
               <Input
                 placeholder="Search lectures..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
             <select
               value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
+              onChange={e => setFilterSubject(e.target.value)}
               className="px-3 py-2 border rounded-md bg-background"
             >
               <option value="">All Subjects</option>
               {uniqueSubjects.map(subject => (
-                <option key={subject ?? ''} value={subject ?? ''}>{subject ?? ''}</option>
+                <option key={subject ?? ''} value={subject ?? ''}>
+                  {subject ?? ''}
+                </option>
               ))}
             </select>
           </div>
@@ -187,11 +209,13 @@ export default function LectureSelector({
           <div className="flex-1 overflow-y-auto">
             {filteredSummaries.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {searchTerm || filterSubject ? 'No lectures match your search criteria' : 'No lectures available'}
+                {searchTerm || filterSubject
+                  ? 'No lectures match your search criteria'
+                  : 'No lectures available'}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredSummaries.map((summary) => (
+                {filteredSummaries.map(summary => (
                   <LectureCard
                     key={summary.id}
                     summary={summary}
@@ -208,7 +232,7 @@ export default function LectureSelector({
             <div className="border-t pt-4">
               <h4 className="font-medium mb-3">Add to Collection:</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {collections.map((collection) => (
+                {collections.map(collection => (
                   <Button
                     key={collection.id}
                     variant="outline"
@@ -221,7 +245,9 @@ export default function LectureSelector({
                         📁
                       </div>
                       <div className="flex-1 text-left">
-                        <div className="font-medium text-sm">{collection.name}</div>
+                        <div className="font-medium text-sm">
+                          {collection.name}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {collection.itemCount || 0} items
                         </div>
@@ -251,9 +277,13 @@ interface LectureCardProps {
   onToggleSelection: () => void
 }
 
-function LectureCard({ summary, isSelected, onToggleSelection }: LectureCardProps) {
+function LectureCard({
+  summary,
+  isSelected,
+  onToggleSelection
+}: LectureCardProps) {
   return (
-    <Card 
+    <Card
       className={`cursor-pointer transition-all ${
         isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : ''
       }`}
@@ -264,9 +294,9 @@ function LectureCard({ summary, isSelected, onToggleSelection }: LectureCardProp
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggleSelection}
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           />
-          
+
           <div className="flex-1 min-w-0">
             {/* Thumbnail if available */}
             {summary.pdf_url && (
@@ -279,20 +309,23 @@ function LectureCard({ summary, isSelected, onToggleSelection }: LectureCardProp
                 />
               </div>
             )}
-            
+
             <h4 className="font-medium text-sm line-clamp-2 mb-1">
               {summary.title || summary.lecture_name || 'Untitled'}
             </h4>
-            
+
             {(summary.university || summary.subject) && (
               <div className="space-y-1 text-xs text-muted-foreground mb-2">
                 {summary.university && <p>{summary.university}</p>}
                 {summary.subject && <p>{summary.subject}</p>}
               </div>
             )}
-            
+
             <div className="flex items-center gap-2">
-              <Badge variant={summary.is_public ? 'default' : 'secondary'} className="text-[10px]">
+              <Badge
+                variant={summary.is_public ? 'default' : 'secondary'}
+                className="text-[10px]"
+              >
                 {summary.is_public ? 'Public' : 'Private'}
               </Badge>
               <span className="text-xs text-muted-foreground">

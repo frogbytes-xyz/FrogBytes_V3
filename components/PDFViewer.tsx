@@ -8,32 +8,34 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 // Dynamically import react-pdf to prevent SSR issues
-const Document = dynamic(
-  () => import('react-pdf').then((mod) => mod.Document),
-  { ssr: false }
-)
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), {
+  ssr: false
+})
 
-const Page = dynamic(
-  () => import('react-pdf').then((mod) => mod.Page),
-  { ssr: false }
-)
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), {
+  ssr: false
+})
 
 // Configure PDF.js worker
 let pdfVersion: string | null = null
 if (typeof window !== 'undefined') {
   import('react-pdf')
-    .then((mod) => {
+    .then(mod => {
       try {
         const pdfjs = (mod as any).pdfjs
         pdfVersion = pdfjs.version || pdfjs.pdfjs?.version || '4.0.379'
         // Use CDN with the correct version to avoid version mismatch
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfVersion}/build/pdf.worker.min.mjs`
       } catch (err) {
-        logger.warn('Failed to configure PDF.js worker for react-pdf', { error: err })
+        logger.warn('Failed to configure PDF.js worker for react-pdf', {
+          error: err
+        })
       }
     })
-    .catch((err) => {
-      logger.warn('Failed to dynamically import react-pdf for worker setup', { error: err })
+    .catch(err => {
+      logger.warn('Failed to dynamically import react-pdf for worker setup', {
+        error: err
+      })
     })
 }
 
@@ -65,9 +67,9 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
     return {
       url: pdfUrl,
       httpHeaders: {
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': '*'
       },
-      withCredentials: false,
+      withCredentials: false
     }
   }, [pdfUrl])
 
@@ -77,12 +79,12 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
     return {
       cMapUrl: `https://unpkg.com/pdfjs-dist@${version}/cmaps/`,
       cMapPacked: true,
-      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${version}/standard_fonts/`,
+      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${version}/standard_fonts/`
     }
   }, [])
 
   useEffect(() => {
-    logger.info('PDFViewer: URL changed to:', pdfUrl)
+    logger.info('PDFViewer: URL changed to:', { pdfUrl })
     setLoading(true)
     setLoadError(null)
   }, [pdfUrl])
@@ -90,13 +92,13 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
   // Add mouse wheel and touchpad pinch zoom support
   useEffect(() => {
     if (!isMounted) return undefined
-    
+
     let currentVisualScale = visualScale
-    
+
     const updateActualScale = (targetScale: number) => {
       // Mark as zooming
       setIsZooming(true)
-      
+
       // Clear any pending updates
       if (scaleUpdateTimeoutRef.current) {
         clearTimeout(scaleUpdateTimeoutRef.current)
@@ -104,7 +106,7 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
       if (zoomingTimeoutRef.current) {
         clearTimeout(zoomingTimeoutRef.current)
       }
-      
+
       // Debounce actual scale update to avoid re-rendering PDF too frequently
       scaleUpdateTimeoutRef.current = setTimeout(() => {
         const actualScale = scale * targetScale
@@ -112,33 +114,33 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
         setScale(clampedScale)
         setVisualScale(1.0) // Reset visual scale after applying to actual scale
         currentVisualScale = 1.0
-        
+
         // Clear zooming state after scale is applied
         zoomingTimeoutRef.current = setTimeout(() => {
           setIsZooming(false)
         }, 100)
       }, 150) // Wait 150ms after zoom stops
     }
-    
+
     const handleWheel = (e: WheelEvent) => {
       // Detect pinch gesture: ctrlKey is automatically set by browsers for touchpad pinch
       const isPinch = e.ctrlKey || e.metaKey
-      
+
       if (isPinch) {
         e.preventDefault()
         e.stopPropagation()
-        
+
         // Use deltaY for zoom amount - negative is zoom in, positive is zoom out
         const delta = -e.deltaY
         const zoomIntensity = 0.003 // Reduced for smoother zoom
         const scaleFactor = 1 + delta * zoomIntensity
-        
+
         // Update visual scale immediately for smooth feedback
         currentVisualScale *= scaleFactor
         currentVisualScale = Math.min(1.5, Math.max(0.5, currentVisualScale)) // Clamp visual scale
-        
+
         setVisualScale(currentVisualScale)
-        
+
         // Schedule actual scale update
         updateActualScale(currentVisualScale)
       }
@@ -147,13 +149,18 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
     const pdfContainer = containerRef.current
     if (pdfContainer) {
       logger.info('Adding wheel event listener to PDF container')
-      pdfContainer.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+      pdfContainer.addEventListener('wheel', handleWheel, {
+        passive: false,
+        capture: true
+      })
       return () => {
         logger.info('Removing wheel event listener from PDF container')
         if (scaleUpdateTimeoutRef.current) {
           clearTimeout(scaleUpdateTimeoutRef.current)
         }
-        pdfContainer.removeEventListener('wheel', handleWheel, { capture: true })
+        pdfContainer.removeEventListener('wheel', handleWheel, {
+          capture: true
+        })
       }
     }
     return undefined
@@ -162,7 +169,7 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
   // Add touch gesture zoom support for mobile/tablet devices
   useEffect(() => {
     if (!isMounted) return undefined
-    
+
     let initialDistance = 0
     let initialVisualScale = visualScale
     let currentVisualScale = visualScale
@@ -176,24 +183,24 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
       const dy = touch1.clientY - touch2.clientY
       return Math.sqrt(dx * dx + dy * dy)
     }
-    
+
     const updateActualScale = (targetScale: number) => {
       setIsZooming(true)
-      
+
       if (scaleUpdateTimeoutRef.current) {
         clearTimeout(scaleUpdateTimeoutRef.current)
       }
       if (zoomingTimeoutRef.current) {
         clearTimeout(zoomingTimeoutRef.current)
       }
-      
+
       scaleUpdateTimeoutRef.current = setTimeout(() => {
         const actualScale = scale * targetScale
         const clampedScale = Math.min(2.0, Math.max(0.5, actualScale))
         setScale(clampedScale)
         setVisualScale(1.0)
         currentVisualScale = 1.0
-        
+
         zoomingTimeoutRef.current = setTimeout(() => {
           setIsZooming(false)
         }, 100)
@@ -215,12 +222,12 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
       if (e.touches.length === 2 && initialDistance > 0) {
         e.preventDefault()
         e.stopPropagation()
-        
+
         const currentDistance = getDistance(e.touches)
         const distanceRatio = currentDistance / initialDistance
         currentVisualScale = initialVisualScale * distanceRatio
         currentVisualScale = Math.min(1.5, Math.max(0.5, currentVisualScale))
-        
+
         setVisualScale(currentVisualScale)
         updateActualScale(currentVisualScale)
       }
@@ -236,24 +243,39 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
     const pdfContainer = containerRef.current
     if (pdfContainer) {
       logger.info('Adding touch event listeners to PDF container')
-      pdfContainer.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true })
-      pdfContainer.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true })
-      pdfContainer.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true })
+      pdfContainer.addEventListener('touchstart', handleTouchStart, {
+        passive: false,
+        capture: true
+      })
+      pdfContainer.addEventListener('touchmove', handleTouchMove, {
+        passive: false,
+        capture: true
+      })
+      pdfContainer.addEventListener('touchend', handleTouchEnd, {
+        passive: false,
+        capture: true
+      })
       return () => {
         logger.info('Removing touch event listeners from PDF container')
         if (scaleUpdateTimeoutRef.current) {
           clearTimeout(scaleUpdateTimeoutRef.current)
         }
-        pdfContainer.removeEventListener('touchstart', handleTouchStart, { capture: true })
-        pdfContainer.removeEventListener('touchmove', handleTouchMove, { capture: true })
-        pdfContainer.removeEventListener('touchend', handleTouchEnd, { capture: true })
+        pdfContainer.removeEventListener('touchstart', handleTouchStart, {
+          capture: true
+        })
+        pdfContainer.removeEventListener('touchmove', handleTouchMove, {
+          capture: true
+        })
+        pdfContainer.removeEventListener('touchend', handleTouchEnd, {
+          capture: true
+        })
       }
     }
     return undefined
   }, [scale, visualScale, isMounted])
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    logger.info('PDFViewer: Document loaded successfully with', numPages, 'pages')
+    logger.info('PDFViewer: Document loaded successfully with', { numPages })
     setNumPages(numPages)
     setLoading(false)
     setLoadError(null)
@@ -267,21 +289,21 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
   }
 
   const zoomIn = () => {
-    setScale((prev) => {
+    setScale(prev => {
       const newScale = Math.min(2.0, prev + 0.2)
       return newScale
     })
     setVisualScale(1.0)
   }
-  
+
   const zoomOut = () => {
-    setScale((prev) => {
+    setScale(prev => {
       const newScale = Math.max(0.5, prev - 0.2)
       return newScale
     })
     setVisualScale(1.0)
   }
-  
+
   const resetZoom = () => {
     setScale(1.8)
     setVisualScale(1.0)
@@ -326,9 +348,11 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
       {/* Page Count Badge and Zoom Controls */}
       <div className="flex items-center justify-between p-4 border-b bg-card rounded-t-lg">
         <Badge variant="outline" className="min-w-[100px] justify-center">
-          {loading ? 'Loading...' : `${numPages} ${numPages === 1 ? 'page' : 'pages'}`}
+          {loading
+            ? 'Loading...'
+            : `${numPages} ${numPages === 1 ? 'page' : 'pages'}`}
         </Badge>
-        
+
         {/* Zoom Controls */}
         <div className="flex items-center gap-2">
           <Button
@@ -365,15 +389,15 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
       </div>
 
       {/* PDF Document */}
-      <div 
+      <div
         ref={containerRef}
         className="pdf-viewer-container flex-1 overflow-y-auto overflow-x-hidden p-4 bg-muted/30 relative"
-        style={{ 
+        style={{
           touchAction: 'manipulation',
-          willChange: 'transform',
+          willChange: 'transform'
         }}
       >
-        <div 
+        <div
           ref={contentRef}
           className="flex flex-col items-center justify-start gap-4 w-full"
           style={{
@@ -381,7 +405,7 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
             transformOrigin: 'center top',
             transition: 'none',
             willChange: 'transform',
-            minWidth: '100%',
+            minWidth: '100%'
           }}
         >
           <Document
@@ -414,13 +438,18 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
                     Failed to load PDF document
                   </p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {loadError?.message || 'Unable to display the PDF in the viewer'}
+                    {loadError?.message ||
+                      'Unable to display the PDF in the viewer'}
                   </p>
                 </div>
                 {pdfUrl && (
                   <div className="space-y-2">
                     <Button asChild variant="default">
-                      <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         Open PDF in New Tab
                       </a>
                     </Button>
@@ -432,22 +461,22 @@ export default function PDFViewer({ pdfUrl, onLoadError }: PDFViewerProps) {
               </div>
             }
           >
-              {!loading && numPages > 0 ? (
-                Array.from(new Array(numPages), (_, index) => (
-                  <Page
-                    key={`page_${index + 1}`}
-                    pageNumber={index + 1}
-                    scale={scale}
-                    renderTextLayer={!isZooming}
-                    renderAnnotationLayer={!isZooming}
-                    className="shadow-lg rounded-lg overflow-hidden mb-4"
-                  />
-                ))
-              ) : (
-                <div className="p-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-                </div>
-              )}
+            {!loading && numPages > 0 ? (
+              Array.from(new Array(numPages), (_, index) => (
+                <Page
+                  key={`page_${index + 1}`}
+                  pageNumber={index + 1}
+                  scale={scale}
+                  renderTextLayer={!isZooming}
+                  renderAnnotationLayer={!isZooming}
+                  className="shadow-lg rounded-lg overflow-hidden mb-4"
+                />
+              ))
+            ) : (
+              <div className="p-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+              </div>
+            )}
           </Document>
         </div>
       </div>

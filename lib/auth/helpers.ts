@@ -1,5 +1,7 @@
 import { createClient } from '@/services/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { logger } from '@/lib/utils/logger'
 // (type Database import removed — not used in this helper)
 
 export interface AuthUser {
@@ -12,21 +14,23 @@ export interface AuthUser {
 
 /**
  * Get authenticated user from request
- * 
+ *
  * This function should be used in API route handlers to get the current user.
  * The middleware adds user info to headers, but we still verify the session.
- * 
+ *
  * @param request - Next.js request object
  * @returns User object if authenticated, null otherwise
  */
-export async function getAuthUser(_request: NextRequest): Promise<AuthUser | null> {
+export async function getAuthUser(
+  _request: NextRequest
+): Promise<AuthUser | null> {
   try {
     const supabase = await createClient()
 
     // Get user from session
     const {
       data: { user },
-      error,
+      error
     } = await supabase.auth.getUser()
 
     if (error || !user) {
@@ -51,7 +55,7 @@ export async function getAuthUser(_request: NextRequest): Promise<AuthUser | nul
       email: user.email!,
       full_name: profile?.full_name || null,
       university: profile?.university || null,
-      reputation_score: profile?.reputation_score || 0,
+      reputation_score: profile?.reputation_score || 0
     }
   } catch (error) {
     logger.error('Error getting auth user', error)
@@ -61,11 +65,11 @@ export async function getAuthUser(_request: NextRequest): Promise<AuthUser | nul
 
 /**
  * Require authentication for a route handler
- * 
+ *
  * This is a wrapper function that handles authentication checking.
  * If user is not authenticated, returns 401 response.
  * Otherwise, calls the handler with the authenticated user.
- * 
+ *
  * @param handler - Route handler function that receives (request, user)
  * @returns Next.js Response
  */
@@ -80,7 +84,7 @@ export function requireAuth<T extends NextRequest>(
         {
           success: false,
           error: 'Unauthorized',
-          details: ['Authentication required'],
+          details: ['Authentication required']
         },
         { status: 401 }
       )
@@ -92,15 +96,18 @@ export function requireAuth<T extends NextRequest>(
 
 /**
  * Check if user has permission (placeholder for future RBAC)
- * 
+ *
  * Currently just checks if user exists.
  * Can be extended to check roles, permissions, etc.
- * 
+ *
  * @param user - Authenticated user
  * @param permission - Permission to check (unused for now)
  * @returns true if user has permission
  */
-export function hasPermission(user: AuthUser | null, _permission?: string): boolean {
+export function hasPermission(
+  user: AuthUser | null,
+  _permission?: string
+): boolean {
   if (!user) return false
 
   // Add role-based checks here in the future
@@ -110,15 +117,14 @@ export function hasPermission(user: AuthUser | null, _permission?: string): bool
 
 /**
  * Extract bearer token from Authorization header
- * 
+ *
  * @param request - Next.js request object
  * @returns JWT token string or null
  */
 export function getBearerToken(request: NextRequest): string | null {
-import { logger } from '@/lib/utils/logger'
   const authHeader = request.headers.get('authorization')
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return null
   }
 

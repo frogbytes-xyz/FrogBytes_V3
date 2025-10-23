@@ -2,6 +2,7 @@ import { createClient } from '@/services/supabase/server'
 import { DatabaseError, ValidationError } from '@/lib/utils/errors'
 import { emailSchema, validateWithSchema } from '@/lib/validations'
 import { randomBytes } from 'crypto'
+import { logger } from '@/lib/utils/logger'
 
 export interface Invitation {
   id: string
@@ -33,7 +34,10 @@ export class InvitationService {
   /**
    * Create a new invitation
    */
-  async createInvitation(inviterId: string, inviteeEmail: string): Promise<Invitation> {
+  async createInvitation(
+    inviterId: string,
+    inviteeEmail: string
+  ): Promise<Invitation> {
     try {
       // Validate email
       validateWithSchema(emailSchema, inviteeEmail)
@@ -81,12 +85,16 @@ export class InvitationService {
           invitee_email: inviteeEmail,
           invitation_code: invitationCode,
           status: 'pending',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+          expires_at: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString() // 7 days
         })
-        .select(`
+        .select(
+          `
           *,
           inviter:user_profiles!inviter_id(email)
-        `)
+        `
+        )
         .single()
 
       if (error) {
@@ -113,7 +121,10 @@ export class InvitationService {
   /**
    * Accept an invitation
    */
-  async acceptInvitation(invitationCode: string, userId: string): Promise<boolean> {
+  async acceptInvitation(
+    invitationCode: string,
+    userId: string
+  ): Promise<boolean> {
     try {
       // Get invitation
       const { data: invitation, error: fetchError } = await this.supabase
@@ -173,7 +184,9 @@ export class InvitationService {
         .eq('id', userId)
 
       if (profileError) {
-        logger.warn('Failed to update user profile with invitation info', { error: profileError })
+        logger.warn('Failed to update user profile with invitation info', {
+          error: profileError
+        })
       }
 
       return true
@@ -196,10 +209,12 @@ export class InvitationService {
     try {
       const { data, error } = await this.supabase
         .from('user_invitations')
-        .select(`
+        .select(
+          `
           *,
           inviter:user_profiles!inviter_id(email)
-        `)
+        `
+        )
         .eq('inviter_id', userId)
         .order('created_at', { ascending: false })
 
@@ -211,7 +226,7 @@ export class InvitationService {
         )
       }
 
-  return data.map((d: any) => this.mapToInvitation(d))
+      return data.map((d: any) => this.mapToInvitation(d))
     } catch (error) {
       if (error instanceof DatabaseError) {
         throw error
@@ -227,18 +242,23 @@ export class InvitationService {
   /**
    * Get invitation by code (for display purposes)
    */
-  async getInvitationByCode(invitationCode: string): Promise<Invitation | null> {
+  async getInvitationByCode(
+    invitationCode: string
+  ): Promise<Invitation | null> {
     try {
       const { data, error } = await this.supabase
         .from('user_invitations')
-        .select(`
+        .select(
+          `
           *,
           inviter:user_profiles!inviter_id(email, full_name)
-        `)
+        `
+        )
         .eq('invitation_code', invitationCode)
         .single()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = not found
         throw new DatabaseError(
           `Failed to fetch invitation: ${error.message}`,
           'select',
@@ -278,7 +298,7 @@ export class InvitationService {
       }
 
       const stats = data.reduce(
-  (acc: any, inv: any) => {
+        (acc: any, inv: any) => {
           acc.totalSent++
           switch (inv.status) {
             case 'accepted':
@@ -351,7 +371,10 @@ export class InvitationService {
   /**
    * Generate invitation URL
    */
-  generateInvitationUrl(invitationCode: string, baseUrl: string = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'): string {
+  generateInvitationUrl(
+    invitationCode: string,
+    baseUrl: string = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  ): string {
     return `${baseUrl}/invite/${invitationCode}`
   }
 
@@ -381,7 +404,6 @@ export class InvitationService {
  * Factory function to create invitation service with server client
  */
 export async function createInvitationService(): Promise<InvitationService> {
-import { logger } from '@/lib/utils/logger'
   const supabase = await createClient()
   return new InvitationService(supabase)
 }
@@ -418,7 +440,7 @@ export function generateInvitationEmailContent(
         <li>Chat with an AI copilot for learning assistance</li>
       </ul>
 
-      <p>By joining through this invitation, you'll help ${inviterName} unlock premium features!</p>
+      <p>By joining through this invitation, you&apos;ll help ${inviterName} unlock premium features!</p>
 
       <p style="color: #666; font-size: 14px;">This invitation expires in 7 days. If the button doesn't work, copy and paste this link: ${invitationUrl}</p>
 
@@ -432,7 +454,7 @@ export function generateInvitationEmailContent(
   const text = `
 ${inviterName} invited you to join FrogBytes!
 
-You've been invited to join FrogBytes, the AI-powered learning platform that helps you master any subject through interactive PDFs, quizzes, and intelligent assistance.
+You&apos;ve been invited to join FrogBytes, the AI-powered learning platform that helps you master any subject through interactive PDFs, quizzes, and intelligent assistance.
 
 Accept your invitation: ${invitationUrl}
 
@@ -442,7 +464,7 @@ With FrogBytes, you can:
 - Generate custom quizzes to test your knowledge
 - Chat with an AI copilot for learning assistance
 
-By joining through this invitation, you'll help ${inviterName} unlock premium features!
+By joining through this invitation, you&apos;ll help ${inviterName} unlock premium features!
 
 This invitation expires in 7 days.
 

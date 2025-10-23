@@ -2,7 +2,7 @@
 
 import { logger } from '@/lib/utils/logger'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/services/supabase/client'
@@ -12,15 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/hooks/use-toast'
-import { 
-  ArrowLeft, 
-  Share, 
-  Users, 
-  Lock, 
-  Trash2,
-  Copy,
-  Eye,
-} from 'lucide-react'
+import { ArrowLeft, Share, Users, Lock, Trash2, Copy, Eye } from 'lucide-react'
 
 interface Summary {
   id: string
@@ -49,9 +41,11 @@ interface CollectionDetailPageProps {
   params: Promise<{ id: string }>
 }
 
-export default function CollectionDetailPage({ params }: CollectionDetailPageProps) {
+export default function CollectionDetailPage({
+  params
+}: CollectionDetailPageProps) {
   const router = useRouter()
-  
+
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [collection, setCollection] = useState<Collection | null>(null)
@@ -60,6 +54,44 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
   const [collectionId, setCollectionId] = useState<string>('')
   const supabase = createClient()
 
+  const checkAuth = useCallback(
+    async (passedId?: string) => {
+      try {
+        const {
+          data: { user },
+          error
+        } = await supabase.auth.getUser()
+
+        if (error || !user) {
+          // Guest mode: allow viewing but with restrictions
+          setUser(null)
+          const idToLoad = passedId || collectionId
+          if (idToLoad) {
+            await loadCollectionData(idToLoad, true) // true = guest mode
+          }
+        } else {
+          // Authenticated user
+          setUser(user)
+          const idToLoad = passedId || collectionId
+          if (idToLoad) {
+            await loadCollectionData(idToLoad, false)
+          }
+        }
+      } catch (err) {
+        logger.error('Auth check failed', err)
+        // Still allow viewing in guest mode
+        setUser(null)
+        const idToLoad = passedId || collectionId
+        if (idToLoad) {
+          await loadCollectionData(idToLoad, true)
+        }
+      } finally {
+        setLoading(false)
+      }
+    },
+    [collectionId, supabase]
+  )
+
   useEffect(() => {
     const initPage = async () => {
       const resolvedParams = await params
@@ -67,49 +99,16 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
       await checkAuth(resolvedParams.id)
     }
     initPage()
-  }, [params])
-
-  async function checkAuth(passedId?: string) {
-    try {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser()
-
-      if (error || !user) {
-        // Guest mode: allow viewing but with restrictions
-        setUser(null)
-        const idToLoad = passedId || collectionId
-        if (idToLoad) {
-          await loadCollectionData(idToLoad, true) // true = guest mode
-        }
-      } else {
-        // Authenticated user
-        setUser(user)
-        const idToLoad = passedId || collectionId
-        if (idToLoad) {
-          await loadCollectionData(idToLoad, false)
-        }
-      }
-    } catch (err) {
-      logger.error('Auth check failed', err)
-      // Still allow viewing in guest mode
-      setUser(null)
-      const idToLoad = passedId || collectionId
-      if (idToLoad) {
-        await loadCollectionData(idToLoad, true)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [params, checkAuth])
 
   async function loadCollectionData(id: string, isGuest: boolean = false) {
     if (!id) return
 
     try {
       // First, get the collection details
-      const collectionResponse = await fetch(`/api/collections/manage?id=${encodeURIComponent(id)}`)
+      const collectionResponse = await fetch(
+        `/api/collections/manage?id=${encodeURIComponent(id)}`
+      )
       if (!collectionResponse.ok) {
         if (collectionResponse.status === 404) {
           setError('Collection not found')
@@ -124,19 +123,19 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
             .eq('id', id)
             .eq('is_public', true)
             .single()
-          
+
           if (publicError || !publicCollection) {
             setError('Collection not found or not public')
             return
           }
-          
+
           setCollection(publicCollection)
           // Load summaries from collection_items
           const { data: items } = await supabase
             .from('collection_items')
             .select('summary_id')
             .eq('collection_id', id)
-          
+
           if (items && items.length > 0) {
             const summaryIds = items.map((item: any) => item.summary_id)
             const { data: publicSummaries } = await supabase
@@ -144,7 +143,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
               .select('*')
               .in('id', summaryIds)
               .eq('is_public', true)
-            
+
             setSummaries(publicSummaries || [])
           }
           return
@@ -156,7 +155,9 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
       setCollection(collectionData.collection)
 
       // Then get the collection items
-      const itemsResponse = await fetch(`/api/collections/manage/items?id=${encodeURIComponent(id)}`)
+      const itemsResponse = await fetch(
+        `/api/collections/manage/items?id=${encodeURIComponent(id)}`
+      )
       if (itemsResponse.ok) {
         const itemsData = await itemsResponse.json()
         setSummaries(itemsData.summaries || [])
@@ -169,7 +170,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
           .from('collection_items')
           .select('summary_id')
           .eq('collection_id', id)
-        
+
         if (items && items.length > 0) {
           const summaryIds = items.map((item: any) => item.summary_id)
           const { data: publicSummaries } = await supabase
@@ -177,7 +178,7 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
             .select('*')
             .in('id', summaryIds)
             .eq('is_public', true)
-          
+
           setSummaries(publicSummaries || [])
         }
       }
@@ -187,12 +188,15 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
     }
   }
 
-  async function togglePublishStatus(summaryId: string, currentStatus: boolean) {
+  async function togglePublishStatus(
+    summaryId: string,
+    currentStatus: boolean
+  ) {
     if (!user) {
       toast.error('Please log in to perform this action')
       return
     }
-    
+
     try {
       const updateData = { is_public: !currentStatus }
       const { error } = await (supabase as any)
@@ -202,9 +206,11 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
 
       if (error) throw error
 
-      setSummaries(summaries.map(s => 
-        s.id === summaryId ? { ...s, is_public: !currentStatus } : s
-      ))
+      setSummaries(
+        summaries.map(s =>
+          s.id === summaryId ? { ...s, is_public: !currentStatus } : s
+        )
+      )
       toast.success(currentStatus ? 'Made private' : 'Published to library')
     } catch (err) {
       logger.error('Error updating publish status', err)
@@ -217,17 +223,24 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
       toast.error('Please log in to perform this action')
       return
     }
-    
-    if (!confirm('Are you sure you want to remove this summary from the collection?')) {
+
+    if (
+      !confirm(
+        'Are you sure you want to remove this summary from the collection?'
+      )
+    ) {
       return
     }
 
     try {
-      const response = await fetch(`/api/collections/manage/items?id=${encodeURIComponent(collectionId)}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ summaryIds: [summaryId] })
-      })
+      const response = await fetch(
+        `/api/collections/manage/items?id=${encodeURIComponent(collectionId)}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ summaryIds: [summaryId] })
+        }
+      )
 
       if (!response.ok) throw new Error('Failed to remove summary')
 
@@ -246,20 +259,23 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
     }
 
     try {
-      const response = await fetch(`/api/collections/manage?id=${encodeURIComponent(collection.id)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_public: true })
-      })
+      const response = await fetch(
+        `/api/collections/manage?id=${encodeURIComponent(collection.id)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_public: true })
+        }
+      )
 
       if (!response.ok) throw new Error('Failed to share collection')
 
       const data = await response.json()
       const shareUrl = `${window.location.origin}/collections/${data.collection.share_slug}`
-      
+
       navigator.clipboard.writeText(shareUrl)
       toast.success('Share link copied to clipboard!')
-      
+
       // Refresh collection data to get the share_slug
       await loadCollectionData(collectionId, false)
     } catch (err) {
@@ -294,7 +310,9 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
         <main className="flex-1 container max-w-7xl mx-auto px-4 py-8 pt-24">
           <div className="flex flex-col items-center justify-center py-20">
             <h1 className="text-2xl font-bold mb-2">Collection Not Found</h1>
-            <p className="text-muted-foreground mb-6">{error || 'The collection you\'re looking for doesn\'t exist.'}</p>
+            <p className="text-muted-foreground mb-6">
+              {error || "The collection you're looking for doesn't exist."}
+            </p>
             <Button asChild>
               <Link href="/dashboard">Return to Dashboard</Link>
             </Button>
@@ -310,14 +328,16 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
 
       {/* Main content wrapper with conditional blur */}
       <div className="relative flex-1">
-        <main className={`container max-w-7xl mx-auto px-4 py-8 pt-24 ${!user ? 'filter blur-sm pointer-events-none' : ''}`}>
+        <main
+          className={`container max-w-7xl mx-auto px-4 py-8 pt-24 ${!user ? 'filter blur-sm pointer-events-none' : ''}`}
+        >
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-4">
               <Button variant="ghost" size="sm" asChild>
-                <Link href={user ? "/dashboard" : "/"}>
+                <Link href={user ? '/dashboard' : '/'}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to {user ? "Dashboard" : "Home"}
+                  Back to {user ? 'Dashboard' : 'Home'}
                 </Link>
               </Button>
             </div>
@@ -326,11 +346,18 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
               <div>
                 <h1 className="text-3xl font-bold mb-2">{collection.name}</h1>
                 {collection.description && (
-                  <p className="text-muted-foreground mb-2">{collection.description}</p>
+                  <p className="text-muted-foreground mb-2">
+                    {collection.description}
+                  </p>
                 )}
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>Created {new Date(collection.created_at).toLocaleDateString()}</span>
-                  <Badge variant={collection.is_public ? 'default' : 'secondary'}>
+                  <span>
+                    Created{' '}
+                    {new Date(collection.created_at).toLocaleDateString()}
+                  </span>
+                  <Badge
+                    variant={collection.is_public ? 'default' : 'secondary'}
+                  >
                     {collection.is_public ? (
                       <>
                         <Users className="w-3 h-3 mr-1" />
@@ -368,9 +395,9 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
           {error && (
             <div className="mb-6 p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
               <p className="text-destructive text-sm">{error}</p>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="mt-2 h-auto p-0 text-destructive hover:text-destructive"
                 onClick={() => setError(null)}
               >
@@ -387,11 +414,13 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                   <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                     <Eye className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-medium mb-2">No summaries in this collection</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    No summaries in this collection
+                  </h3>
                   <p className="text-muted-foreground mb-4 text-center max-w-md">
-                    {user 
-                      ? "Start organizing by dragging summaries into this collection from your dashboard."
-                      : "This collection is empty or contains only private summaries."}
+                    {user
+                      ? 'Start organizing by dragging summaries into this collection from your dashboard.'
+                      : 'This collection is empty or contains only private summaries.'}
                   </p>
                   {user && (
                     <Button asChild>
@@ -402,11 +431,18 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {summaries.map((summary) => (
-                  <Card key={summary.id} className="hover:shadow-lg transition-all overflow-hidden group">
+                {summaries.map(summary => (
+                  <Card
+                    key={summary.id}
+                    className="hover:shadow-lg transition-all overflow-hidden group"
+                  >
                     {/* PDF Thumbnail Preview */}
                     {summary.pdf_url && (
-                      <Link href={`/learn/${summary.id}`} className="block relative overflow-hidden bg-gradient-to-br from-accent to-muted" style={{ height: '300px' }}>
+                      <Link
+                        href={`/learn/${summary.id}`}
+                        className="block relative overflow-hidden bg-gradient-to-br from-accent to-muted"
+                        style={{ height: '300px' }}
+                      >
                         <PDFThumbnail
                           pdfUrl={summary.pdf_url}
                           width={450}
@@ -414,7 +450,12 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                           className="cursor-pointer transition-transform group-hover:scale-105"
                         />
                         <div className="absolute top-2 right-2">
-                          <Badge variant={summary.is_public ? 'default' : 'secondary'} className="shadow-lg">
+                          <Badge
+                            variant={
+                              summary.is_public ? 'default' : 'secondary'
+                            }
+                            className="shadow-lg"
+                          >
                             {summary.is_public ? 'Published' : 'Private'}
                           </Badge>
                         </div>
@@ -427,7 +468,12 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                           {summary.title || summary.lecture_name || 'Untitled'}
                         </CardTitle>
                         {!summary.pdf_url && (
-                          <Badge variant={summary.is_public ? 'default' : 'secondary'} className="flex-shrink-0">
+                          <Badge
+                            variant={
+                              summary.is_public ? 'default' : 'secondary'
+                            }
+                            className="flex-shrink-0"
+                          >
                             {summary.is_public ? 'Published' : 'Private'}
                           </Badge>
                         )}
@@ -435,7 +481,9 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                       {(summary.university || summary.subject) && (
                         <div className="space-y-1 text-sm text-muted-foreground">
                           {summary.university && (
-                            <p className="font-mono text-xs">{summary.university}</p>
+                            <p className="font-mono text-xs">
+                              {summary.university}
+                            </p>
                           )}
                           {summary.subject && <p>{summary.subject}</p>}
                         </div>
@@ -446,23 +494,50 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                       <div className="space-y-3">
                         {summary.is_public && (
                           <div className="flex items-center gap-2 text-sm">
-                            <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            <svg
+                              className="w-4 h-4 text-muted-foreground"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 15l7-7 7 7"
+                              />
                             </svg>
-                            <span className="font-medium">{summary.reputation_score}</span>
-                            <span className="text-muted-foreground">upvotes</span>
+                            <span className="font-medium">
+                              {summary.reputation_score}
+                            </span>
+                            <span className="text-muted-foreground">
+                              upvotes
+                            </span>
                           </div>
                         )}
 
                         <div className="text-xs text-muted-foreground">
-                          <p>Created {new Date(summary.created_at).toLocaleDateString()}</p>
+                          <p>
+                            Created{' '}
+                            {new Date(summary.created_at).toLocaleDateString()}
+                          </p>
                           {summary.updated_at !== summary.created_at && (
-                            <p>Updated {new Date(summary.updated_at).toLocaleDateString()}</p>
+                            <p>
+                              Updated{' '}
+                              {new Date(
+                                summary.updated_at
+                              ).toLocaleDateString()}
+                            </p>
                           )}
                         </div>
 
                         <div className="pt-3 border-t flex flex-wrap gap-2">
-                          <Button asChild size="sm" variant="default" className="flex-1">
+                          <Button
+                            asChild
+                            size="sm"
+                            variant="default"
+                            className="flex-1"
+                          >
                             <Link href={`/learn/${summary.id}`}>
                               <Eye className="w-4 h-4 mr-1" />
                               Study
@@ -474,8 +549,17 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => togglePublishStatus(summary.id, summary.is_public)}
-                                title={summary.is_public ? 'Make private' : 'Publish to library'}
+                                onClick={() =>
+                                  togglePublishStatus(
+                                    summary.id,
+                                    summary.is_public
+                                  )
+                                }
+                                title={
+                                  summary.is_public
+                                    ? 'Make private'
+                                    : 'Publish to library'
+                                }
                               >
                                 {summary.is_public ? (
                                   <Lock className="w-4 h-4" />
@@ -509,15 +593,31 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
         {!user && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-background/80 backdrop-blur-md border rounded-lg p-6 text-center shadow-lg max-w-md mx-4">
-              <h2 className="text-xl font-semibold mb-2">Create an account to access this collection</h2>
+              <h2 className="text-xl font-semibold mb-2">
+                Create an account to access this collection
+              </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Log in or register to view all summaries, import this collection, and access the full features.
+                Log in or register to view all summaries, import this
+                collection, and access the full features.
               </p>
               <div className="flex gap-3 justify-center">
-                <Button onClick={() => router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`)}>
+                <Button
+                  onClick={() =>
+                    router.push(
+                      `/login?returnUrl=${encodeURIComponent(window.location.pathname)}`
+                    )
+                  }
+                >
                   Log in
                 </Button>
-                <Button variant="outline" onClick={() => router.push(`/register?returnUrl=${encodeURIComponent(window.location.pathname)}`)}>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    router.push(
+                      `/register?returnUrl=${encodeURIComponent(window.location.pathname)}`
+                    )
+                  }
+                >
                   Register
                 </Button>
               </div>

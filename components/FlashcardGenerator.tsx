@@ -16,13 +16,18 @@ interface FlashcardGeneratorProps {
   isFocusMode?: boolean
 }
 
-export default function FlashcardGenerator({ documentContext, isFocusMode = false }: FlashcardGeneratorProps) {
+export default function FlashcardGenerator({
+  documentContext,
+  isFocusMode = false
+}: FlashcardGeneratorProps) {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
-  const [difficulty, setDifficulty] = useState<'bachelor' | 'master' | 'phd'>('bachelor')
+  const [difficulty, setDifficulty] = useState<'bachelor' | 'master' | 'phd'>(
+    'bachelor'
+  )
   const [cardCount, setCardCount] = useState(10)
 
   const generateFlashcards = async () => {
@@ -41,25 +46,29 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
       const response = await fetch('/api/flashcards', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           content: documentContext,
           cardCount,
-          difficulty,
-        }),
+          difficulty
+        })
       })
 
       const data = await response.json()
 
       if (!response.ok || !data.success) {
-        throw new Error(data.details?.[0] || data.error || 'Failed to generate flashcards')
+        throw new Error(
+          data.details?.[0] || data.error || 'Failed to generate flashcards'
+        )
       }
 
       setFlashcards(data.flashcards)
     } catch (err) {
       logger.error('Flashcard generation error', err)
-      setError(err instanceof Error ? err.message : 'Failed to generate flashcards')
+      setError(
+        err instanceof Error ? err.message : 'Failed to generate flashcards'
+      )
     } finally {
       setLoading(false)
     }
@@ -96,8 +105,12 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border">
-        <h3 className={`font-semibold ${isFocusMode ? 'text-2xl' : 'text-lg'}`}>Flashcard Generator</h3>
-        <p className={`text-muted-foreground ${isFocusMode ? 'text-sm' : 'text-xs'} mt-0.5`}>
+        <h3 className={`font-semibold ${isFocusMode ? 'text-2xl' : 'text-lg'}`}>
+          Flashcard Generator
+        </h3>
+        <p
+          className={`text-muted-foreground ${isFocusMode ? 'text-sm' : 'text-xs'} mt-0.5`}
+        >
           Study with AI-generated flashcards
         </p>
       </div>
@@ -112,44 +125,80 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                 <label className="block text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 text-center">
                   Select Difficulty
                 </label>
-                <div className={`grid gap-3 ${isFocusMode ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                <div
+                  className={`grid gap-3 ${isFocusMode ? 'grid-cols-3' : 'grid-cols-1'}`}
+                >
                   {[
-                    { 
-                      value: 'bachelor', 
-                      label: 'Bachelor', 
+                    {
+                      value: 'bachelor',
+                      label: 'Bachelor',
                       desc: 'Basic concepts',
                       icon: (
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                          />
                         </svg>
                       )
                     },
-                    { 
-                      value: 'master', 
-                      label: 'Master', 
+                    {
+                      value: 'master',
+                      label: 'Master',
                       desc: 'Advanced topics',
                       icon: (
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
                           <path d="M12 14l9-5-9-5-9 5 9 5z" />
                           <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"
+                          />
                         </svg>
                       )
                     },
-                    { 
-                      value: 'phd', 
-                      label: 'PhD', 
+                    {
+                      value: 'phd',
+                      label: 'PhD',
                       desc: 'Expert knowledge',
                       icon: (
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                          />
                         </svg>
                       )
                     }
-                  ].map((level) => (
+                  ].map(level => (
                     <button
                       key={level.value}
-                      onClick={() => setDifficulty(level.value as 'bachelor' | 'master' | 'phd')}
+                      onClick={() =>
+                        setDifficulty(
+                          level.value as 'bachelor' | 'master' | 'phd'
+                        )
+                      }
                       disabled={loading}
                       className={`group relative text-left rounded-xl border-2 transition-all duration-200 ${
                         isFocusMode ? 'px-6 py-5' : 'px-4 py-4'
@@ -160,14 +209,24 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                       } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={difficulty === level.value ? 'text-primary-foreground' : 'text-muted-foreground'}>
+                        <span
+                          className={
+                            difficulty === level.value
+                              ? 'text-primary-foreground'
+                              : 'text-muted-foreground'
+                          }
+                        >
                           {level.icon}
                         </span>
                         <div className="flex-1">
-                          <div className={`font-semibold ${isFocusMode ? 'text-base' : 'text-sm'}`}>
+                          <div
+                            className={`font-semibold ${isFocusMode ? 'text-base' : 'text-sm'}`}
+                          >
                             {level.label}
                           </div>
-                          <div className={`text-xs ${difficulty === level.value ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                          <div
+                            className={`text-xs ${difficulty === level.value ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}
+                          >
                             {level.desc}
                           </div>
                         </div>
@@ -182,8 +241,10 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                 <label className="block text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4 text-center">
                   Number of Flashcards
                 </label>
-                <div className={`grid gap-3 ${isFocusMode ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                  {[5, 10, 15, 20].map((count) => (
+                <div
+                  className={`grid gap-3 ${isFocusMode ? 'grid-cols-4' : 'grid-cols-2'}`}
+                >
+                  {[5, 10, 15, 20].map(count => (
                     <button
                       key={count}
                       onClick={() => setCardCount(count)}
@@ -196,10 +257,14 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                           : 'border-border bg-card hover:border-border/80 hover:shadow-md'
                       } ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-0.5'}`}
                     >
-                      <div className={`font-bold ${isFocusMode ? 'text-3xl' : 'text-2xl'}`}>
+                      <div
+                        className={`font-bold ${isFocusMode ? 'text-3xl' : 'text-2xl'}`}
+                      >
                         {count}
                       </div>
-                      <div className={`text-xs ${cardCount === count ? 'text-primary-foreground/80' : 'text-muted-foreground'} mt-1`}>
+                      <div
+                        className={`text-xs ${cardCount === count ? 'text-primary-foreground/80' : 'text-muted-foreground'} mt-1`}
+                      >
                         cards
                       </div>
                     </button>
@@ -222,8 +287,18 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                   </>
                 ) : (
                   <>
-                    <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    <svg
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                      />
                     </svg>
                     Generate Flashcards
                   </>
@@ -240,8 +315,14 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
         )}
 
         {flashcards.length > 0 && currentCard && (
-          <div className={`space-y-6 ${isFocusMode ? 'max-w-4xl mx-auto' : ''}`}>
-            <Button onClick={resetFlashcards} variant="outline" className="rounded-xl">
+          <div
+            className={`space-y-6 ${isFocusMode ? 'max-w-4xl mx-auto' : ''}`}
+          >
+            <Button
+              onClick={resetFlashcards}
+              variant="outline"
+              className="rounded-xl"
+            >
               Generate New Flashcards
             </Button>
             {/* Progress */}
@@ -252,7 +333,9 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
               <div className="mt-2 w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentIndex + 1) / flashcards.length) * 100}%` }}
+                  style={{
+                    width: `${((currentIndex + 1) / flashcards.length) * 100}%`
+                  }}
                 />
               </div>
             </div>
@@ -271,7 +354,7 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                 }`}
                 style={{
                   transformStyle: 'preserve-3d',
-                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
                 }}
               >
                 {/* Front of card */}
@@ -281,17 +364,25 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                   }`}
                   style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <div className={`font-medium text-primary mb-4 px-3 py-1 bg-primary/10 rounded-full ${
-                    isFocusMode ? 'text-sm' : 'text-xs'
-                  }`}>
+                  <div
+                    className={`font-medium text-primary mb-4 px-3 py-1 bg-primary/10 rounded-full ${
+                      isFocusMode ? 'text-sm' : 'text-xs'
+                    }`}
+                  >
                     {currentCard.category}
                   </div>
-                  <p className={`font-medium text-center ${
-                    isFocusMode ? 'text-3xl' : 'text-lg'
-                  }`}>{currentCard.front}</p>
-                  <div className={`absolute bottom-4 text-muted-foreground ${
-                    isFocusMode ? 'text-sm' : 'text-xs'
-                  }`}>
+                  <p
+                    className={`font-medium text-center ${
+                      isFocusMode ? 'text-3xl' : 'text-lg'
+                    }`}
+                  >
+                    {currentCard.front}
+                  </p>
+                  <div
+                    className={`absolute bottom-4 text-muted-foreground ${
+                      isFocusMode ? 'text-sm' : 'text-xs'
+                    }`}
+                  >
                     Click to reveal answer
                   </div>
                 </div>
@@ -303,20 +394,28 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                   }`}
                   style={{
                     backfaceVisibility: 'hidden',
-                    transform: 'rotateY(180deg)',
+                    transform: 'rotateY(180deg)'
                   }}
                 >
-                  <div className={`font-medium text-primary mb-4 px-3 py-1 bg-background rounded-full ${
-                    isFocusMode ? 'text-sm' : 'text-xs'
-                  }`}>
+                  <div
+                    className={`font-medium text-primary mb-4 px-3 py-1 bg-background rounded-full ${
+                      isFocusMode ? 'text-sm' : 'text-xs'
+                    }`}
+                  >
                     Answer
                   </div>
-                  <p className={`text-center leading-relaxed ${
-                    isFocusMode ? 'text-2xl' : 'text-base'
-                  }`}>{currentCard.back}</p>
-                  <div className={`absolute bottom-4 text-muted-foreground ${
-                    isFocusMode ? 'text-sm' : 'text-xs'
-                  }`}>
+                  <p
+                    className={`text-center leading-relaxed ${
+                      isFocusMode ? 'text-2xl' : 'text-base'
+                    }`}
+                  >
+                    {currentCard.back}
+                  </p>
+                  <div
+                    className={`absolute bottom-4 text-muted-foreground ${
+                      isFocusMode ? 'text-sm' : 'text-xs'
+                    }`}
+                  >
                     Click to see question
                   </div>
                 </div>
@@ -339,7 +438,11 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                   stroke="currentColor"
                   strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
                 Previous
               </Button>
@@ -381,7 +484,11 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
                   stroke="currentColor"
                   strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </Button>
             </div>
@@ -389,7 +496,8 @@ export default function FlashcardGenerator({ documentContext, isFocusMode = fals
             {/* Stats */}
             <div className="mt-4 p-4 bg-muted border border-border rounded-lg">
               <p className="text-sm text-foreground">
-                <strong>Progress:</strong> {currentIndex + 1} / {flashcards.length} cards reviewed
+                <strong>Progress:</strong> {currentIndex + 1} /{' '}
+                {flashcards.length} cards reviewed
               </p>
             </div>
           </div>

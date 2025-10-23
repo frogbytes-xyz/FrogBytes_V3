@@ -1,7 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
 import { createDocumentSharingService } from '@/lib/services/document-sharing-service'
-import { getSafeErrorMessage, ValidationError, AuthorizationError } from '@/lib/utils/errors'
+import {
+  getSafeErrorMessage,
+  ValidationError,
+  AuthorizationError
+} from '@/lib/utils/errors'
 import { logger } from '@/lib/utils/logger'
 
 /**
@@ -23,17 +28,20 @@ export async function GET(
     }
 
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const sharingService = await createDocumentSharingService()
-    const shareInfo = await sharingService.getDocumentShareInfo(documentId, user.id)
+    const shareInfo = await sharingService.getDocumentShareInfo(
+      documentId,
+      user.id
+    )
 
     return NextResponse.json({
       success: true,
@@ -43,10 +51,7 @@ export async function GET(
     logger.error('Error fetching document share info', error)
 
     if (error instanceof AuthorizationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 403 })
     }
 
     return NextResponse.json(
@@ -75,13 +80,13 @@ export async function POST(
     }
 
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -122,17 +127,11 @@ export async function POST(
     logger.error('Error toggling document sharing', error)
 
     if (error instanceof ValidationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     if (error instanceof AuthorizationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 403 })
     }
 
     return NextResponse.json(

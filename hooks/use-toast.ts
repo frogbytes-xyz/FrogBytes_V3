@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import toast from 'react-hot-toast'
 
-type ToastVariant = "default" | "destructive" | "success"
+type ToastVariant = 'default' | 'destructive' | 'success'
 
 interface ToastOptions {
   title?: string
@@ -12,9 +12,9 @@ interface ToastOptions {
 
 export function useToast() {
   return {
-    toast: ({ title, description, variant = "default" }: ToastOptions) => {
+    toast: ({ title, description, variant = 'default' }: ToastOptions) => {
       const message = `${title}${description ? ` - ${description}` : ''}`
-      
+
       switch (variant) {
         case 'destructive':
           return toast.error(message)

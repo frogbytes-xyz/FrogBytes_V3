@@ -2,12 +2,18 @@
 
 import { logger } from '@/lib/utils/logger'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/services/supabase/client'
 import Menubar from '@/components/layout/Menubar'
 import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -91,9 +97,21 @@ const reactionIcons: Record<string, any> = {
 }
 
 const typeConfig = {
-  issue: { icon: Bug, label: 'Bug', color: 'text-red-600 bg-red-50 border-red-200' },
-  feature: { icon: Sparkles, label: 'Feature', color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  improvement: { icon: Wrench, label: 'Improvement', color: 'text-green-600 bg-green-50 border-green-200' }
+  issue: {
+    icon: Bug,
+    label: 'Bug',
+    color: 'text-red-600 bg-red-50 border-red-200'
+  },
+  feature: {
+    icon: Sparkles,
+    label: 'Feature',
+    color: 'text-blue-600 bg-blue-50 border-blue-200'
+  },
+  improvement: {
+    icon: Wrench,
+    label: 'Improvement',
+    color: 'text-green-600 bg-green-50 border-green-200'
+  }
 }
 
 const priorityConfig = {
@@ -110,14 +128,20 @@ export default function FeedbackPage() {
   const [loading, setLoading] = useState(true)
   const [tablesExist, setTablesExist] = useState(false)
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
-  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null)
+  const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(
+    null
+  )
   const [replies, setReplies] = useState<Reply[]>([])
   const [labels, setLabels] = useState<Label[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
   // Filters
-  const [filter, setFilter] = useState<'all' | 'issue' | 'improvement' | 'feature'>('all')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all')
+  const [filter, setFilter] = useState<
+    'all' | 'issue' | 'improvement' | 'feature'
+  >('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>(
+    'all'
+  )
   const [labelFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy] = useState<'recent' | 'popular' | 'updated'>('updated')
@@ -129,45 +153,22 @@ export default function FeedbackPage() {
     title: '',
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
-    selectedLabels: [] as string[],
+    selectedLabels: [] as string[]
   })
   const [newReply, setNewReply] = useState('')
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  useEffect(() => {
-    if (tablesExist) {
-      loadLabels()
-      loadFeedbacks()
-    }
-  }, [user, filter, statusFilter, labelFilter, sortBy, tablesExist])
-
-  // Debounced search effect
-  useEffect(() => {
-    if (!tablesExist) return
-
-    const debounceTimer = setTimeout(() => {
-      loadFeedbacks()
-    }, 300) // Wait 300ms after user stops typing
-
-    return () => clearTimeout(debounceTimer)
-  }, [searchQuery])
-
-  async function checkAuth() {
-    const { data: { user } } = await supabase.auth.getUser()
+  const checkAuth = useCallback(async () => {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
     setUser(user)
     await checkTables()
     setLoading(false)
-  }
+  }, [supabase])
 
   async function checkTables() {
     try {
-      const { error } = await supabase
-        .from('feedback')
-        .select('count')
-        .limit(1)
+      const { error } = await supabase.from('feedback').select('count').limit(1)
 
       setTablesExist(!error)
     } catch (error) {
@@ -176,7 +177,7 @@ export default function FeedbackPage() {
     }
   }
 
-  async function loadLabels() {
+  const loadLabels = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('feedback_labels')
@@ -189,14 +190,12 @@ export default function FeedbackPage() {
     } catch (error) {
       logger.error('Error loading labels', error)
     }
-  }
+  }, [supabase])
 
   async function loadFeedbacks() {
     try {
       setIsSearching(true)
-      let query = supabase
-        .from('feedback')
-        .select('*')
+      let query = supabase.from('feedback').select('*')
 
       if (filter !== 'all') {
         query = query.eq('type', filter)
@@ -209,7 +208,9 @@ export default function FeedbackPage() {
       }
 
       if (searchQuery.trim()) {
-        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        query = query.or(
+          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`
+        )
       }
 
       if (sortBy === 'popular') {
@@ -227,64 +228,93 @@ export default function FeedbackPage() {
       if (user && data) {
         const feedbackData = data as Feedback[]
         const feedbackIds = feedbackData.map(f => f.id)
-        const userIds = [...new Set(feedbackData.map(f => f.user_id).concat(feedbackData.map(f => f.assignee_id).filter((id): id is string => Boolean(id))))]
+        const userIds = [
+          ...new Set(
+            feedbackData
+              .map(f => f.user_id)
+              .concat(
+                feedbackData
+                  .map(f => f.assignee_id)
+                  .filter((id): id is string => Boolean(id))
+              )
+          )
+        ]
 
-        const [votes, reactions, replies, labelAssignments, usersData] = await Promise.all([
-          supabase
-            .from('feedback_votes')
-            .select('feedback_id, vote_type')
-            .eq('user_id', user.id)
-            .in('feedback_id', feedbackIds),
+        const [votes, reactions, replies, labelAssignments, usersData] =
+          await Promise.all([
+            supabase
+              .from('feedback_votes')
+              .select('feedback_id, vote_type')
+              .eq('user_id', user.id)
+              .in('feedback_id', feedbackIds),
 
-          supabase
-            .from('feedback_reactions')
-            .select('feedback_id, reaction_type')
-            .eq('user_id', user.id)
-            .in('feedback_id', feedbackIds),
+            supabase
+              .from('feedback_reactions')
+              .select('feedback_id, reaction_type')
+              .eq('user_id', user.id)
+              .in('feedback_id', feedbackIds),
 
-          supabase
-            .from('feedback_replies')
-            .select('feedback_id')
-            .in('feedback_id', feedbackIds),
+            supabase
+              .from('feedback_replies')
+              .select('feedback_id')
+              .in('feedback_id', feedbackIds),
 
-          supabase
-            .from('feedback_label_assignments')
-            .select(`
+            supabase
+              .from('feedback_label_assignments')
+              .select(
+                `
               feedback_id,
               feedback_labels (id, name, color, description)
-            `)
-            .in('feedback_id', feedbackIds),
+            `
+              )
+              .in('feedback_id', feedbackIds),
 
-          supabase
-            .from('users')
-            .select('id, email, full_name')
-            .in('id', userIds)
-        ])
+            supabase
+              .from('users')
+              .select('id, email, full_name')
+              .in('id', userIds)
+          ])
 
-        const voteMap = new Map((votes.data || []).map((v: {feedback_id: string, vote_type: string}) => [v.feedback_id, v.vote_type]))
-        
-        const userMap = new Map((usersData.data || []).map((u: {id: string}) => [u.id, u]))
+        const voteMap = new Map(
+          (votes.data || []).map(
+            (v: { feedback_id: string; vote_type: string }) => [
+              v.feedback_id,
+              v.vote_type
+            ]
+          )
+        )
+
+        const userMap = new Map(
+          (usersData.data || []).map((u: { id: string }) => [u.id, u])
+        )
 
         const reactionMap = new Map<string, string[]>()
-        ;(reactions.data || []).forEach((r: {feedback_id: string, reaction_type: string}) => {
-          if (!reactionMap.has(r.feedback_id)) {
-            reactionMap.set(r.feedback_id, [])
+        ;(reactions.data || []).forEach(
+          (r: { feedback_id: string; reaction_type: string }) => {
+            if (!reactionMap.has(r.feedback_id)) {
+              reactionMap.set(r.feedback_id, [])
+            }
+            reactionMap.get(r.feedback_id)?.push(r.reaction_type)
           }
-          reactionMap.get(r.feedback_id)?.push(r.reaction_type)
-        })
+        )
 
         const replyCountMap = new Map<string, number>()
-        ;(replies.data || []).forEach((r: {feedback_id: string}) => {
-          replyCountMap.set(r.feedback_id, (replyCountMap.get(r.feedback_id) || 0) + 1)
+        ;(replies.data || []).forEach((r: { feedback_id: string }) => {
+          replyCountMap.set(
+            r.feedback_id,
+            (replyCountMap.get(r.feedback_id) || 0) + 1
+          )
         })
 
         const labelMap = new Map<string, unknown[]>()
-        ;(labelAssignments.data || []).forEach((la: {feedback_id: string, feedback_labels: unknown}) => {
-          if (!labelMap.has(la.feedback_id)) {
-            labelMap.set(la.feedback_id, [])
+        ;(labelAssignments.data || []).forEach(
+          (la: { feedback_id: string; feedback_labels: unknown }) => {
+            if (!labelMap.has(la.feedback_id)) {
+              labelMap.set(la.feedback_id, [])
+            }
+            labelMap.get(la.feedback_id)?.push(la.feedback_labels)
           }
-          labelMap.get(la.feedback_id)?.push(la.feedback_labels)
-        })
+        )
 
         const feedbackWithData = data.map((f: Feedback) => ({
           ...f,
@@ -293,14 +323,17 @@ export default function FeedbackPage() {
           user_vote: voteMap.get(f.id) || null,
           user_reactions: reactionMap.get(f.id) || [],
           reply_count: replyCountMap.get(f.id) || 0,
-          labels: labelMap.get(f.id) || [],
+          labels: labelMap.get(f.id) || []
         }))
 
         let filteredFeedback = feedbackWithData
         if (labelFilter !== 'all') {
           filteredFeedback = feedbackWithData.filter(f => {
             const labels = f.labels as unknown as Label[]
-            return Array.isArray(labels) && labels.some((l: Label) => l.id === labelFilter)
+            return (
+              Array.isArray(labels) &&
+              labels.some((l: Label) => l.id === labelFilter)
+            )
           })
         }
 
@@ -308,20 +341,32 @@ export default function FeedbackPage() {
       } else if (data) {
         // No user logged in - still fetch user data for display
         const feedbackData = data as Feedback[]
-        const userIds = [...new Set(feedbackData.map(f => f.user_id).concat(feedbackData.map(f => f.assignee_id).filter((id): id is string => Boolean(id))))]
+        const userIds = [
+          ...new Set(
+            feedbackData
+              .map(f => f.user_id)
+              .concat(
+                feedbackData
+                  .map(f => f.assignee_id)
+                  .filter((id): id is string => Boolean(id))
+              )
+          )
+        ]
         const { data: usersData } = await supabase
           .from('users')
           .select('id, email, full_name')
           .in('id', userIds)
-        
-        const userMap = new Map((usersData || []).map((u: {id: string}) => [u.id, u]))
-        
+
+        const userMap = new Map(
+          (usersData || []).map((u: { id: string }) => [u.id, u])
+        )
+
         const feedbackWithUsers = data.map((f: Feedback) => ({
           ...f,
           users: userMap.get(f.user_id) || null,
-          assignee: f.assignee_id ? userMap.get(f.assignee_id) : null,
+          assignee: f.assignee_id ? userMap.get(f.assignee_id) : null
         }))
-        
+
         setFeedbacks(feedbackWithUsers as unknown as Feedback[])
       } else {
         setFeedbacks([])
@@ -332,6 +377,37 @@ export default function FeedbackPage() {
       setIsSearching(false)
     }
   }
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  useEffect(() => {
+    if (tablesExist) {
+      loadLabels()
+      loadFeedbacks()
+    }
+  }, [
+    user,
+    filter,
+    statusFilter,
+    labelFilter,
+    sortBy,
+    tablesExist,
+    loadLabels,
+    loadFeedbacks
+  ])
+
+  // Debounced search effect
+  useEffect(() => {
+    if (!tablesExist) return
+
+    const debounceTimer = setTimeout(() => {
+      loadFeedbacks()
+    }, 300) // Wait 300ms after user stops typing
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchQuery, loadFeedbacks, tablesExist])
 
   async function handleReaction(feedbackId: string, reactionType: string) {
     if (!user) {
@@ -353,13 +429,11 @@ export default function FeedbackPage() {
           .eq('user_id', user.id)
           .eq('reaction_type', reactionType)
       } else {
-        await supabaseAny
-          .from('feedback_reactions')
-          .insert({
-            feedback_id: feedbackId,
-            user_id: user.id,
-            reaction_type: reactionType,
-          } as any)
+        await supabaseAny.from('feedback_reactions').insert({
+          feedback_id: feedbackId,
+          user_id: user.id,
+          reaction_type: reactionType
+        } as any)
       }
 
       loadFeedbacks()
@@ -380,19 +454,25 @@ export default function FeedbackPage() {
 
       if (data && data.length > 0) {
         const replyData = data as Reply[]
-        const userIds = [...new Set(replyData.map(r => r.user_id).filter(Boolean))]
+        const userIds = [
+          ...new Set(replyData.map(r => r.user_id).filter(Boolean))
+        ]
         const { data: usersData } = await supabase
           .from('users')
           .select('id, email, full_name')
           .in('id', userIds)
-        
-        const userMap = new Map((usersData || []).map((u: {id: string}) => [u.id, u]))
-        
-        const repliesWithUsers = data.map((r: {user_id: string, id: string}) => ({
-          ...r,
-          users: userMap.get(r.user_id) || null,
-        }))
-        
+
+        const userMap = new Map(
+          (usersData || []).map((u: { id: string }) => [u.id, u])
+        )
+
+        const repliesWithUsers = data.map(
+          (r: { user_id: string; id: string }) => ({
+            ...r,
+            users: userMap.get(r.user_id) || null
+          })
+        )
+
         setReplies(repliesWithUsers as unknown as Reply[])
       } else {
         setReplies(data || [])
@@ -424,7 +504,7 @@ export default function FeedbackPage() {
           priority: newFeedback.priority,
           status: 'open',
           upvotes: 0,
-          downvotes: 0,
+          downvotes: 0
         } as any)
         .select()
 
@@ -439,7 +519,7 @@ export default function FeedbackPage() {
         if (feedbackId) {
           const labelAssignments = newFeedback.selectedLabels.map(labelId => ({
             feedback_id: feedbackId,
-            label_id: labelId,
+            label_id: labelId
           }))
 
           await (supabase as any)
@@ -453,13 +533,15 @@ export default function FeedbackPage() {
         title: '',
         description: '',
         priority: 'medium',
-        selectedLabels: [],
+        selectedLabels: []
       })
       setShowCreateForm(false)
       loadFeedbacks()
     } catch (error) {
       logger.error('Error creating feedback', error)
-      alert(`Failed to create feedback: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      alert(
+        `Failed to create feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -486,13 +568,11 @@ export default function FeedbackPage() {
           .eq('feedback_id', feedbackId)
           .eq('user_id', user.id)
       } else {
-        await supabaseAny
-          .from('feedback_votes')
-          .insert({
-            feedback_id: feedbackId,
-            user_id: user.id,
-            vote_type: voteType,
-          } as any)
+        await supabaseAny.from('feedback_votes').insert({
+          feedback_id: feedbackId,
+          user_id: user.id,
+          vote_type: voteType
+        } as any)
       }
 
       loadFeedbacks()
@@ -507,13 +587,11 @@ export default function FeedbackPage() {
     }
 
     try {
-      const { error } = await supabaseAny
-        .from('feedback_replies')
-        .insert({
-          feedback_id: selectedFeedback.id,
-          user_id: user.id,
-          content: newReply,
-        } as any)
+      const { error } = await supabaseAny.from('feedback_replies').insert({
+        feedback_id: selectedFeedback.id,
+        user_id: user.id,
+        content: newReply
+      } as any)
 
       if (error) throw error
 
@@ -527,11 +605,15 @@ export default function FeedbackPage() {
   }
 
   const getOpenIssuesCount = () => {
-    return feedbacks.filter(f => f.status === 'open' || f.status === 'in_progress').length
+    return feedbacks.filter(
+      f => f.status === 'open' || f.status === 'in_progress'
+    ).length
   }
 
   const getClosedIssuesCount = () => {
-    return feedbacks.filter(f => f.status === 'completed' || f.status === 'closed').length
+    return feedbacks.filter(
+      f => f.status === 'completed' || f.status === 'closed'
+    ).length
   }
 
   if (loading) {
@@ -551,13 +633,18 @@ export default function FeedbackPage() {
         <div className="pt-20 pb-12">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-normal mb-3 text-foreground">Issues</h1>
+              <h1 className="text-4xl font-normal mb-3 text-foreground">
+                Issues
+              </h1>
               <p className="text-lg text-muted-foreground">
                 Track bugs, request features, and suggest improvements
               </p>
             </div>
             {user && (
-              <Button onClick={() => setShowCreateForm(!showCreateForm)} size="lg">
+              <Button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                size="lg"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 {showCreateForm ? 'Cancel' : 'New Issue'}
               </Button>
@@ -573,7 +660,7 @@ export default function FeedbackPage() {
                 <Input
                   placeholder="Search issues by title or description..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-9 pr-20 h-12"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -597,7 +684,10 @@ export default function FeedbackPage() {
             {searchQuery.trim() && (
               <div className="flex items-center justify-between text-sm">
                 <p className="text-muted-foreground">
-                  Search results for <span className="font-medium text-foreground">"{searchQuery}"</span>
+                  Search results for{' '}
+                  <span className="font-medium text-foreground">
+                    "{searchQuery}"
+                  </span>
                 </p>
                 <Button
                   variant="ghost"
@@ -689,20 +779,34 @@ export default function FeedbackPage() {
         {!tablesExist ? (
           <Card className="border bg-background rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg font-normal">Setup Required</CardTitle>
+              <CardTitle className="text-lg font-normal">
+                Setup Required
+              </CardTitle>
               <CardDescription>
                 The feedback system tables need to be created in your database
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                <p className="text-sm font-medium">To set up the feedback system:</p>
+                <p className="text-sm font-medium">
+                  To set up the feedback system:
+                </p>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                   <li>Go to your Supabase dashboard</li>
                   <li>Navigate to the SQL Editor</li>
                   <li>Copy and run the SQL from both migration files:</li>
-                  <li className="ml-4">• <code className="bg-background px-1">create_feedback_tables.sql</code></li>
-                  <li className="ml-4">• <code className="bg-background px-1">20250115000000_enhance_feedback_system.sql</code></li>
+                  <li className="ml-4">
+                    •{' '}
+                    <code className="bg-background px-1">
+                      create_feedback_tables.sql
+                    </code>
+                  </li>
+                  <li className="ml-4">
+                    •{' '}
+                    <code className="bg-background px-1">
+                      20250115000000_enhance_feedback_system.sql
+                    </code>
+                  </li>
                   <li>Refresh this page</li>
                 </ol>
               </div>
@@ -717,7 +821,9 @@ export default function FeedbackPage() {
             {showCreateForm && (
               <Card className="border border-border/30 bg-gradient-to-b from-muted/5 to-background rounded-2xl">
                 <CardHeader>
-                  <CardTitle className="text-xl font-normal">Create New Issue</CardTitle>
+                  <CardTitle className="text-xl font-normal">
+                    Create New Issue
+                  </CardTitle>
                   <CardDescription className="text-base">
                     Describe the bug, feature, or improvement you'd like to see
                   </CardDescription>
@@ -728,7 +834,12 @@ export default function FeedbackPage() {
                       <label className="text-sm font-medium">Type</label>
                       <select
                         value={newFeedback.type}
-                        onChange={(e) => setNewFeedback({ ...newFeedback, type: e.target.value as any })}
+                        onChange={e =>
+                          setNewFeedback({
+                            ...newFeedback,
+                            type: e.target.value as any
+                          })
+                        }
                         className="h-10 w-full px-4 text-sm border border-border rounded-lg bg-background hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="issue">Bug Report</option>
@@ -741,7 +852,12 @@ export default function FeedbackPage() {
                       <label className="text-sm font-medium">Priority</label>
                       <select
                         value={newFeedback.priority}
-                        onChange={(e) => setNewFeedback({ ...newFeedback, priority: e.target.value as any })}
+                        onChange={e =>
+                          setNewFeedback({
+                            ...newFeedback,
+                            priority: e.target.value as any
+                          })
+                        }
                         className="h-10 w-full px-4 text-sm border border-border rounded-lg bg-background hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="low">Low</option>
@@ -756,7 +872,12 @@ export default function FeedbackPage() {
                     <label className="text-sm font-medium">Title</label>
                     <Input
                       value={newFeedback.title}
-                      onChange={(e) => setNewFeedback({ ...newFeedback, title: e.target.value })}
+                      onChange={e =>
+                        setNewFeedback({
+                          ...newFeedback,
+                          title: e.target.value
+                        })
+                      }
                       placeholder="Brief, descriptive title for your issue"
                       className="h-12"
                     />
@@ -766,7 +887,12 @@ export default function FeedbackPage() {
                     <label className="text-sm font-medium">Description</label>
                     <textarea
                       value={newFeedback.description}
-                      onChange={(e) => setNewFeedback({ ...newFeedback, description: e.target.value })}
+                      onChange={e =>
+                        setNewFeedback({
+                          ...newFeedback,
+                          description: e.target.value
+                        })
+                      }
                       placeholder="Detailed description of the issue or feature request..."
                       className="w-full min-h-[140px] px-4 py-3 text-sm border border-border rounded-lg bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
@@ -774,18 +900,23 @@ export default function FeedbackPage() {
 
                   {labels.length > 0 && (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Labels (optional)</label>
+                      <label className="text-sm font-medium">
+                        Labels (optional)
+                      </label>
                       <div className="flex flex-wrap gap-2">
-                        {labels.map((label) => (
+                        {labels.map(label => (
                           <button
                             key={label.id}
                             type="button"
                             onClick={() => {
-                              const isSelected = newFeedback.selectedLabels.includes(label.id)
+                              const isSelected =
+                                newFeedback.selectedLabels.includes(label.id)
                               setNewFeedback({
                                 ...newFeedback,
                                 selectedLabels: isSelected
-                                  ? newFeedback.selectedLabels.filter(id => id !== label.id)
+                                  ? newFeedback.selectedLabels.filter(
+                                      id => id !== label.id
+                                    )
                                   : [...newFeedback.selectedLabels, label.id]
                               })
                             }}
@@ -795,10 +926,13 @@ export default function FeedbackPage() {
                                 : 'border-border hover:bg-muted/50'
                             }`}
                             style={{
-                              backgroundColor: newFeedback.selectedLabels.includes(label.id)
-                                ? `${label.color}20`
-                                : undefined,
-                              borderColor: newFeedback.selectedLabels.includes(label.id)
+                              backgroundColor:
+                                newFeedback.selectedLabels.includes(label.id)
+                                  ? `${label.color}20`
+                                  : undefined,
+                              borderColor: newFeedback.selectedLabels.includes(
+                                label.id
+                              )
                                 ? label.color
                                 : undefined
                             }}
@@ -811,7 +945,11 @@ export default function FeedbackPage() {
                   )}
 
                   <div className="flex items-center gap-3 pt-4">
-                    <Button onClick={handleCreateFeedback} size="lg" className="flex-1">
+                    <Button
+                      onClick={handleCreateFeedback}
+                      size="lg"
+                      className="flex-1"
+                    >
                       Create Issue
                     </Button>
                     <Button
@@ -838,24 +976,32 @@ export default function FeedbackPage() {
                           <MessageCircle className="h-8 w-8 text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="text-lg font-medium mb-2">No issues found</p>
+                          <p className="text-lg font-medium mb-2">
+                            No issues found
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            {user ? "Be the first to create an issue!" : "Sign in to create issues"}
+                            {user
+                              ? 'Be the first to create an issue!'
+                              : 'Sign in to create issues'}
                           </p>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ) : (
-                  feedbacks.map((feedback) => {
+                  feedbacks.map(feedback => {
                     const TypeIcon = typeConfig[feedback.type].icon
-                    const isOpen = feedback.status === 'open' || feedback.status === 'in_progress'
+                    const isOpen =
+                      feedback.status === 'open' ||
+                      feedback.status === 'in_progress'
 
                     return (
                       <Card
                         key={feedback.id}
                         className={`border border-border/30 bg-gradient-to-b from-muted/5 to-background rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01] ${
-                          selectedFeedback?.id === feedback.id ? 'ring-2 ring-primary' : ''
+                          selectedFeedback?.id === feedback.id
+                            ? 'ring-2 ring-primary'
+                            : ''
                         }`}
                         onClick={() => {
                           setSelectedFeedback(feedback)
@@ -867,11 +1013,13 @@ export default function FeedbackPage() {
                             {/* Status Icon & Voting */}
                             <div className="flex flex-col items-center gap-2 min-w-[48px]">
                               {/* Status Icon */}
-                              <div className={`h-7 w-7 rounded-full flex items-center justify-center ${
-                                isOpen
-                                  ? 'bg-green-100 text-green-600'
-                                  : 'bg-purple-100 text-purple-600'
-                              }`}>
+                              <div
+                                className={`h-7 w-7 rounded-full flex items-center justify-center ${
+                                  isOpen
+                                    ? 'bg-green-100 text-green-600'
+                                    : 'bg-purple-100 text-purple-600'
+                                }`}
+                              >
                                 {isOpen ? (
                                   <Circle className="h-3.5 w-3.5 fill-current" />
                                 ) : (
@@ -881,7 +1029,8 @@ export default function FeedbackPage() {
 
                               {/* Vote Score */}
                               <div className="text-xs font-medium text-muted-foreground">
-                                {feedback.upvotes - feedback.downvotes > 0 && '+'}
+                                {feedback.upvotes - feedback.downvotes > 0 &&
+                                  '+'}
                                 {feedback.upvotes - feedback.downvotes}
                               </div>
                             </div>
@@ -897,14 +1046,18 @@ export default function FeedbackPage() {
 
                               {/* Badges */}
                               <div className="flex items-center gap-2 mb-3">
-                                <div className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border rounded-md ${typeConfig[feedback.type].color}`}>
+                                <div
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border rounded-md ${typeConfig[feedback.type].color}`}
+                                >
                                   <TypeIcon className="w-3 h-3" />
                                   {typeConfig[feedback.type].label}
                                 </div>
-                                <div className={`inline-block px-2 py-0.5 text-xs font-medium border rounded-md ${priorityConfig[feedback.priority].color}`}>
+                                <div
+                                  className={`inline-block px-2 py-0.5 text-xs font-medium border rounded-md ${priorityConfig[feedback.priority].color}`}
+                                >
                                   {feedback.priority}
                                 </div>
-                                {feedback.labels?.map((label) => (
+                                {feedback.labels?.map(label => (
                                   <span
                                     key={label.id}
                                     className="inline-block px-2 py-0.5 text-xs font-medium border rounded-md"
@@ -929,28 +1082,37 @@ export default function FeedbackPage() {
                                 <div className="flex items-center gap-2">
                                   <span>
                                     #{feedback.id.slice(-6)} opened{' '}
-                                    {formatDistanceToNow(new Date(feedback.created_at), { addSuffix: true })}
+                                    {formatDistanceToNow(
+                                      new Date(feedback.created_at),
+                                      { addSuffix: true }
+                                    )}
                                   </span>
                                   <span>•</span>
                                   <span>
-                                    {feedback.users?.full_name || feedback.users?.email}
+                                    {feedback.users?.full_name ||
+                                      feedback.users?.email}
                                   </span>
                                 </div>
 
                                 <div className="flex items-center gap-3">
                                   {/* Reactions */}
-                                  {Object.entries(feedback.reaction_counts || {}).map(([type, count]) => {
+                                  {Object.entries(
+                                    feedback.reaction_counts || {}
+                                  ).map(([type, count]) => {
                                     const ReactionIcon = reactionIcons[type]
-                                    if (!ReactionIcon || count === 0) return null
+                                    if (!ReactionIcon || count === 0)
+                                      return null
                                     return (
                                       <button
                                         key={type}
-                                        onClick={(e) => {
+                                        onClick={e => {
                                           e.stopPropagation()
                                           handleReaction(feedback.id, type)
                                         }}
                                         className={`flex items-center gap-1 px-1.5 py-0.5 border rounded-md transition-colors hover:bg-muted ${
-                                          feedback.user_reactions?.includes(type)
+                                          feedback.user_reactions?.includes(
+                                            type
+                                          )
                                             ? 'border-primary bg-primary/10 text-primary'
                                             : 'border-border'
                                         }`}
@@ -986,21 +1148,29 @@ export default function FeedbackPage() {
                     <CardHeader className="pb-4">
                       {/* Status Badge */}
                       <div className="flex items-center gap-2 mb-3">
-                        <div className={`h-6 w-6 rounded-full flex items-center justify-center ${
-                          selectedFeedback.status === 'open' || selectedFeedback.status === 'in_progress'
-                            ? 'bg-green-100 text-green-600'
-                            : 'bg-purple-100 text-purple-600'
-                        }`}>
-                          {selectedFeedback.status === 'open' || selectedFeedback.status === 'in_progress' ? (
+                        <div
+                          className={`h-6 w-6 rounded-full flex items-center justify-center ${
+                            selectedFeedback.status === 'open' ||
+                            selectedFeedback.status === 'in_progress'
+                              ? 'bg-green-100 text-green-600'
+                              : 'bg-purple-100 text-purple-600'
+                          }`}
+                        >
+                          {selectedFeedback.status === 'open' ||
+                          selectedFeedback.status === 'in_progress' ? (
                             <Circle className="h-3 w-3 fill-current" />
                           ) : (
                             <CheckCircle2 className="h-3 w-3" />
                           )}
                         </div>
                         <span className="text-sm font-medium">
-                          {selectedFeedback.status === 'open' ? 'Open' :
-                           selectedFeedback.status === 'in_progress' ? 'In Progress' :
-                           selectedFeedback.status === 'completed' ? 'Completed' : 'Closed'}
+                          {selectedFeedback.status === 'open'
+                            ? 'Open'
+                            : selectedFeedback.status === 'in_progress'
+                              ? 'In Progress'
+                              : selectedFeedback.status === 'completed'
+                                ? 'Completed'
+                                : 'Closed'}
                         </span>
                       </div>
 
@@ -1010,28 +1180,34 @@ export default function FeedbackPage() {
 
                       <div className="text-xs text-muted-foreground">
                         #{selectedFeedback.id.slice(-6)} opened by{' '}
-                        {selectedFeedback.users?.full_name || selectedFeedback.users?.email} •{' '}
-                        {formatDistanceToNow(new Date(selectedFeedback.created_at), { addSuffix: true })}
+                        {selectedFeedback.users?.full_name ||
+                          selectedFeedback.users?.email}{' '}
+                        •{' '}
+                        {formatDistanceToNow(
+                          new Date(selectedFeedback.created_at),
+                          { addSuffix: true }
+                        )}
                       </div>
 
                       {/* Labels */}
-                      {selectedFeedback.labels && selectedFeedback.labels.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-3">
-                          {selectedFeedback.labels.map((label) => (
-                            <span
-                              key={label.id}
-                              className="inline-block px-2 py-0.5 text-xs font-medium border rounded-md"
-                              style={{
-                                backgroundColor: `${label.color}20`,
-                                borderColor: label.color,
-                                color: label.color
-                              }}
-                            >
-                              {label.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      {selectedFeedback.labels &&
+                        selectedFeedback.labels.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-3">
+                            {selectedFeedback.labels.map(label => (
+                              <span
+                                key={label.id}
+                                className="inline-block px-2 py-0.5 text-xs font-medium border rounded-md"
+                                style={{
+                                  backgroundColor: `${label.color}20`,
+                                  borderColor: label.color,
+                                  color: label.color
+                                }}
+                              >
+                                {label.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                     </CardHeader>
 
                     <CardContent className="space-y-6">
@@ -1046,9 +1222,13 @@ export default function FeedbackPage() {
                       {user && (
                         <div className="flex items-center gap-2 py-3 border-t">
                           <button
-                            onClick={() => handleVote(selectedFeedback.id, 'up')}
+                            onClick={() =>
+                              handleVote(selectedFeedback.id, 'up')
+                            }
                             className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-all hover:bg-muted ${
-                              selectedFeedback.user_vote === 'up' ? 'border-primary bg-primary/10 text-primary' : 'border-border'
+                              selectedFeedback.user_vote === 'up'
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border'
                             }`}
                           >
                             <ChevronUp className="h-4 w-4" />
@@ -1056,9 +1236,13 @@ export default function FeedbackPage() {
                           </button>
 
                           <button
-                            onClick={() => handleVote(selectedFeedback.id, 'down')}
+                            onClick={() =>
+                              handleVote(selectedFeedback.id, 'down')
+                            }
                             className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-all hover:bg-muted ${
-                              selectedFeedback.user_vote === 'down' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-border'
+                              selectedFeedback.user_vote === 'down'
+                                ? 'border-destructive bg-destructive/10 text-destructive'
+                                : 'border-border'
                             }`}
                           >
                             <ChevronDown className="h-4 w-4" />
@@ -1066,7 +1250,9 @@ export default function FeedbackPage() {
                           </button>
 
                           <div className="text-xs text-muted-foreground ml-2">
-                            Score: {selectedFeedback.upvotes - selectedFeedback.downvotes}
+                            Score:{' '}
+                            {selectedFeedback.upvotes -
+                              selectedFeedback.downvotes}
                           </div>
                         </div>
                       )}
@@ -1081,16 +1267,26 @@ export default function FeedbackPage() {
 
                         {/* Comments List */}
                         <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                          {replies.map((reply) => (
-                            <div key={reply.id} className="bg-muted/30 border border-border/30 p-3 rounded-lg text-sm">
+                          {replies.map(reply => (
+                            <div
+                              key={reply.id}
+                              className="bg-muted/30 border border-border/30 p-3 rounded-lg text-sm"
+                            >
                               <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
                                 <span className="font-medium">
                                   {reply.users?.full_name || reply.users?.email}
                                 </span>
                                 <span>•</span>
-                                <span>{formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}</span>
+                                <span>
+                                  {formatDistanceToNow(
+                                    new Date(reply.created_at),
+                                    { addSuffix: true }
+                                  )}
+                                </span>
                               </div>
-                              <p className="whitespace-pre-wrap leading-relaxed">{reply.content}</p>
+                              <p className="whitespace-pre-wrap leading-relaxed">
+                                {reply.content}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -1100,7 +1296,7 @@ export default function FeedbackPage() {
                           <div className="space-y-3">
                             <textarea
                               value={newReply}
-                              onChange={(e) => setNewReply(e.target.value)}
+                              onChange={e => setNewReply(e.target.value)}
                               placeholder="Add a comment..."
                               className="w-full min-h-[100px] px-3 py-2 text-sm border border-border rounded-lg bg-background resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             />
@@ -1118,7 +1314,10 @@ export default function FeedbackPage() {
                         {!user && (
                           <div className="text-center py-4">
                             <p className="text-sm text-muted-foreground">
-                              <a href="/login" className="text-primary hover:underline">
+                              <a
+                                href="/login"
+                                className="text-primary hover:underline"
+                              >
                                 Sign in
                               </a>{' '}
                               to comment on this issue
@@ -1150,7 +1349,7 @@ export default function FeedbackPage() {
           </div>
         )}
       </div>
-      
+
       <Footer />
     </main>
   )

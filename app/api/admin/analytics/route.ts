@@ -5,99 +5,100 @@ import { logger } from '@/lib/utils/logger'
  * GET - Comprehensive platform analytics with detailed metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 interface AnalyticsData {
-  timestamp: string;
+  timestamp: string
   users: {
-    total: number;
-    activeToday: number;
-    activeWeek: number;
-    activeMonth: number;
-    newToday: number;
-    newWeek: number;
-    newMonth: number;
+    total: number
+    activeToday: number
+    activeWeek: number
+    activeMonth: number
+    newToday: number
+    newWeek: number
+    newMonth: number
     retention: {
-      daily: number;
-      weekly: number;
-      monthly: number;
-    };
+      daily: number
+      weekly: number
+      monthly: number
+    }
     growth: {
-      daily: number;
-      weekly: number;
-      monthly: number;
-    };
-  };
+      daily: number
+      weekly: number
+      monthly: number
+    }
+  }
   content: {
     uploads: {
-      total: number;
-      today: number;
-      week: number;
-      month: number;
+      total: number
+      today: number
+      week: number
+      month: number
       byType: {
-        audio: number;
-        pdf: number;
-        other: number;
-      };
-    };
+        audio: number
+        pdf: number
+        other: number
+      }
+    }
     processing: {
       transcriptions: {
-        total: number;
-        successful: number;
-        failed: number;
-        avgDuration: number;
-      };
+        total: number
+        successful: number
+        failed: number
+        avgDuration: number
+      }
       summaries: {
-        total: number;
-        successful: number;
-        failed: number;
-        avgLength: number;
-      };
-    };
-  };
+        total: number
+        successful: number
+        failed: number
+        avgLength: number
+      }
+    }
+  }
   storage: {
-    total: number;
-    audio: number;
-    pdf: number;
-    other: number;
-    growth: number;
-  };
+    total: number
+    audio: number
+    pdf: number
+    other: number
+    growth: number
+  }
   performance: {
-    avgUploadTime: number;
-    avgTranscriptionTime: number;
-    avgSummaryTime: number;
+    avgUploadTime: number
+    avgTranscriptionTime: number
+    avgSummaryTime: number
     errorRates: {
-      upload: number;
-      transcription: number;
-      summary: number;
-    };
-  };
+      upload: number
+      transcription: number
+      summary: number
+    }
+  }
   engagement: {
-    avgSessionDuration: number;
-    pagesPerSession: number;
-    bounceRate: number;
+    avgSessionDuration: number
+    pagesPerSession: number
+    bounceRate: number
     mostUsedFeatures: Array<{
-      feature: string;
-      usage: number;
-      trend: number;
-    }>;
-  };
+      feature: string
+      usage: number
+      trend: number
+    }>
+  }
   revenue: {
-    totalRevenue: number;
-    monthlyRecurring: number;
+    totalRevenue: number
+    monthlyRecurring: number
     tierDistribution: Array<{
-      tier: string;
-      users: number;
-      revenue: number;
-    }>;
-    churnRate: number;
-  };
+      tier: string
+      users: number
+      revenue: number
+    }>
+    churnRate: number
+  }
 }
 
 function verifyAdminAuth(request: NextRequest): boolean {
-  const apiKey = request.headers.get('x-api-key');
-  return apiKey === process.env.ADMIN_API_KEY;
+  const apiKey = request.headers.get('x-api-key')
+  return apiKey === process.env.ADMIN_API_KEY
 }
 
 async function getUserAnalytics(supabase: any) {
@@ -105,13 +106,13 @@ async function getUserAnalytics(supabase: any) {
     // Get total users
     const { count: totalUsers } = await supabase
       .from('users')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
 
     // Get users by time period
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
 
     const [
       { count: activeToday },
@@ -121,24 +122,36 @@ async function getUserAnalytics(supabase: any) {
       { count: newWeek },
       { count: newMonth }
     ] = await Promise.all([
-      supabase.from('users').select('*', { count: 'exact', head: true })
+      supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
         .gte('last_sign_in_at', today.toISOString()),
-      supabase.from('users').select('*', { count: 'exact', head: true })
+      supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
         .gte('last_sign_in_at', weekAgo.toISOString()),
-      supabase.from('users').select('*', { count: 'exact', head: true })
+      supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
         .gte('last_sign_in_at', monthAgo.toISOString()),
-      supabase.from('users').select('*', { count: 'exact', head: true })
+      supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', today.toISOString()),
-      supabase.from('users').select('*', { count: 'exact', head: true })
+      supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', weekAgo.toISOString()),
-      supabase.from('users').select('*', { count: 'exact', head: true })
+      supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', monthAgo.toISOString())
-    ]);
+    ])
 
     // Calculate growth rates (mock calculation)
-    const dailyGrowth = newToday || 0;
-    const weeklyGrowth = ((newWeek || 0) / Math.max(totalUsers || 1, 1)) * 100;
-    const monthlyGrowth = ((newMonth || 0) / Math.max(totalUsers || 1, 1)) * 100;
+    const dailyGrowth = newToday || 0
+    const weeklyGrowth = ((newWeek || 0) / Math.max(totalUsers || 1, 1)) * 100
+    const monthlyGrowth = ((newMonth || 0) / Math.max(totalUsers || 1, 1)) * 100
 
     return {
       total: totalUsers || 0,
@@ -149,33 +162,47 @@ async function getUserAnalytics(supabase: any) {
       newWeek: newWeek || 0,
       newMonth: newMonth || 0,
       retention: {
-        daily: Math.min(((activeToday || 0) / Math.max(totalUsers || 1, 1)) * 100, 100),
-        weekly: Math.min(((activeWeek || 0) / Math.max(totalUsers || 1, 1)) * 100, 100),
-        monthly: Math.min(((activeMonth || 0) / Math.max(totalUsers || 1, 1)) * 100, 100)
+        daily: Math.min(
+          ((activeToday || 0) / Math.max(totalUsers || 1, 1)) * 100,
+          100
+        ),
+        weekly: Math.min(
+          ((activeWeek || 0) / Math.max(totalUsers || 1, 1)) * 100,
+          100
+        ),
+        monthly: Math.min(
+          ((activeMonth || 0) / Math.max(totalUsers || 1, 1)) * 100,
+          100
+        )
       },
       growth: {
         daily: dailyGrowth,
         weekly: Math.round(weeklyGrowth * 100) / 100,
         monthly: Math.round(monthlyGrowth * 100) / 100
       }
-    };
+    }
   } catch (error) {
-    logger.error('User analytics error', error);
+    logger.error('User analytics error', error)
     return {
-      total: 0, activeToday: 0, activeWeek: 0, activeMonth: 0,
-      newToday: 0, newWeek: 0, newMonth: 0,
+      total: 0,
+      activeToday: 0,
+      activeWeek: 0,
+      activeMonth: 0,
+      newToday: 0,
+      newWeek: 0,
+      newMonth: 0,
       retention: { daily: 0, weekly: 0, monthly: 0 },
       growth: { daily: 0, weekly: 0, monthly: 0 }
-    };
+    }
   }
 }
 
 async function getContentAnalytics(supabase: any) {
   try {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
 
     // Get upload statistics
     const [
@@ -185,27 +212,33 @@ async function getContentAnalytics(supabase: any) {
       { count: uploadsMonth }
     ] = await Promise.all([
       supabase.from('uploads').select('*', { count: 'exact', head: true }),
-      supabase.from('uploads').select('*', { count: 'exact', head: true })
+      supabase
+        .from('uploads')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', today.toISOString()),
-      supabase.from('uploads').select('*', { count: 'exact', head: true })
+      supabase
+        .from('uploads')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', weekAgo.toISOString()),
-      supabase.from('uploads').select('*', { count: 'exact', head: true })
+      supabase
+        .from('uploads')
+        .select('*', { count: 'exact', head: true })
         .gte('created_at', monthAgo.toISOString())
-    ]);
+    ])
 
     // No file-type distribution available without a type column; return zeros
-    const audioCount = 0;
-    const pdfCount = 0;
-    const otherCount = 0;
+    const audioCount = 0
+    const pdfCount = 0
+    const otherCount = 0
 
     // Get processing statistics (totals only, do not fabricate success/failure)
-    const [
-      { count: totalTranscriptions },
-      { count: totalSummaries }
-    ] = await Promise.all([
-      supabase.from('transcriptions').select('*', { count: 'exact', head: true }),
-      supabase.from('summaries').select('*', { count: 'exact', head: true })
-    ]);
+    const [{ count: totalTranscriptions }, { count: totalSummaries }] =
+      await Promise.all([
+        supabase
+          .from('transcriptions')
+          .select('*', { count: 'exact', head: true }),
+        supabase.from('summaries').select('*', { count: 'exact', head: true })
+      ])
 
     return {
       uploads: {
@@ -233,36 +266,39 @@ async function getContentAnalytics(supabase: any) {
           avgLength: 0
         }
       }
-    };
+    }
   } catch (error) {
-    logger.error('Content analytics error', error);
+    logger.error('Content analytics error', error)
     return {
       uploads: {
-        total: 0, today: 0, week: 0, month: 0,
+        total: 0,
+        today: 0,
+        week: 0,
+        month: 0,
         byType: { audio: 0, pdf: 0, other: 0 }
       },
       processing: {
         transcriptions: { total: 0, successful: 0, failed: 0, avgDuration: 0 },
         summaries: { total: 0, successful: 0, failed: 0, avgLength: 0 }
       }
-    };
+    }
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
     if (!verifyAdminAuth(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     const [userAnalytics, contentAnalytics] = await Promise.all([
       getUserAnalytics(supabase),
       getContentAnalytics(supabase)
-    ]);
+    ])
 
     // Only return data derived from the database or zeroed when unavailable
     const analyticsData: AnalyticsData = {
@@ -298,17 +334,17 @@ export async function GET(request: NextRequest) {
         tierDistribution: [],
         churnRate: 0
       }
-    };
+    }
 
     return NextResponse.json({
       success: true,
       data: analyticsData
-    });
+    })
   } catch (error: any) {
-    logger.error('Analytics API error', error);
+    logger.error('Analytics API error', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
-    );
+    )
   }
 }

@@ -5,7 +5,7 @@ import { logger } from '@/lib/utils/logger'
  * Shows user-friendly popup dialogs when authentication is required for media access
  */
 
-import { Page } from 'puppeteer'
+import type { Page } from 'puppeteer'
 import { browserLauncherService } from './browser-launcher-service'
 import { videoDownloadConfig } from '../config/video-download'
 
@@ -27,7 +27,10 @@ export interface PopupResult {
 }
 
 class AuthenticationPopupService {
-  private activePopups = new Map<string, { page: Page; timeoutId: NodeJS.Timeout }>()
+  private activePopups = new Map<
+    string,
+    { page: Page; timeoutId: NodeJS.Timeout }
+  >()
 
   /**
    * Show authentication popup when media is not found
@@ -43,23 +46,25 @@ class AuthenticationPopupService {
     try {
       // Launch browser for popup
       const browserResult = await browserLauncherService.launchForAuth()
-      
+
       if (!browserResult.success || !browserResult.browser) {
         return {
           success: false,
           action: 'error',
-          error: browserResult.error || 'Failed to launch browser for popup',
+          error: browserResult.error || 'Failed to launch browser for popup'
         }
       }
 
       // Create popup page
-      const page = await browserLauncherService.createPage(browserResult.instanceId!)
-      
+      const page = await browserLauncherService.createPage(
+        browserResult.instanceId!
+      )
+
       if (!page) {
         return {
           success: false,
           action: 'error',
-          error: 'Failed to create popup page',
+          error: 'Failed to create popup page'
         }
       }
 
@@ -79,15 +84,19 @@ class AuthenticationPopupService {
       this.activePopups.set(sessionId, { page, timeoutId })
 
       // Wait for user interaction
-      const result = await this.waitForUserInteraction(page, sessionId, url, userId)
+      const result = await this.waitForUserInteraction(
+        page,
+        sessionId,
+        url,
+        userId
+      )
 
       return result
-
     } catch (error) {
       return {
         success: false,
         action: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       }
     }
   }
@@ -95,22 +104,27 @@ class AuthenticationPopupService {
   /**
    * Set up popup page configuration
    */
-  private async setupPopupPage(page: Page, url: string, userId: string, options: PopupOptions): Promise<void> {
+  private async setupPopupPage(
+    page: Page,
+    _url: string,
+    _userId: string,
+    options: PopupOptions
+  ): Promise<void> {
     // Set viewport for popup
     await page.setViewport({
       width: 500,
       height: 400,
-      deviceScaleFactor: 1,
+      deviceScaleFactor: 1
     })
 
     // Set up page event listeners
-    page.on('console', (msg) => {
+    page.on('console', msg => {
       if (msg.type() === 'error') {
         logger.error(`Popup console error: ${msg.text()}`)
       }
     })
 
-    page.on('pageerror', (error) => {
+    page.on('pageerror', error => {
       logger.error(`Popup page error: ${error.message}`)
     })
 
@@ -129,7 +143,9 @@ class AuthenticationPopupService {
    */
   private generatePopupHTML(url: string, options: PopupOptions): string {
     const title = options.title || 'Authentication Required'
-    const message = options.message || `
+    const message =
+      options.message ||
+      `
       <p>This video requires authentication to access.</p>
       <p><strong>URL:</strong> <code>${url}</code></p>
       <p>Please log in to your account to continue with the download.</p>
@@ -361,7 +377,7 @@ class AuthenticationPopupService {
             window.parent.postMessage({
               type: 'AUTH_POPUP_ACTION',
               action: 'login',
-              sessionId: '${sessionId}'
+              sessionId: sessionId
             }, '*');
           });
           
@@ -370,7 +386,7 @@ class AuthenticationPopupService {
             window.parent.postMessage({
               type: 'AUTH_POPUP_ACTION',
               action: 'cancel',
-              sessionId: '${sessionId}'
+              sessionId: sessionId
             }, '*');
           });
           
@@ -379,7 +395,7 @@ class AuthenticationPopupService {
             window.parent.postMessage({
               type: 'AUTH_POPUP_ACTION',
               action: 'cancel',
-              sessionId: '${sessionId}'
+              sessionId: sessionId
             }, '*');
           });
           
@@ -397,32 +413,35 @@ class AuthenticationPopupService {
   private async waitForUserInteraction(
     page: Page,
     sessionId: string,
-    url: string,
-    userId: string
+    _url: string,
+    _userId: string
   ): Promise<PopupResult> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const messageHandler = (message: any) => {
-        if (message.type === 'AUTH_POPUP_ACTION' && message.sessionId === sessionId) {
+        if (
+          message.type === 'AUTH_POPUP_ACTION' &&
+          message.sessionId === sessionId
+        ) {
           this.cleanupPopup(sessionId)
-          
+
           if (message.action === 'login') {
             resolve({
               success: true,
               action: 'login',
-              sessionId,
+              sessionId
             })
           } else if (message.action === 'cancel') {
             resolve({
               success: false,
               action: 'cancel',
-              sessionId,
+              sessionId
             })
           }
         }
       }
 
       // Listen for messages from the popup
-      page.on('console', (msg) => {
+      page.on('console', msg => {
         if (msg.text().includes('AUTH_POPUP_ACTION')) {
           try {
             const message = JSON.parse(msg.text())
@@ -434,14 +453,20 @@ class AuthenticationPopupService {
       })
 
       // Set up timeout
-      const timeout = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         this.cleanupPopup(sessionId)
         resolve({
           success: false,
           action: 'timeout',
-          sessionId,
+          sessionId
         })
       }, videoDownloadConfig.authSessionTimeout)
+
+      // Store timeout ID for cleanup
+      const popup = this.activePopups.get(sessionId)
+      if (popup) {
+        popup.timeoutId = timeoutId
+      }
     })
   }
 
@@ -452,7 +477,9 @@ class AuthenticationPopupService {
     const popup = this.activePopups.get(sessionId)
     if (popup) {
       clearTimeout(popup.timeoutId)
-      popup.page.close().catch(console.error)
+      popup.page.close().catch(_error => {
+        // Silently handle popup close errors
+      })
       this.activePopups.delete(sessionId)
     }
   }
@@ -477,4 +504,3 @@ class AuthenticationPopupService {
 
 // Export singleton instance
 export const authenticationPopupService = new AuthenticationPopupService()
-

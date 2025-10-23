@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { retryStreamWithKeyRotation } from '@/lib/api-keys/retry-with-fallback'
+import { logger } from '@/lib/utils/logger'
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:streamGenerateContent'
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:streamGenerateContent'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -15,7 +18,6 @@ interface CopilotRequest {
 }
 
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     const body: CopilotRequest = await request.json()
     const { question, context = '', history = [] } = body
@@ -25,13 +27,16 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Question is required',
-          details: ['Please provide a question'],
+          details: ['Please provide a question']
         },
         { status: 400 }
       )
     }
 
-    logger.info('[Copilot] Processing question with context length:', context?.length || 0, 'and history length:', history.length)
+    logger.info('[Copilot] Processing question with context length:', {
+      contextLength: context?.length || 0,
+      historyLength: history.length
+    })
 
     // Build conversation history for Gemini
     const contents: Array<{ role: string; parts: Array<{ text: string }> }> = []
@@ -41,8 +46,9 @@ import { logger } from '@/lib/utils/logger'
       // Add initial system message with lecture content
       contents.push({
         role: 'user',
-        parts: [{
-          text: `You are an AI learning assistant helping a student understand lecture content. Here is the lecture material you should reference when answering questions:
+        parts: [
+          {
+            text: `You are an AI learning assistant helping a student understand lecture content. Here is the lecture material you should reference when answering questions:
 
 ---LECTURE CONTENT---
 ${context}
@@ -57,11 +63,16 @@ Your role is to:
 - If asked something outside the lecture scope, acknowledge the limitation but provide helpful guidance
 
 Please confirm you understand the lecture content.`
-        }]
+          }
+        ]
       })
       contents.push({
         role: 'model',
-        parts: [{ text: 'I understand the lecture content and am ready to help you study and understand the material. Feel free to ask me any questions about the lecture, request explanations of concepts, or ask for practice problems. How can I help you today?' }]
+        parts: [
+          {
+            text: 'I understand the lecture content and am ready to help you study and understand the material. Feel free to ask me any questions about the lecture, request explanations of concepts, or ask for practice problems. How can I help you today?'
+          }
+        ]
       })
     }
 
@@ -80,28 +91,32 @@ Please confirm you understand the lecture content.`
     })
 
     // Call Gemini API with streaming and automatic retry/fallback
-    logger.info('[Copilot] Calling Gemini API with', contents.length, 'messages')
+    logger.info('[Copilot] Calling Gemini API with', {
+      messageCount: contents.length
+    })
 
     const { response } = await retryStreamWithKeyRotation(
       async (apiKey: string) => {
         return fetch(`${GEMINI_API_URL}?key=${apiKey}&alt=sse`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             contents,
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 2048,
-            },
-          }),
+              maxOutputTokens: 2048
+            }
+          })
         })
       },
       {
         maxRetries: 5,
         onRetry: (attempt, error) => {
-          logger.info(`[Copilot] Retry attempt ${attempt} due to: ${error.message}`)
+          logger.info(
+            `[Copilot] Retry attempt ${attempt} due to: ${error.message}`
+          )
         }
       }
     )
@@ -134,7 +149,9 @@ Please confirm you understand the lecture content.`
                   const text = data.candidates?.[0]?.content?.parts?.[0]?.text
                   if (text) {
                     controller.enqueue(
-                      new TextEncoder().encode(`data: ${JSON.stringify({ text })}\n\n`)
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify({ text })}\n\n`
+                      )
                     )
                   }
                 } catch (e) {
@@ -144,22 +161,22 @@ Please confirm you understand the lecture content.`
             }
           }
         } catch (error) {
-          logger.error('Stream error', error)
+          logger.error('Stream error', { error })
         } finally {
           controller.close()
         }
-      },
+      }
     })
 
     return new NextResponse(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
+        Connection: 'keep-alive'
+      }
     })
   } catch (error: any) {
-    logger.error('[Copilot] API error after retries', error)
+    logger.error('[Copilot] API error after retries', { error })
 
     // Handle retry exhaustion gracefully
     if (error.exhaustedKeys) {
@@ -167,7 +184,9 @@ Please confirm you understand the lecture content.`
         {
           success: false,
           error: 'AI service temporarily unavailable',
-          details: ['All available API keys are currently exhausted. Please try again in a few moments.'],
+          details: [
+            'All available API keys are currently exhausted. Please try again in a few moments.'
+          ]
         },
         { status: 503 }
       )
@@ -177,7 +196,7 @@ Please confirm you understand the lecture content.`
       {
         success: false,
         error: 'Internal server error',
-        details: [error.message || 'An unexpected error occurred'],
+        details: [error.message || 'An unexpected error occurred']
       },
       { status: 500 }
     )

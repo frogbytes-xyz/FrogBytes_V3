@@ -6,22 +6,17 @@ import { logger } from '@/lib/utils/logger'
  * with stealth configuration to avoid bot detection
  */
 
-import { Browser, Page } from 'puppeteer'
-import puppeteerExtra from 'puppeteer-extra'
+import type { Browser, Page } from 'puppeteer'
+// Delay importing puppeteer-extra and stealth plugin until runtime to avoid
+// static analysis issues during Next.js build.
 import { videoDownloadConfig } from '../config/video-download'
+import type { BrowserInfo } from '@/lib/utils/browser-info'
+import { browserInfoToPuppeteerConfig } from '@/lib/utils/browser-info'
 
 // Conditionally add stealth plugin to avoid detection
 // Handle potential compatibility issues gracefully
 let stealthPluginInitialized = false
-try {
-  const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-  puppeteerExtra.use(StealthPlugin())
-  stealthPluginInitialized = true
-  logger.info('[BROWSER] Stealth plugin initialized successfully')
-} catch (error) {
-  logger.warn('[BROWSER] Failed to initialize stealth plugin', { error: error instanceof Error ? error.message : 'Unknown error' })
-  logger.warn('[BROWSER] Continuing without stealth plugin - some sites may detect automation')
-}
+// Stealth plugin will be initialized at runtime when launching a browser.
 
 export interface BrowserLaunchOptions {
   headless?: boolean
@@ -33,6 +28,7 @@ export interface BrowserLaunchOptions {
   }
   args?: string[]
   timeout?: number
+  browserInfo?: BrowserInfo
 }
 
 export interface BrowserInstance {
@@ -57,11 +53,13 @@ class BrowserLauncherService {
   constructor() {
     this.defaultLaunchOptions = {
       headless: videoDownloadConfig.puppeteerHeadless,
-      executablePath: videoDownloadConfig.puppeteerExecutablePath,
+      ...(videoDownloadConfig.puppeteerExecutablePath
+        ? { executablePath: videoDownloadConfig.puppeteerExecutablePath }
+        : {}),
       userDataDir: videoDownloadConfig.puppeteerUserDataDir,
       viewport: {
         width: 1280,
-        height: 720,
+        height: 720
       },
       args: [
         '--no-sandbox',
@@ -87,9 +85,9 @@ class BrowserLauncherService {
         '--no-pings',
         '--password-store=basic',
         '--use-mock-keychain',
-        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       ],
-      timeout: 30000,
+      timeout: 30000
     }
   }
 
@@ -104,7 +102,9 @@ class BrowserLauncherService {
       // Prepare launch arguments
       const args = [
         ...launchOptions.args!,
-        ...(launchOptions.userDataDir ? [`--user-data-dir=${launchOptions.userDataDir}`] : []),
+        ...(launchOptions.userDataDir
+          ? [`--user-data-dir=${launchOptions.userDataDir}`]
+          : [])
       ]
 
       const browserOptions: any = {
@@ -112,7 +112,7 @@ class BrowserLauncherService {
         args,
         ignoreDefaultArgs: ['--disable-extensions'],
         defaultViewport: launchOptions.viewport,
-        timeout: launchOptions.timeout,
+        timeout: launchOptions.timeout
       }
 
       // Add executable path if specified
@@ -120,7 +120,32 @@ class BrowserLauncherService {
         browserOptions.executablePath = launchOptions.executablePath
       }
 
-      // Launch browser with stealth plugin
+      // Dynamic import puppeteer-extra and initialize stealth plugin once
+      const puppeteerExtra: any =
+        (await import('puppeteer-extra')).default ||
+        (await import('puppeteer-extra'))
+
+      if (!stealthPluginInitialized) {
+        try {
+          const StealthPlugin =
+            (await import('puppeteer-extra-plugin-stealth')).default ||
+            (await import('puppeteer-extra-plugin-stealth'))
+          if (StealthPlugin) {
+            puppeteerExtra.use(StealthPlugin())
+            stealthPluginInitialized = true
+            logger.info('[BROWSER] Stealth plugin initialized successfully')
+          }
+        } catch (err) {
+          logger.warn('[BROWSER] Failed to initialize stealth plugin', {
+            error: err instanceof Error ? err.message : 'Unknown error'
+          })
+          logger.warn(
+            '[BROWSER] Continuing without stealth plugin - some sites may detect automation'
+          )
+        }
+      }
+
+      // Launch browser with puppeteer-extra
       const browser = await puppeteerExtra.launch(browserOptions)
 
       // Create browser instance record
@@ -129,7 +154,7 @@ class BrowserLauncherService {
         id: instanceId,
         createdAt: Date.now(),
         lastUsed: Date.now(),
-        isActive: true,
+        isActive: true
       }
 
       // Store instance
@@ -138,18 +163,20 @@ class BrowserLauncherService {
       // Set up browser event handlers
       this.setupBrowserEventHandlers(browser, instanceId)
 
-      logger.info(`Browser launched successfully with instance ID: ${instanceId}`)
+      logger.info(
+        `Browser launched successfully with instance ID: ${instanceId}`
+      )
 
       return {
         success: true,
         browser,
-        instanceId,
+        instanceId
       }
     } catch (error) {
       logger.error('Failed to launch browser', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       }
     }
   }
@@ -157,21 +184,27 @@ class BrowserLauncherService {
   /**
    * Launch browser for authentication flow
    */
-  async launchForAuth(options: BrowserLaunchOptions = {}): Promise<LaunchResult> {
+  async launchForAuth(
+    options: BrowserLaunchOptions = {}
+  ): Promise<LaunchResult> {
+    // Generate unique userDataDir for each auth session to avoid conflicts
+    const uniqueUserDataDir = `${videoDownloadConfig.puppeteerUserDataDir}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
     const authOptions: BrowserLaunchOptions = {
       ...options,
       headless: false, // Always visible for authentication
+      userDataDir: uniqueUserDataDir, // Use unique directory for this instance
       viewport: {
         width: 1280,
-        height: 800,
+        height: 800
       },
       args: [
         ...this.defaultLaunchOptions.args!,
         '--start-maximized',
         '--disable-infobars',
         '--disable-notifications',
-        '--disable-popup-blocking',
-      ],
+        '--disable-popup-blocking'
+      ]
     }
 
     return this.launch(authOptions)
@@ -180,23 +213,26 @@ class BrowserLauncherService {
   /**
    * Create a new page in an existing browser
    */
-  async createPage(instanceId: string): Promise<Page | null> {
+  async createPage(
+    instanceId: string,
+    browserInfo?: BrowserInfo
+  ): Promise<Page | null> {
     const instance = this.activeBrowsers.get(instanceId)
-    
-    if (!instance || !instance.isActive) {
+
+    if (!instance?.isActive) {
       logger.error(`Browser instance ${instanceId} not found or inactive`)
       return null
     }
 
     try {
       const page = await instance.browser.newPage()
-      
-      // Configure page
-      await this.configurePage(page)
-      
+
+      // Configure page with user's browser info if available
+      await this.configurePage(page, browserInfo)
+
       // Update last used timestamp
       instance.lastUsed = Date.now()
-      
+
       return page
     } catch (error) {
       logger.error(`Failed to create page for instance ${instanceId}:`, error)
@@ -205,42 +241,105 @@ class BrowserLauncherService {
   }
 
   /**
-   * Configure a page with stealth settings
+   * Configure a page with stealth settings and optional user browser info
    */
-  private async configurePage(page: Page): Promise<void> {
-    // Set user agent
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    
-    // Set viewport
-    await page.setViewport({
-      width: 1280,
-      height: 720,
-      deviceScaleFactor: 1,
-    })
+  private async configurePage(
+    page: Page,
+    browserInfo?: BrowserInfo
+  ): Promise<void> {
+    if (browserInfo) {
+      // Use user's actual browser configuration
+      const config = browserInfoToPuppeteerConfig(browserInfo)
 
-    // Set extra headers
-    await page.setExtraHTTPHeaders({
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-      'Upgrade-Insecure-Requests': '1',
-      'Cache-Control': 'max-age=0',
-    })
+      logger.info('Configuring page with user browser info', {
+        userAgent: config.userAgent.substring(0, 50),
+        viewport: config.viewport,
+        timezone: config.timezone
+      })
 
-    // Override navigator properties
-    await page.evaluateOnNewDocument(() => {
-      Object.defineProperty(navigator, 'webdriver', {
-        get: () => undefined,
+      // Set user agent from user's browser
+      await page.setUserAgent(config.userAgent)
+
+      // Set viewport to match user's screen
+      await page.setViewport(config.viewport)
+
+      // Set extra headers from user's browser
+      await page.setExtraHTTPHeaders(config.extraHTTPHeaders)
+
+      // Set timezone to match user's location
+      await page.emulateTimezone(config.timezone)
+
+      // Override navigator properties with user's actual values
+      await page.evaluateOnNewDocument((info: BrowserInfo) => {
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => undefined
+        })
+
+        Object.defineProperty(navigator, 'platform', {
+          get: () => info.platform
+        })
+
+        Object.defineProperty(navigator, 'vendor', {
+          get: () => info.vendor
+        })
+
+        Object.defineProperty(navigator, 'language', {
+          get: () => info.language
+        })
+
+        Object.defineProperty(navigator, 'languages', {
+          get: () => info.languages
+        })
+
+        Object.defineProperty(navigator, 'hardwareConcurrency', {
+          get: () => info.hardwareConcurrency
+        })
+
+        if (info.deviceMemory !== undefined) {
+          Object.defineProperty(navigator, 'deviceMemory', {
+            get: () => info.deviceMemory
+          })
+        }
+      }, browserInfo)
+    } else {
+      // Fallback to default configuration
+      logger.info(
+        'Configuring page with default settings (no user browser info)'
+      )
+
+      await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      )
+
+      await page.setViewport({
+        width: 1280,
+        height: 720,
+        deviceScaleFactor: 1
       })
-      
-      Object.defineProperty(navigator, 'plugins', {
-        get: () => [1, 2, 3, 4, 5],
+
+      await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0'
       })
-      
-      Object.defineProperty(navigator, 'languages', {
-        get: () => ['en-US', 'en'],
+
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => undefined
+        })
+
+        Object.defineProperty(navigator, 'plugins', {
+          get: () => [1, 2, 3, 4, 5]
+        })
+
+        Object.defineProperty(navigator, 'languages', {
+          get: () => ['en-US', 'en']
+        })
       })
-    })
+    }
   }
 
   /**
@@ -248,7 +347,7 @@ class BrowserLauncherService {
    */
   async closeBrowser(instanceId: string): Promise<boolean> {
     const instance = this.activeBrowsers.get(instanceId)
-    
+
     if (!instance) {
       logger.warn(`Browser instance ${instanceId} not found`)
       return false
@@ -271,11 +370,11 @@ class BrowserLauncherService {
    */
   async closeAllBrowsers(): Promise<void> {
     const instanceIds = Array.from(this.activeBrowsers.keys())
-    
+
     for (const instanceId of instanceIds) {
       await this.closeBrowser(instanceId)
     }
-    
+
     logger.info(`Closed ${instanceIds.length} browser instances`)
   }
 
@@ -290,7 +389,9 @@ class BrowserLauncherService {
    * Get all active browser instances
    */
   getActiveBrowsers(): BrowserInstance[] {
-    return Array.from(this.activeBrowsers.values()).filter(instance => instance.isActive)
+    return Array.from(this.activeBrowsers.values()).filter(
+      instance => instance.isActive
+    )
   }
 
   /**
@@ -304,12 +405,13 @@ class BrowserLauncherService {
   /**
    * Clean up inactive browser instances
    */
-  async cleanupInactiveBrowsers(maxAge: number = 300000): Promise<number> { // 5 minutes default
+  async cleanupInactiveBrowsers(maxAge: number = 300000): Promise<number> {
+    // 5 minutes default
     const now = Date.now()
     const inactiveInstances: string[] = []
 
     for (const [instanceId, instance] of this.activeBrowsers.entries()) {
-      if (!instance.isActive || (now - instance.lastUsed) > maxAge) {
+      if (!instance.isActive || now - instance.lastUsed > maxAge) {
         inactiveInstances.push(instanceId)
       }
     }
@@ -331,18 +433,21 @@ class BrowserLauncherService {
   } {
     const activeBrowsers = this.getActiveBrowsers().length
     const totalLaunched = this.activeBrowsers.size
-    
+
     return {
       activeBrowsers,
       totalLaunched,
-      uptime: process.uptime(),
+      uptime: process.uptime()
     }
   }
 
   /**
    * Set up browser event handlers
    */
-  private setupBrowserEventHandlers(browser: Browser, instanceId: string): void {
+  private setupBrowserEventHandlers(
+    browser: Browser,
+    instanceId: string
+  ): void {
     browser.on('disconnected', () => {
       logger.info(`Browser instance ${instanceId} disconnected`)
       const instance = this.activeBrowsers.get(instanceId)
@@ -351,12 +456,16 @@ class BrowserLauncherService {
       }
     })
 
-    browser.on('targetcreated', (target) => {
-      logger.info(`New target created in browser instance ${instanceId}: ${target.url()}`)
+    browser.on('targetcreated', target => {
+      logger.info(
+        `New target created in browser instance ${instanceId}: ${target.url()}`
+      )
     })
 
-    browser.on('targetdestroyed', (target) => {
-      logger.info(`Target destroyed in browser instance ${instanceId}: ${target.url()}`)
+    browser.on('targetdestroyed', target => {
+      logger.info(
+        `Target destroyed in browser instance ${instanceId}: ${target.url()}`
+      )
     })
   }
 
@@ -372,23 +481,6 @@ class BrowserLauncherService {
    */
   reset(): void {
     this.activeBrowsers.clear()
-  }
-
-  /**
-   * Validate browser launch options
-   */
-  private validateLaunchOptions(options: BrowserLaunchOptions): boolean {
-    if (options.timeout && options.timeout < 1000) {
-      logger.warn('Browser timeout should be at least 1000ms')
-      return false
-    }
-
-    if (options.viewport && (options.viewport.width < 100 || options.viewport.height < 100)) {
-      logger.warn('Viewport dimensions should be at least 100x100')
-      return false
-    }
-
-    return true
   }
 }
 

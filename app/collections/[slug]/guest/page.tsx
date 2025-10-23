@@ -26,8 +26,13 @@ export default async function CollectionGuestPage({ params }: PageProps) {
       <main className="flex-1 container max-w-5xl mx-auto px-4 py-8 pt-24">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">{shared.name}</h1>
-          {shared.description && <p className="text-muted-foreground">{shared.description}</p>}
-          <p className="text-sm text-muted-foreground mt-2">This collection has {shared.summaries?.length || 0} public summaries.</p>
+          {shared.description && (
+            <p className="text-muted-foreground">{shared.description}</p>
+          )}
+          <p className="text-sm text-muted-foreground mt-2">
+            This collection has {shared.summaries?.length || 0} public
+            summaries.
+          </p>
         </div>
 
         <div className="relative">
@@ -40,16 +45,25 @@ export default async function CollectionGuestPage({ params }: PageProps) {
           {/* CTA overlay for guests */}
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="bg-background/90 border rounded-lg p-6 text-center shadow-sm max-w-md mx-4">
-              <h2 className="text-xl font-semibold mb-2">Create an account to import this collection</h2>
-              <p className="text-sm text-muted-foreground mb-4">Log in or register to add this collection to your dashboard and access the documents.</p>
+              <h2 className="text-xl font-semibold mb-2">
+                Create an account to import this collection
+              </h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Log in or register to add this collection to your dashboard and
+                access the documents.
+              </p>
               <div className="flex gap-3 justify-center">
                 <Button asChild>
-                  <Link href={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}>
+                  <Link
+                    href={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
+                  >
                     Log in
                   </Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href={`/register?returnUrl=${encodeURIComponent(returnUrl)}`}>
+                  <Link
+                    href={`/register?returnUrl=${encodeURIComponent(returnUrl)}`}
+                  >
                     Register
                   </Link>
                 </Button>
@@ -57,7 +71,6 @@ export default async function CollectionGuestPage({ params }: PageProps) {
             </div>
           </div>
         </div>
-
       </main>
     </div>
   )

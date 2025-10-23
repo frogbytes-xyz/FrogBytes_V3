@@ -1,5 +1,6 @@
 import { createClient } from '@/services/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { logger } from '@/lib/utils/logger'
 
 export async function GET(request: NextRequest) {
@@ -8,7 +9,10 @@ export async function GET(request: NextRequest) {
     const field = searchParams.get('field')
     const query = searchParams.get('query') || ''
 
-    if (!field || !['university', 'subject', 'course_name', 'course_code'].includes(field)) {
+    if (
+      !field ||
+      !['university', 'subject', 'course_name', 'course_code'].includes(field)
+    ) {
       return NextResponse.json(
         { error: 'Invalid field parameter' },
         { status: 400 }
@@ -32,8 +36,10 @@ export async function GET(request: NextRequest) {
       if (error) throw error
 
       // Get unique values
-      const uniqueUniversities = [...new Set(universities?.map((item) => item.university) || [])]
-      data = uniqueUniversities.map((name) => ({ value: name, label: name }))
+      const uniqueUniversities = [
+        ...new Set(universities?.map((item: any) => item.university) || [])
+      ]
+      data = uniqueUniversities.map(name => ({ value: name, label: name }))
     } else if (field === 'subject') {
       // Get distinct subjects
       const { data: subjects, error } = await supabase
@@ -46,8 +52,10 @@ export async function GET(request: NextRequest) {
 
       if (error) throw error
 
-      const uniqueSubjects = [...new Set(subjects?.map((item) => item.subject) || [])]
-      data = uniqueSubjects.map((name) => ({ value: name, label: name }))
+      const uniqueSubjects = [
+        ...new Set(subjects?.map((item: any) => item.subject) || [])
+      ]
+      data = uniqueSubjects.map(name => ({ value: name, label: name }))
     } else if (field === 'course_name' || field === 'course_code') {
       // Get courses with their associated data
       const { data: courses, error } = await supabase
@@ -67,19 +75,21 @@ export async function GET(request: NextRequest) {
 
       // Create unique course entries
       const uniqueCourses = new Map()
-      courses?.forEach((course) => {
+      courses?.forEach((course: any) => {
         const key = `${course.course_code}-${course.course_name}`
         if (!uniqueCourses.has(key)) {
           uniqueCourses.set(key, course)
         }
       })
 
-      data = Array.from(uniqueCourses.values()).map((course) => ({
-        value: field === 'course_name' ? course.course_name : course.course_code,
-        label: field === 'course_name' ? course.course_name : course.course_code,
+      data = Array.from(uniqueCourses.values()).map(course => ({
+        value:
+          field === 'course_name' ? course.course_name : course.course_code,
+        label:
+          field === 'course_name' ? course.course_name : course.course_code,
         courseCode: course.course_code,
         courseName: course.course_name,
-        subject: course.subject,
+        subject: course.subject
       }))
     }
 
@@ -92,6 +102,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
-
-

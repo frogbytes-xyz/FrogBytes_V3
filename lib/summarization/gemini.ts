@@ -7,7 +7,13 @@ import { logger } from '@/lib/utils/logger'
  * Uses a pool of API keys from the database for parallel processing.
  */
 
-import { getKeyForTextGeneration, getKeysForParallelProcessing, markKeySuccess, markKeyQuotaExceeded, markKeyInvalid } from '@/lib/api-keys/key-pool-service'
+import {
+  getKeyForTextGeneration,
+  getKeysForParallelProcessing,
+  markKeySuccess,
+  markKeyQuotaExceeded,
+  markKeyInvalid
+} from '@/lib/api-keys/key-pool-service'
 
 export type SummaryType = 'compact' | 'detailed' | 'expanded'
 
@@ -22,7 +28,8 @@ export interface SummarizationResult {
   chunkCount: number
 }
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent'
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent'
 
 // Token limits for chunking (Gemini 2.0 Flash has high limits)
 const MAX_TOKENS_PER_CHUNK = 30000
@@ -35,47 +42,53 @@ Format the output as LaTeX content (do not include \\documentclass, \\begin{docu
 Use LaTeX sections (\\section), subsections (\\subsection), and itemize/enumerate lists.
 Include important equations using LaTeX math mode.
 Make it suitable for quick review.`,
-  
+
   detailed: `Summarize the following lecture transcript into a detailed LaTeX document (about 80% of original length).
 Include all major concepts, explanations, and examples.
 Format the output as LaTeX content (do not include \\documentclass, \\begin{document}, or \\end{document}).
 Use LaTeX sections (\\section), subsections (\\subsection), itemize/enumerate lists, and descriptions.
 Include all equations and formulas using LaTeX math mode.
 Preserve important details and context.`,
-  
+
   expanded: `Summarize and expand the following lecture transcript into a comprehensive LaTeX document (about 120% of original length).
 Include all concepts with enhanced explanations and additional context.
 Format the output as LaTeX content (do not include \\documentclass, \\begin{document}, or \\end{document}).
 Use LaTeX sections (\\section), subsections (\\subsection), subsubsections (\\subsubsection), itemize/enumerate lists, and descriptions.
 Include all equations with detailed explanations using LaTeX math mode.
 Add clarifying notes and connections between topics.
-Make it suitable for comprehensive study.`,
+Make it suitable for comprehensive study.`
 }
 
 /**
  * Chunk text into smaller pieces that fit within token limits
  */
-function chunkText(text: string, maxChunkSize: number = MAX_TOKENS_PER_CHUNK): string[] {
+function chunkText(
+  text: string,
+  maxChunkSize: number = MAX_TOKENS_PER_CHUNK
+): string[] {
   const maxChars = maxChunkSize * CHARS_PER_TOKEN
   const chunks: string[] = []
-  
+
   // Split by paragraphs first
   const paragraphs = text.split(/\n\n+/)
   let currentChunk = ''
-  
+
   for (const paragraph of paragraphs) {
-    if ((currentChunk + paragraph).length > maxChars && currentChunk.length > 0) {
+    if (
+      (currentChunk + paragraph).length > maxChars &&
+      currentChunk.length > 0
+    ) {
       chunks.push(currentChunk.trim())
       currentChunk = paragraph
     } else {
       currentChunk += (currentChunk ? '\n\n' : '') + paragraph
     }
   }
-  
+
   if (currentChunk) {
     chunks.push(currentChunk.trim())
   }
-  
+
   return chunks
 }
 
@@ -92,37 +105,45 @@ async function summarizeChunk(
   retryCount: number = 0
 ): Promise<string> {
   const MAX_RETRIES = 3
-  const backoff = (attempt: number) => new Promise(r => setTimeout(r, 300 * Math.pow(2, attempt)))
+  const backoff = (attempt: number) =>
+    new Promise(r => setTimeout(r, 300 * Math.pow(2, attempt)))
 
   // Select API key (use provided or from pool)
-  const key = apiKey || await getKeyForTextGeneration()
+  const key = apiKey || (await getKeyForTextGeneration())
 
   if (!key) {
-    throw new Error('No available Gemini API keys. Please configure API keys in the system or contact support')
+    throw new Error(
+      'No available Gemini API keys. Please configure API keys in the system or contact support'
+    )
   }
 
   const prompt = SUMMARY_PROMPTS[summaryType]
-  const chunkContext = totalChunks > 1 
-    ? `\n\nThis is chunk ${chunkIndex + 1} of ${totalChunks}.`
-    : ''
+  const chunkContext =
+    totalChunks > 1
+      ? `\n\nThis is chunk ${chunkIndex + 1} of ${totalChunks}.`
+      : ''
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `${prompt}${chunkContext}\n\nTranscript:\n${chunk}`
-          }]
-        }],
+        contents: [
+          {
+            parts: [
+              {
+                text: `${prompt}${chunkContext}\n\nTranscript:\n${chunk}`
+              }
+            ]
+          }
+        ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 8000,
-        },
-      }),
+          maxOutputTokens: 8000
+        }
+      })
     })
 
     if (!response.ok) {
@@ -131,7 +152,9 @@ async function summarizeChunk(
       // Check if quota exceeded
       if (errorText.includes('quota') || errorText.includes('limit')) {
         await markKeyQuotaExceeded(key)
-        throw new Error(`API quota exceeded. Please try again later or contact support`)
+        throw new Error(
+          `API quota exceeded. Please try again later or contact support`
+        )
       }
 
       // Check if invalid key
@@ -140,13 +163,17 @@ async function summarizeChunk(
         throw new Error(`API authentication failed. Please contact support`)
       }
 
-      throw new Error(`Summarization service error: ${response.statusText}. Please try again`)
+      throw new Error(
+        `Summarization service error: ${response.statusText}. Please try again`
+      )
     }
 
     const result = await response.json()
-    
+
     if (!result.candidates || result.candidates.length === 0) {
-      throw new Error('Summary generation failed. Please try again or contact support')
+      throw new Error(
+        'Summary generation failed. Please try again or contact support'
+      )
     }
 
     // Mark key as successful
@@ -157,9 +184,18 @@ async function summarizeChunk(
   } catch (error: any) {
     // Improved fallback: retry up to MAX_RETRIES with exponential backoff and fresh key from pool
     if (retryCount < MAX_RETRIES) {
-      logger.warn(`summarizeChunk failed (attempt ${retryCount + 1}/${MAX_RETRIES}) for chunk ${chunkIndex + 1}/${totalChunks}: ${error?.message || error}`)
+      logger.warn(
+        `summarizeChunk failed (attempt ${retryCount + 1}/${MAX_RETRIES}) for chunk ${chunkIndex + 1}/${totalChunks}: ${error?.message || error}`
+      )
       await backoff(retryCount)
-      return summarizeChunk(chunk, summaryType, chunkIndex, totalChunks, undefined, retryCount + 1)
+      return summarizeChunk(
+        chunk,
+        summaryType,
+        chunkIndex,
+        totalChunks,
+        undefined,
+        retryCount + 1
+      )
     }
     throw error
   }
@@ -191,12 +227,15 @@ export async function summarizeWithGemini(
 
   // Get available API keys for parallel processing (request desiredParallelism)
   const availableKeys = await getKeysForParallelProcessing(desiredParallelism)
-  logger.info(`Requested ${desiredParallelism} keys, using ${availableKeys.length} for parallel processing`)
+  logger.info(
+    `Requested ${desiredParallelism} keys, using ${availableKeys.length} for parallel processing`
+  )
 
   // Distribute chunks across available keys (round-robin)
   const summaries = await Promise.all(
     chunks.map((chunk, index) => {
-      const keyIndex = availableKeys.length > 0 ? index % availableKeys.length : 0
+      const keyIndex =
+        availableKeys.length > 0 ? index % availableKeys.length : 0
       const key = availableKeys[keyIndex]
       return summarizeChunk(chunk, summaryType, index, chunks.length, key)
     })
@@ -214,7 +253,14 @@ Maintain the LaTeX formatting (no \\documentclass or \\begin{document}).
 Sections to combine:\n\n${combinedLatex}`
 
     // Use robust retry here too
-    combinedLatex = await summarizeChunk(combinePrompt, summaryType, 0, 1, undefined, 0)
+    combinedLatex = await summarizeChunk(
+      combinePrompt,
+      summaryType,
+      0,
+      1,
+      undefined,
+      0
+    )
   }
 
   // Clean up the LaTeX (remove document preamble and markdown code blocks if present)
@@ -230,7 +276,7 @@ Sections to combine:\n\n${combinedLatex}`
   return {
     latexContent: combinedLatex,
     totalTokens: Math.floor(text.length / CHARS_PER_TOKEN),
-    chunkCount: chunks.length,
+    chunkCount: chunks.length
   }
 }
 
@@ -270,9 +316,11 @@ This is a mock LaTeX summary of the transcribed lecture content. In production, 
 \\subsection{Detailed Explanation}
 
 The lecture covered approximately ${wordCount} words of content. The ${summaryType} summary type was requested, which would ${
-    summaryType === 'compact' ? 'condense the information to essentials' :
-    summaryType === 'detailed' ? 'preserve most important details' :
-    'expand on the concepts with additional context'
+    summaryType === 'compact'
+      ? 'condense the information to essentials'
+      : summaryType === 'detailed'
+        ? 'preserve most important details'
+        : 'expand on the concepts with additional context'
   }.
 
 \\subsection{Mathematical Content}
@@ -289,6 +337,6 @@ This mock summary demonstrates the LaTeX output format that would be generated f
   return {
     latexContent: mockLatex,
     totalTokens: Math.floor(text.length / CHARS_PER_TOKEN),
-    chunkCount: 1,
+    chunkCount: 1
   }
 }

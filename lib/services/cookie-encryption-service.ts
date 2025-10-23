@@ -12,6 +12,16 @@ export interface EncryptedCookieData {
   timestamp: number
 }
 
+export interface NetscapeCookie {
+  domain: string
+  flag: boolean
+  path: string
+  secure: boolean
+  expiration: number
+  name: string
+  value: string
+}
+
 class CookieEncryptionService {
   private readonly key: string
 
@@ -26,21 +36,23 @@ class CookieEncryptionService {
     try {
       // Generate a random IV for each encryption
       const iv = CryptoJS.lib.WordArray.random(16)
-      
+
       // Encrypt the cookies
       const encrypted = CryptoJS.AES.encrypt(cookies, this.key, {
         iv: iv,
         mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
+        padding: CryptoJS.pad.Pkcs7
       })
 
       return {
         encrypted: encrypted.toString(),
         iv: iv.toString(CryptoJS.enc.Hex),
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
     } catch (error) {
-      throw new Error(`Failed to encrypt cookies: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to encrypt cookies: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -51,23 +63,31 @@ class CookieEncryptionService {
     try {
       // Convert IV from hex string back to WordArray
       const iv = CryptoJS.enc.Hex.parse(encryptedData.iv)
-      
+
       // Decrypt the cookies
-      const decrypted = CryptoJS.AES.decrypt(encryptedData.encrypted, this.key, {
-        iv: iv,
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-      })
+      const decrypted = CryptoJS.AES.decrypt(
+        encryptedData.encrypted,
+        this.key,
+        {
+          iv: iv,
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7
+        }
+      )
 
       const decryptedString = decrypted.toString(CryptoJS.enc.Utf8)
-      
+
       if (!decryptedString) {
-        throw new Error('Failed to decrypt cookies - invalid key or corrupted data')
+        throw new Error(
+          'Failed to decrypt cookies - invalid key or corrupted data'
+        )
       }
 
       return decryptedString
     } catch (error) {
-      throw new Error(`Failed to decrypt cookies: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to decrypt cookies: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -94,10 +114,10 @@ class CookieEncryptionService {
     }> = []
 
     const lines = cookieText.split('\n')
-    
+
     for (const line of lines) {
       const trimmedLine = line.trim()
-      
+
       // Skip empty lines and comments
       if (!trimmedLine || trimmedLine.startsWith('#')) {
         continue
@@ -106,7 +126,7 @@ class CookieEncryptionService {
       // Parse Netscape cookie format
       // Format: domain, flag, path, secure, expiration, name, value
       const parts = trimmedLine.split('\t')
-      
+
       if (parts.length >= 7) {
         cookies.push({
           domain: parts[0] || '',
@@ -115,7 +135,7 @@ class CookieEncryptionService {
           secure: parts[3] === 'TRUE',
           expiration: parseInt(parts[4] || '0', 10),
           name: parts[5] || '',
-          value: parts[6] || '',
+          value: parts[6] || ''
         })
       }
     }
@@ -126,19 +146,21 @@ class CookieEncryptionService {
   /**
    * Convert structured cookies back to Netscape format
    */
-  formatNetscapeCookies(cookies: Array<{
-    domain: string
-    flag: boolean
-    path: string
-    secure: boolean
-    expiration: number
-    name: string
-    value: string
-  }>): string {
+  formatNetscapeCookies(
+    cookies: Array<{
+      domain: string
+      flag: boolean
+      path: string
+      secure: boolean
+      expiration: number
+      name: string
+      value: string
+    }>
+  ): string {
     const lines = [
       '# Netscape HTTP Cookie File',
       '# This is a generated file! Do not edit.',
-      '',
+      ''
     ]
 
     for (const cookie of cookies) {
@@ -149,9 +171,9 @@ class CookieEncryptionService {
         cookie.secure ? 'TRUE' : 'FALSE',
         cookie.expiration.toString(),
         cookie.name || '',
-        cookie.value || '',
+        cookie.value || ''
       ].join('\t')
-      
+
       lines.push(line)
     }
 
@@ -164,15 +186,22 @@ class CookieEncryptionService {
   validateCookieData(encryptedData: EncryptedCookieData): boolean {
     try {
       // Check if required fields are present
-      if (!encryptedData.encrypted || !encryptedData.iv || !encryptedData.timestamp) {
+      if (
+        !encryptedData.encrypted ||
+        !encryptedData.iv ||
+        !encryptedData.timestamp
+      ) {
         return false
       }
 
       // Check if timestamp is reasonable (not too old, not in the future)
       const now = Date.now()
       const maxAge = 24 * 60 * 60 * 1000 // 24 hours
-      
-      if (encryptedData.timestamp > now || (now - encryptedData.timestamp) > maxAge) {
+
+      if (
+        encryptedData.timestamp > now ||
+        now - encryptedData.timestamp > maxAge
+      ) {
         return false
       }
 
@@ -188,13 +217,14 @@ class CookieEncryptionService {
    * Generate a secure random string for session IDs
    */
   generateSecureToken(length: number = 32): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     let result = ''
-    
+
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length))
     }
-    
+
     return result
   }
 

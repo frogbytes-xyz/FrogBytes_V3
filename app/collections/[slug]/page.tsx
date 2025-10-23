@@ -1,12 +1,17 @@
 import { redirect, notFound } from 'next/navigation'
 import { createCollectionService } from '@/lib/services/collection-service'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * Collection Share Page
  * Resolves a share slug and redirects to the collection detail page
  * Works similar to the shared document architecture
  */
-export default async function CollectionSharePage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CollectionSharePage({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
   const { slug } = await params
   if (!slug || typeof slug !== 'string') return notFound()
 
@@ -23,8 +28,11 @@ export default async function CollectionSharePage({ params }: { params: Promise<
 /**
  * Generate metadata for shared collections (SEO)
  */
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-import { logger } from '@/lib/utils/logger'
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
   const { slug } = await params
 
   try {
@@ -34,7 +42,8 @@ import { logger } from '@/lib/utils/logger'
     if (!sharedCollection) {
       return {
         title: 'Collection Not Found | FrogBytes',
-        description: 'The shared collection you are looking for could not be found.'
+        description:
+          'The shared collection you are looking for could not be found.'
       }
     }
 
@@ -42,23 +51,30 @@ import { logger } from '@/lib/utils/logger'
 
     return {
       title: `${sharedCollection.name} | Shared Collection on FrogBytes`,
-      description: sharedCollection.description || `View "${sharedCollection.name}" - a collection with ${summaryCount} summaries shared on FrogBytes - AI-powered learning platform.`,
+      description:
+        sharedCollection.description ||
+        `View "${sharedCollection.name}" - a collection with ${summaryCount} summaries shared on FrogBytes - AI-powered learning platform.`,
       openGraph: {
         title: sharedCollection.name,
-        description: sharedCollection.description || `A collection with ${summaryCount} summaries shared on FrogBytes`,
-        type: 'article',
+        description:
+          sharedCollection.description ||
+          `A collection with ${summaryCount} summaries shared on FrogBytes`,
+        type: 'article'
       },
       twitter: {
         card: 'summary',
         title: sharedCollection.name,
-        description: sharedCollection.description || `A collection with ${summaryCount} summaries shared on FrogBytes`
+        description:
+          sharedCollection.description ||
+          `A collection with ${summaryCount} summaries shared on FrogBytes`
       }
     }
   } catch (error) {
     logger.error('Error generating metadata for shared collection', error)
     return {
       title: 'Shared Collection | FrogBytes',
-      description: 'View shared collections on FrogBytes - AI-powered learning platform.'
+      description:
+        'View shared collections on FrogBytes - AI-powered learning platform.'
     }
   }
 }

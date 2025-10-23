@@ -34,11 +34,12 @@ class CookieService {
   ): Promise<CookieServiceResult<void>> {
     try {
       // Generate session ID if not provided
-      const cookieSessionId = sessionId || cookieEncryptionService.generateSecureToken()
-      
+      const cookieSessionId =
+        sessionId || cookieEncryptionService.generateSecureToken()
+
       // Encrypt the cookies
       const encryptedData = cookieEncryptionService.encrypt(cookies)
-      
+
       // Create cookie data structure
       const cookieData: CookieData = {
         domain,
@@ -46,21 +47,28 @@ class CookieService {
         userId,
         sessionId: cookieSessionId,
         createdAt: Date.now(),
-        expiresAt: Date.now() + (videoDownloadConfig.cookieExpiryHours * 3600 * 1000),
+        expiresAt:
+          Date.now() + videoDownloadConfig.cookieExpiryHours * 3600 * 1000
       }
 
       // Store in Redis with TTL
       const ttlSeconds = videoDownloadConfig.cookieExpiryHours * 3600
-      await redisService.storeCookies(userId, cookieSessionId, JSON.stringify(cookieData), ttlSeconds)
+      await redisService.storeCookies(
+        userId,
+        cookieSessionId,
+        JSON.stringify(cookieData),
+        ttlSeconds
+      )
 
       return {
         success: true,
-        data: undefined,
+        data: undefined
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to store cookies',
+        error:
+          error instanceof Error ? error.message : 'Failed to store cookies'
       }
     }
   }
@@ -75,24 +83,24 @@ class CookieService {
     try {
       // Get encrypted data from Redis
       const encryptedData = await redisService.getCookies(userId, sessionId)
-      
+
       if (!encryptedData) {
         return {
           success: false,
-          error: 'No cookies found for this session',
+          error: 'No cookies found for this session'
         }
       }
 
       // Parse the stored data
       const cookieData: CookieData = JSON.parse(encryptedData)
-      
+
       // Check if cookies have expired
       if (Date.now() > cookieData.expiresAt) {
         // Clean up expired cookies
         await this.delete(userId, sessionId)
         return {
           success: false,
-          error: 'Cookies have expired',
+          error: 'Cookies have expired'
         }
       }
 
@@ -100,20 +108,21 @@ class CookieService {
       const decryptedCookies = cookieEncryptionService.decrypt({
         encrypted: cookieData.cookies,
         iv: '', // This will be handled by the encryption service
-        timestamp: cookieData.createdAt,
+        timestamp: cookieData.createdAt
       })
 
       return {
         success: true,
         data: {
           cookies: decryptedCookies,
-          domain: cookieData.domain,
-        },
+          domain: cookieData.domain
+        }
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve cookies',
+        error:
+          error instanceof Error ? error.message : 'Failed to retrieve cookies'
       }
     }
   }
@@ -121,17 +130,21 @@ class CookieService {
   /**
    * Delete cookies for a user session
    */
-  async delete(userId: string, sessionId: string): Promise<CookieServiceResult<void>> {
+  async delete(
+    userId: string,
+    sessionId: string
+  ): Promise<CookieServiceResult<void>> {
     try {
       await redisService.deleteCookies(userId, sessionId)
       return {
         success: true,
-        data: undefined,
+        data: undefined
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete cookies',
+        error:
+          error instanceof Error ? error.message : 'Failed to delete cookies'
       }
     }
   }
@@ -147,12 +160,13 @@ class CookieService {
   ): Promise<CookieServiceResult<void>> {
     try {
       // Validate Netscape format
-      const parsedCookies = cookieEncryptionService.parseNetscapeCookies(netscapeCookies)
-      
+      const parsedCookies =
+        cookieEncryptionService.parseNetscapeCookies(netscapeCookies)
+
       if (parsedCookies.length === 0) {
         return {
           success: false,
-          error: 'No valid cookies found in Netscape format',
+          error: 'No valid cookies found in Netscape format'
         }
       }
 
@@ -161,7 +175,10 @@ class CookieService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to store Netscape cookies',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to store Netscape cookies'
       }
     }
   }
@@ -175,23 +192,26 @@ class CookieService {
   ): Promise<CookieServiceResult<string>> {
     try {
       const result = await this.get(userId, sessionId)
-      
+
       if (!result.success || !result.data) {
         return {
           success: false,
-          error: result.error || 'Failed to retrieve cookies',
+          error: result.error || 'Failed to retrieve cookies'
         }
       }
 
       // Return the cookies in Netscape format
       return {
         success: true,
-        data: result.data.cookies,
+        data: result.data.cookies
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve Netscape cookies',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to retrieve Netscape cookies'
       }
     }
   }
@@ -199,24 +219,27 @@ class CookieService {
   /**
    * Validate cookie data integrity
    */
-  async validateCookies(userId: string, sessionId: string): Promise<CookieServiceResult<boolean>> {
+  async validateCookies(
+    userId: string,
+    sessionId: string
+  ): Promise<CookieServiceResult<boolean>> {
     try {
       const encryptedData = await redisService.getCookies(userId, sessionId)
-      
+
       if (!encryptedData) {
         return {
           success: true,
-          data: false,
+          data: false
         }
       }
 
       const cookieData: CookieData = JSON.parse(encryptedData)
-      
+
       // Check expiration
       if (Date.now() > cookieData.expiresAt) {
         return {
           success: true,
-          data: false,
+          data: false
         }
       }
 
@@ -224,17 +247,18 @@ class CookieService {
       const isValid = cookieEncryptionService.validateCookieData({
         encrypted: cookieData.cookies,
         iv: '', // This will be handled by the encryption service
-        timestamp: cookieData.createdAt,
+        timestamp: cookieData.createdAt
       })
 
       return {
         success: true,
-        data: isValid,
+        data: isValid
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to validate cookies',
+        error:
+          error instanceof Error ? error.message : 'Failed to validate cookies'
       }
     }
   }
@@ -242,23 +266,28 @@ class CookieService {
   /**
    * Get all active sessions for a user
    */
-  async getUserSessions(userId: string): Promise<CookieServiceResult<Array<{
-    sessionId: string
-    domain: string
-    createdAt: number
-    expiresAt: number
-  }>>> {
+  async getUserSessions(_userId: string): Promise<
+    CookieServiceResult<
+      Array<{
+        sessionId: string
+        domain: string
+        createdAt: number
+        expiresAt: number
+      }>
+    >
+  > {
     try {
       // This would require a more complex Redis query in a real implementation
-      // For now, we'll return an empty array as this is not critical for the core functionality
+      // For now, we&apos;ll return an empty array as this is not critical for the core functionality
       return {
         success: true,
-        data: [],
+        data: []
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get user sessions',
+        error:
+          error instanceof Error ? error.message : 'Failed to get user sessions'
       }
     }
   }
@@ -271,12 +300,15 @@ class CookieService {
       await redisService.cleanup()
       return {
         success: true,
-        data: 0, // Redis service doesn't return count, but we can assume cleanup worked
+        data: 0 // Redis service doesn't return count, but we can assume cleanup worked
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to cleanup expired cookies',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to cleanup expired cookies'
       }
     }
   }
@@ -302,27 +334,29 @@ class CookieService {
   /**
    * Get service statistics
    */
-  async getStats(): Promise<CookieServiceResult<{
-    isConnected: boolean
-    activeSessions: number
-    uptime: number
-  }>> {
+  async getStats(): Promise<
+    CookieServiceResult<{
+      isConnected: boolean
+      activeSessions: number
+      uptime: number
+    }>
+  > {
     try {
       const isConnected = await redisService.ping()
-      const activeSessions = redisService.getActiveSessions().length
-      
+
       return {
         success: true,
         data: {
           isConnected,
-          activeSessions,
-          uptime: process.uptime(),
-        },
+          activeSessions: 0, // TODO: Implement session counting
+          uptime: process.uptime()
+        }
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get service stats',
+        error:
+          error instanceof Error ? error.message : 'Failed to get service stats'
       }
     }
   }

@@ -1,6 +1,7 @@
 # Claude Code Instructions for FrogBytes
 
 ## Task Master AI Instructions
+
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
 
@@ -8,7 +9,8 @@
 
 FrogBytes is a multifunctional lecture summarization & learning platform that helps students transcribe lectures, generate AI summaries, create study materials, and build a collaborative knowledge base.
 
-**🚨 ARCHITECTURE RULE: This is a Next.js 15 monolithic full-stack application. ALL features are implemented within the Next.js framework using:**
+**CRITICAL ARCHITECTURE RULE: This is a Next.js 15 monolithic full-stack application. ALL features are implemented within the Next.js framework using:**
+
 - API Routes (`app/api/`) for backend endpoints
 - Server Actions for mutations
 - Server Components for data fetching
@@ -17,26 +19,29 @@ FrogBytes is a multifunctional lecture summarization & learning platform that he
 
 **NEVER introduce separate backend frameworks (FastAPI, Express standalone, etc.). Everything must integrate into the existing Next.js architecture.**
 
-## 🚫 CRITICAL: No Documentation Files Rule
+## CRITICAL: No Documentation Files Rule
 
 **NEVER create markdown documentation files (.md) as part of your implementation work. This includes:**
-- ❌ No `FEATURE_NAME.md` files
-- ❌ No `IMPLEMENTATION_SUMMARY.md` files
-- ❌ No `FIX_SUMMARY.md` files
-- ❌ No `COMMIT_MESSAGE.txt` files
-- ❌ No technical documentation files of any kind
+
+- No `FEATURE_NAME.md` files
+- No `IMPLEMENTATION_SUMMARY.md` files
+- No `FIX_SUMMARY.md` files
+- No `COMMIT_MESSAGE.txt` files
+- No technical documentation files of any kind
 
 **Why?** These files are a waste of time and clutter the repository. Focus exclusively on:
-- ✅ Writing production code
-- ✅ Fixing bugs
-- ✅ Implementing features
-- ✅ Writing tests
+
+- Writing production code
+- Fixing bugs
+- Implementing features
+- Writing tests
 
 **Only exception:** Updating the existing `README.md` if explicitly requested by the user.
 
 **If you need to document something:** Put it in code comments, JSDoc, or commit messages - never in separate .md files.
 
 ### Key Technologies
+
 - **Framework**: Next.js 15+ with App Router and Turbopack
 - **Database**: Supabase (PostgreSQL with Row Level Security)
 - **AI**: Google Gemini API for summarization, ElevenLabs for transcription
@@ -46,7 +51,7 @@ FrogBytes is a multifunctional lecture summarization & learning platform that he
 
 ### Code Quality Standards
 
-This project enforces **senior-level, multi-billion company standards**:
+This project enforces **enterprise-grade, Fortune 500 company standards**:
 
 1. **TypeScript Strict Mode**: All strict compiler options enabled
    - `strict: true`
@@ -55,35 +60,68 @@ This project enforces **senior-level, multi-billion company standards**:
    - `noUnusedLocals: true`
    - `noUnusedParameters: true`
 
-2. **Zero Tolerance**:
-   - No explicit `any` types
-   - No unused variables or imports
+2. **Zero Tolerance Policy**:
+   - No explicit `any` types (use `unknown` and type guards)
+   - No unused variables, imports, or parameters
    - ESLint warnings cause build failures
    - All code must be formatted with Prettier
+   - No `@ts-ignore` or `@ts-expect-error` without justification
 
 3. **Professional Code Standards**:
-   - **NO EMOJIS** in production code (comments, strings, logs, UI text)
-   - **NO console.log** in production code - use proper logging utilities
-   - **REQUIRED JSDoc comments** for:
-     - All exported functions and classes
-     - All public API endpoints
-     - All React components (purpose, props, behavior)
-     - Complex algorithms or business logic
-   - **Explicit return types** on all functions
-   - **Error messages** must be professional and user-friendly
-   - **No magic numbers** - use named constants
-   - **No abbreviations** in variable names unless industry standard
+   - **ABSOLUTELY NO EMOJIS** in production code (comments, strings, logs, UI text, error messages)
+   - **NO console.log/error/warn** in production code - use proper logging utilities
+   - **MANDATORY JSDoc comments** for:
+     - All exported functions and classes (purpose, parameters, return value, throws)
+     - All public API endpoints (request/response schemas, error codes)
+     - All React components (purpose, props interface, behavior, examples)
+     - Complex algorithms or business logic (algorithm explanation, complexity)
+     - Database queries and mutations (purpose, side effects)
+   - **Explicit return types** on all functions (no implicit `any`)
+   - **Professional error messages** - user-friendly, actionable, no technical jargon
+   - **No magic numbers** - use named constants with descriptive names
+   - **No abbreviations** in variable names unless industry standard (e.g., `id`, `url`, `api`)
+   - **Consistent naming conventions** - camelCase for variables, PascalCase for components
+   - **Single responsibility principle** - one function/component per purpose
+   - **DRY principle** - extract common logic into reusable utilities
 
-4. **Testing Requirements**:
+4. **Code Documentation Requirements**:
+   - **Function documentation**: Purpose, parameters, return value, exceptions
+   - **Component documentation**: Props interface, behavior, usage examples
+   - **API endpoint documentation**: Request/response schemas, error codes, rate limits
+   - **Complex logic documentation**: Algorithm explanation, business rules
+   - **Database schema documentation**: Table purposes, relationships, constraints
+
+5. **Testing Requirements**:
    - 90%+ code coverage (branches, functions, lines, statements)
-   - Unit tests for all business logic
+   - Unit tests for all business logic and utilities
+   - Integration tests for API endpoints
    - E2E tests for critical user flows
+   - Mock external dependencies (APIs, databases, file systems)
+   - Test error scenarios and edge cases
 
-5. **Performance**:
-   - Minimize bundle size
-   - Optimize re-renders
+6. **Performance Standards**:
+   - Minimize bundle size (analyze with webpack-bundle-analyzer)
+   - Optimize re-renders (use React.memo, useMemo, useCallback appropriately)
    - Use React Server Components where possible
-   - Implement proper loading states
+   - Implement proper loading states and error boundaries
+   - Lazy load non-critical components
+   - Optimize images and assets
+
+7. **Security Standards**:
+   - Validate all inputs with Zod schemas
+   - Sanitize user inputs before processing
+   - Use parameterized queries (no SQL injection)
+   - Implement proper authentication and authorization
+   - Rate limit API endpoints
+   - Log security events for monitoring
+
+8. **Error Handling Standards**:
+   - Use proper error types and error boundaries
+   - Log errors with sufficient context for debugging
+   - Provide user-friendly error messages
+   - Handle edge cases explicitly (null, undefined, empty arrays)
+   - Implement retry logic for transient failures
+   - Use structured logging with correlation IDs
 
 ### Project Structure
 
@@ -172,12 +210,95 @@ npm run test:unit         # Run tests (when implemented)
 ### Current State (Post-Cleanup)
 
 Recent refactoring has established a clean foundation:
+
 - ✅ TypeScript strict mode fully enforced (zero errors)
 - ✅ Jest removed in favor of Vitest
 - ✅ Documentation consolidated (only README.md and this file remain)
 - ✅ Test infrastructure prepared (configs ready, implementation pending)
 - 🚧 Component organization needs improvement (Task #23)
 - 🚧 Comprehensive testing to be implemented (Task #20)
+
+## PRO-MODE: Enterprise Code Quality Enforcement
+
+### Mandatory Code Review Checklist
+
+Before any code is considered complete, it MUST pass this checklist:
+
+#### 1. TypeScript & Type Safety
+
+- [ ] No `any` types (use `unknown` and type guards)
+- [ ] All functions have explicit return types
+- [ ] All parameters are properly typed
+- [ ] No unused variables, imports, or parameters
+- [ ] Proper handling of `null` and `undefined` cases
+- [ ] Type guards used for runtime type checking
+
+#### 2. Code Documentation (JSDoc)
+
+- [ ] All exported functions have complete JSDoc
+- [ ] All React components have JSDoc with props interface
+- [ ] All API endpoints have JSDoc with request/response schemas
+- [ ] Complex algorithms have explanatory comments
+- [ ] Business logic has clear documentation
+
+#### 3. Professional Standards
+
+- [ ] NO emojis anywhere in the codebase
+- [ ] NO console.log/error/warn statements
+- [ ] Professional error messages (user-friendly, actionable)
+- [ ] No magic numbers (use named constants)
+- [ ] Consistent naming conventions
+- [ ] Single responsibility principle followed
+
+#### 4. Performance & Security
+
+- [ ] Input validation with Zod schemas
+- [ ] Proper error handling and logging
+- [ ] No security vulnerabilities
+- [ ] Optimized re-renders (React.memo, useMemo, useCallback)
+- [ ] Bundle size impact considered
+
+#### 5. Testing Requirements
+
+- [ ] Unit tests for business logic
+- [ ] Integration tests for API endpoints
+- [ ] Error scenarios tested
+- [ ] Edge cases handled
+- [ ] Mock external dependencies
+
+### Code Quality Gates
+
+The following will cause immediate rejection:
+
+1. **Emoji Usage**: Any emoji in code, comments, strings, or UI text
+2. **Console Statements**: Any console.log/error/warn in production code
+3. **Missing Documentation**: Exported functions without JSDoc
+4. **Type Safety Violations**: Any `any` types or missing return types
+5. **Security Issues**: Unvalidated inputs, SQL injection risks
+6. **Performance Issues**: Unnecessary re-renders, large bundle sizes
+7. **Unprofessional Messages**: Technical jargon in user-facing text
+
+### Automated Quality Checks
+
+Run these commands before every commit:
+
+```bash
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+
+# Formatting
+npm run format
+
+# Testing
+npm run test:unit
+npm run test:e2e
+
+# Bundle analysis
+npm run analyze
+```
 
 ### When Making Changes
 
@@ -189,6 +310,8 @@ Recent refactoring has established a clean foundation:
 6. **Document complex logic** - add JSDoc for non-obvious behavior
 7. **Performance matters** - profile before optimizing, but be aware of bundle size
 8. **Security first** - validate inputs, sanitize outputs, respect RLS
+9. **Professional standards** - no emojis, proper logging, user-friendly messages
+10. **Code review** - all changes must pass the mandatory checklist
 
 ### Resources
 

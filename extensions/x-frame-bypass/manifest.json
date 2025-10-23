@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "X-Frame-Options Bypass",
+  "version": "1.0.0",
+  "description": "Removes X-Frame-Options and frame-ancestors CSP headers to allow iframe embedding",
+  "permissions": ["webRequest", "webRequestBlocking"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

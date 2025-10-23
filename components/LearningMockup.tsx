@@ -22,7 +22,8 @@ export default function LearningMockup() {
     }
 
     const handleMouseLeave = () => {
-      container.style.transform = 'perspective(1500px) rotateX(0deg) rotateY(0deg)'
+      container.style.transform =
+        'perspective(1500px) rotateX(0deg) rotateY(0deg)'
     }
 
     container.addEventListener('mousemove', handleMouseMove)
@@ -41,7 +42,7 @@ export default function LearningMockup() {
         className="relative w-full max-w-2xl h-full transition-transform duration-300 ease-out"
         style={{
           transformStyle: 'preserve-3d',
-          transform: 'perspective(1500px) rotateX(-5deg) rotateY(8deg)',
+          transform: 'perspective(1500px) rotateX(-5deg) rotateY(8deg)'
         }}
       >
         {/* Minimalist Quiz Interface */}
@@ -49,7 +50,7 @@ export default function LearningMockup() {
           className="relative w-full h-full rounded-xl border border-border/60 bg-card shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
           style={{
             transform: 'translateZ(0px)',
-            transformStyle: 'preserve-3d',
+            transformStyle: 'preserve-3d'
           }}
         >
           {/* Simple header */}
@@ -74,7 +75,9 @@ export default function LearningMockup() {
             {/* Quiz Question */}
             <div className="space-y-5">
               <div className="space-y-2">
-                <div className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted-foreground font-medium">Question 3 of 5</div>
+                <div className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted-foreground font-medium">
+                  Question 3 of 5
+                </div>
                 <p className="text-foreground text-sm leading-relaxed">
                   Which algorithm is commonly used for classification tasks?
                 </p>
@@ -82,8 +85,16 @@ export default function LearningMockup() {
 
               {/* Answer Options - Minimal Style */}
               <div className="space-y-2.5">
-                {['Decision Trees', 'K-Means Clustering', 'Linear Regression', 'PCA'].map((option, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-gray-300 dark:border-border hover:bg-muted/20 transition-colors cursor-pointer">
+                {[
+                  'Decision Trees',
+                  'K-Means Clustering',
+                  'Linear Regression',
+                  'PCA'
+                ].map((option, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-300 dark:border-border hover:bg-muted/20 transition-colors cursor-pointer"
+                  >
                     <div className="w-4 h-4 rounded-full border-2 border-gray-400 dark:border-border flex-shrink-0" />
                     <span className="text-xs text-foreground">{option}</span>
                   </div>
@@ -94,15 +105,35 @@ export default function LearningMockup() {
             {/* Navigation Buttons - Previous/Next */}
             <div className="flex items-center justify-between pt-4">
               <button className="px-4 py-2 rounded-md border border-border bg-card hover:bg-muted/20 transition-colors flex items-center gap-2">
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
                 <span className="text-xs text-muted-foreground">Previous</span>
               </button>
               <button className="px-4 py-2 rounded-md border border-primary/30 bg-primary/10 hover:bg-primary/20 transition-colors flex items-center gap-2">
                 <span className="text-xs text-primary">Next</span>
-                <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
@@ -113,7 +144,7 @@ export default function LearningMockup() {
         <div
           className="absolute inset-0 rounded-xl bg-gradient-to-b from-black/10 to-black/20 dark:from-black/20 dark:to-black/30 blur-3xl"
           style={{
-            transform: 'translateZ(-50px) translateY(25px)',
+            transform: 'translateZ(-50px) translateY(25px)'
           }}
         />
       </div>

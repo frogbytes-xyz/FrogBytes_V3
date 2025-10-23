@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { createErrorResponse, setupGlobalErrorHandlers } from './lib/middleware/error-handler'
+import {
+  createErrorResponse,
+  setupGlobalErrorHandlers
+} from './lib/middleware/error-handler'
 
 // Setup global error handlers (only works in Node.js runtime, not Edge Runtime)
 try {
@@ -12,10 +15,10 @@ try {
 
 /**
  * Next.js Middleware for Authentication
- * 
+ *
  * This middleware runs on specified routes before the request reaches the route handler.
  * It verifies JWT tokens from Supabase Auth and protects routes requiring authentication.
- * 
+ *
  * Protected routes: /api/* (except /api/auth/*)
  */
 export async function middleware(request: NextRequest) {
@@ -36,8 +39,8 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
-    },
+      headers: request.headers
+    }
   })
 
   try {
@@ -55,20 +58,20 @@ export async function middleware(request: NextRequest) {
               request.cookies.set(name, value)
             })
             response = NextResponse.next({
-              request,
+              request
             })
             cookiesToSet.forEach(({ name, value, options: _options }) => {
               response.cookies.set(name, value, _options)
             })
-          },
-        },
+          }
+        }
       }
     )
 
     // Verify the session by getting the user
     const {
       data: { user },
-      error,
+      error
     } = await supabase.auth.getUser()
 
     if (error || !user) {
@@ -86,8 +89,8 @@ export async function middleware(request: NextRequest) {
 
     return NextResponse.next({
       request: {
-        headers: requestHeaders,
-      },
+        headers: requestHeaders
+      }
     })
   } catch (error) {
     return createErrorResponse(error, crypto.randomUUID())
@@ -103,6 +106,6 @@ export const config = {
      * - /api/cron/*
      * - /api/admin/*
      */
-    '/api/:path((?!auth/|cron/|admin/).*)',
-  ],
+    '/api/:path((?!auth/|cron/|admin/).*)'
+  ]
 }

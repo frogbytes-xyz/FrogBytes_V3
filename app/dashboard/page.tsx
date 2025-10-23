@@ -14,15 +14,19 @@ import LectureSelector from '@/components/features/lecture-selector'
 import SummaryCard from '@/components/DraggableSummaryCard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { 
-  Folder,
-  Plus
-} from 'lucide-react'
+import { Folder, Plus } from 'lucide-react'
 
 type Summary = SummaryListItem
 
@@ -58,9 +62,12 @@ export default function DashboardPage() {
     const params = new URLSearchParams(window.location.search)
     const slug = params.get('importCollection')
     if (slug) {
-      (async () => {
+      ;(async () => {
         try {
-          const res = await fetch(`/api/collections/${encodeURIComponent(slug)}/accept`, { method: 'POST' })
+          const res = await fetch(
+            `/api/collections/${encodeURIComponent(slug)}/accept`,
+            { method: 'POST' }
+          )
           if (!res.ok) throw new Error('Failed to import collection')
         } catch (e) {
           logger.error('Import collection failed', e)
@@ -82,7 +89,7 @@ export default function DashboardPage() {
     try {
       const {
         data: { user },
-        error,
+        error
       } = await supabase.auth.getUser()
 
       if (error || !user) {
@@ -91,10 +98,7 @@ export default function DashboardPage() {
       }
 
       setUser(user)
-      await Promise.all([
-        loadUserSummaries(user.id),
-        loadUserCollections()
-      ])
+      await Promise.all([loadUserSummaries(user.id), loadUserCollections()])
     } catch (err) {
       logger.error('Auth check failed', err)
       router.push('/login')
@@ -111,7 +115,10 @@ export default function DashboardPage() {
         // Treat as an empty state instead of crashing the UI
         try {
           const errData = await response.json().catch(() => null)
-          logger.warn('Collections API returned non-OK', { error: response.status, errData })
+          logger.warn('Collections API returned non-OK', {
+            error: response.status,
+            errData
+          })
         } catch {}
         setCollections([])
         return
@@ -134,7 +141,10 @@ export default function DashboardPage() {
 
     setIsLoading(true)
     try {
-      const success = await createCollection(name.trim(), description?.trim() || undefined)
+      const success = await createCollection(
+        name.trim(),
+        description?.trim() || undefined
+      )
       if (success) {
         setShowCreateDialog(false)
         await handleRefresh()
@@ -144,7 +154,10 @@ export default function DashboardPage() {
     }
   }
 
-  const createCollection = async (name: string, description?: string): Promise<boolean> => {
+  const createCollection = async (
+    name: string,
+    description?: string
+  ): Promise<boolean> => {
     try {
       const res = await fetch('/api/collections', {
         method: 'POST',
@@ -161,19 +174,25 @@ export default function DashboardPage() {
       await loadUserCollections()
       return true
     } catch (e) {
-      logger.error(e)
+      logger.error('Failed to create collection', { error: e })
       setError(e instanceof Error ? e.message : 'Failed to create collection')
       return false
     }
   }
 
-  const handleUpdateCollection = async (id: string, updates: Partial<Collection>): Promise<boolean> => {
+  const handleUpdateCollection = async (
+    id: string,
+    updates: Partial<Collection>
+  ): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/collections/manage?id=${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      })
+      const res = await fetch(
+        `/api/collections/manage?id=${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        }
+      )
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -184,21 +203,28 @@ export default function DashboardPage() {
       await loadUserCollections()
       return true
     } catch (e) {
-      logger.error(e)
+      logger.error('Failed to update collection', { error: e })
       setError(e instanceof Error ? e.message : 'Failed to update collection')
       return false
     }
   }
 
   const handleDeleteCollection = async (id: string): Promise<boolean> => {
-    if (!confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this collection? This action cannot be undone.'
+      )
+    ) {
       return false
     }
 
     try {
-      const res = await fetch(`/api/collections/manage?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE'
-      })
+      const res = await fetch(
+        `/api/collections/manage?id=${encodeURIComponent(id)}`,
+        {
+          method: 'DELETE'
+        }
+      )
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -209,19 +235,25 @@ export default function DashboardPage() {
       await loadUserCollections()
       return true
     } catch (e) {
-      logger.error(e)
+      logger.error('Failed to delete collection', { error: e })
       setError(e instanceof Error ? e.message : 'Failed to delete collection')
       return false
     }
   }
 
-  const handleAddItemsToCollection = async (collectionId: string, summaryIds: string[]): Promise<boolean> => {
+  const handleAddItemsToCollection = async (
+    collectionId: string,
+    summaryIds: string[]
+  ): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/collections/manage/items?id=${encodeURIComponent(collectionId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ summaryIds })
-      })
+      const res = await fetch(
+        `/api/collections/manage/items?id=${encodeURIComponent(collectionId)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ summaryIds })
+        }
+      )
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -231,22 +263,24 @@ export default function DashboardPage() {
 
       return true
     } catch (e) {
-      logger.error(e)
-      setError(e instanceof Error ? e.message : 'Failed to add items to collection')
+      logger.error('Failed to add items to collection', { error: e })
+      setError(
+        e instanceof Error ? e.message : 'Failed to add items to collection'
+      )
       return false
     }
   }
 
-  const handleToggleCollectionVisibility = async (id: string, isPublic: boolean): Promise<boolean> => {
+  const handleToggleCollectionVisibility = async (
+    id: string,
+    isPublic: boolean
+  ): Promise<boolean> => {
     return handleUpdateCollection(id, { is_public: isPublic })
   }
 
   const handleRefresh = async (): Promise<void> => {
     if (user?.id) {
-      await Promise.all([
-        loadUserSummaries(user.id),
-        loadUserCollections()
-      ])
+      await Promise.all([loadUserSummaries(user.id), loadUserCollections()])
     }
   }
 
@@ -263,10 +297,13 @@ export default function DashboardPage() {
 
   // sign out handled by Menubar; no local handler required
 
-  async function togglePublishStatus(summaryId: string, currentStatus: boolean) {
+  async function togglePublishStatus(
+    summaryId: string,
+    currentStatus: boolean
+  ) {
     try {
       // Use raw SQL or type assertion to handle strict typing
-      const updateData = { is_public: !currentStatus };
+      const updateData = { is_public: !currentStatus }
       const { error } = await (supabase as any)
         .from('summaries')
         .update(updateData)
@@ -275,9 +312,11 @@ export default function DashboardPage() {
       if (error) throw error
 
       // Update local state
-      setSummaries(summaries.map(s => 
-        s.id === summaryId ? { ...s, is_public: !currentStatus } : s
-      ))
+      setSummaries(
+        summaries.map(s =>
+          s.id === summaryId ? { ...s, is_public: !currentStatus } : s
+        )
+      )
     } catch (err) {
       logger.error('Error updating publish status', err)
       setError('Failed to update publish status')
@@ -305,16 +344,16 @@ export default function DashboardPage() {
         // This bypasses RLS restrictions while maintaining security
         const { data, error } = await supabase.rpc('orphan_published_summary', {
           summary_id_param: summaryId
-        })
+        } as any)
 
         if (error) {
           logger.error('RPC error', error)
           throw new Error(error.message || 'Failed to orphan summary')
         }
 
-        if (data && !data.success) {
-          logger.error('Orphan function error', data.error)
-          throw new Error(data.error || 'Failed to orphan summary')
+        if (data && !(data as any).success) {
+          logger.error('Orphan function error', (data as any).error)
+          throw new Error((data as any).error || 'Failed to orphan summary')
         }
 
         logger.info('Summary successfully orphaned:', data)
@@ -367,15 +406,27 @@ export default function DashboardPage() {
       <main className="flex-1 container max-w-7xl mx-auto px-4 pt-24 pb-16">
         <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-semibold mb-2">My Dashboard</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold mb-2">
+              My Dashboard
+            </h1>
             <p className="text-muted-foreground">
               Manage your lecture summaries and study materials
             </p>
           </div>
           <Button asChild>
             <Link href="/upload">
-              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               Upload New Lecture
             </Link>
@@ -385,9 +436,9 @@ export default function DashboardPage() {
         {error && (
           <div className="mb-6 p-4 border border-destructive/20 bg-destructive/10 rounded-lg">
             <p className="text-destructive text-sm">{error}</p>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="mt-2 h-auto p-0 text-destructive hover:text-destructive"
               onClick={() => setError(null)}
             >
@@ -414,7 +465,10 @@ export default function DashboardPage() {
                   onAddToCollection={handleAddItemsToCollection}
                   onRefresh={handleRefresh}
                 />
-                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <Dialog
+                  open={showCreateDialog}
+                  onOpenChange={setShowCreateDialog}
+                >
                   <DialogTrigger asChild>
                     <Button variant="outline">
                       <Plus className="w-4 h-4 mr-2" />
@@ -437,7 +491,9 @@ export default function DashboardPage() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="description">Description (optional)</Label>
+                          <Label htmlFor="description">
+                            Description (optional)
+                          </Label>
                           <Textarea
                             id="description"
                             name="description"
@@ -455,7 +511,7 @@ export default function DashboardPage() {
                           Cancel
                         </Button>
                         <Button type="submit" disabled={isLoading}>
-                          {isLoading ? "Creating..." : "Create Collection"}
+                          {isLoading ? 'Creating...' : 'Create Collection'}
                         </Button>
                       </DialogFooter>
                     </form>
@@ -470,7 +526,8 @@ export default function DashboardPage() {
                   <Folder className="w-16 h-16 text-muted-foreground mb-4" />
                   <h3 className="font-medium mb-2">No collections yet</h3>
                   <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm">
-                    Create your first collection to organize your summaries into folders.
+                    Create your first collection to organize your summaries into
+                    folders.
                   </p>
                   <Button onClick={() => setShowCreateDialog(true)}>
                     Create Collection
@@ -479,14 +536,21 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {collections.map((collection) => (
+                {collections.map(collection => (
                   <CollectionCard
                     key={collection.id}
                     collection={collection}
-                    onClick={() => router.push(`/dashboard/collections/${collection.id}`)}
+                    onClick={() =>
+                      router.push(`/dashboard/collections/${collection.id}`)
+                    }
                     onEdit={() => setEditingCollection(collection)}
                     onDelete={() => handleDeleteCollection(collection.id)}
-                    onToggleVisibility={() => handleToggleCollectionVisibility(collection.id, !collection.is_public)}
+                    onToggleVisibility={() =>
+                      handleToggleCollectionVisibility(
+                        collection.id,
+                        !collection.is_public
+                      )
+                    }
                     isLoading={isLoading}
                   />
                 ))}
@@ -498,7 +562,9 @@ export default function DashboardPage() {
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-semibold mb-2">Recent Summaries</h2>
+                <h2 className="text-2xl font-semibold mb-2">
+                  Recent Summaries
+                </h2>
                 <p className="text-muted-foreground">
                   Your latest lecture summaries and study materials
                 </p>
@@ -521,14 +587,27 @@ export default function DashboardPage() {
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
                   </svg>
-                  <h3 className="text-xl font-semibold mb-3">No summaries yet</h3>
+                  <h3 className="text-xl font-semibold mb-3">
+                    No summaries yet
+                  </h3>
                   <p className="text-muted-foreground mb-6 text-center max-w-md text-lg">
-                    Upload your first lecture recording to generate AI-powered summaries and study materials.
+                    Upload your first lecture recording to generate AI-powered
+                    summaries and study materials.
                   </p>
                   <Button size="lg" asChild>
                     <Link href="/upload">
-                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                       Upload Your First Lecture
                     </Link>
@@ -537,7 +616,7 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {summaries.map((summary) => (
+                {summaries.map(summary => (
                   <SummaryCard
                     key={summary.id}
                     summary={summary}
@@ -550,32 +629,32 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-      
+
       <Footer />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
-        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        onOpenChange={open => setConfirmDialog({ ...confirmDialog, open })}
         onConfirm={() => {
           if (confirmDialog.summaryId) {
             deleteSummary(confirmDialog.summaryId)
           }
         }}
         title={
-          confirmDialog.isPublic
-            ? "Remove from Dashboard?"
-            : "Delete Summary?"
+          confirmDialog.isPublic ? 'Remove from Dashboard?' : 'Delete Summary?'
         }
         description={
           confirmDialog.isPublic
-            ? "This document is published. Removing it from your dashboard will keep it available in the public library for others to view. Your authorship will be anonymized."
-            : "Are you sure you want to delete this summary? This action cannot be undone and all data will be permanently removed."
+            ? 'This document is published. Removing it from your dashboard will keep it available in the public library for others to view. Your authorship will be anonymized.'
+            : 'Are you sure you want to delete this summary? This action cannot be undone and all data will be permanently removed.'
         }
-        confirmText={confirmDialog.isPublic ? "Remove from Dashboard" : "Delete Summary"}
+        confirmText={
+          confirmDialog.isPublic ? 'Remove from Dashboard' : 'Delete Summary'
+        }
         cancelText="Cancel"
-        variant={confirmDialog.isPublic ? "warning" : "destructive"}
-        icon={confirmDialog.isPublic ? "archive" : "delete"}
+        variant={confirmDialog.isPublic ? 'warning' : 'destructive'}
+        icon={confirmDialog.isPublic ? 'archive' : 'delete'}
       />
     </div>
   )

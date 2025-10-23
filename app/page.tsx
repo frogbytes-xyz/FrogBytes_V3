@@ -1,29 +1,32 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 // Card and Badge imports removed: not used in this file
-import DashboardPreview from '@/components/DashboardPreview';
-import TranscriptionMockup from '@/components/TranscriptionMockup';
-import SummaryMockup from '@/components/SummaryMockup';
-import LearningMockup from '@/components/LearningMockup';
-import HeroFileUpload from '@/components/HeroFileUpload';
-import Menubar from '@/components/layout/Menubar';
-import Footer from '@/components/layout/Footer';
-import AnimatedText from '@/components/AnimatedText';
+import DashboardPreview from '@/components/DashboardPreview'
+import TranscriptionMockup from '@/components/TranscriptionMockup'
+import SummaryMockup from '@/components/SummaryMockup'
+import LearningMockup from '@/components/LearningMockup'
+import HeroFileUpload from '@/components/HeroFileUpload'
+import Menubar from '@/components/layout/Menubar'
+import Footer from '@/components/layout/Footer'
+import AnimatedText from '@/components/AnimatedText'
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-background relative overflow-x-hidden">
       {/* Subtle background pattern */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-          backgroundSize: '40px 40px',
-          color: 'hsl(var(--foreground))'
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+            backgroundSize: '40px 40px',
+            color: 'hsl(var(--foreground))'
+          }}
+        />
       </div>
-      
+
       <Menubar />
-      
+
       {/* Hero Section - Two Column Layout */}
       <section className="relative overflow-x-hidden overflow-y-visible bg-background">
         {/* Subtle decorative lines */}
@@ -31,7 +34,7 @@ export default function Home() {
           <div className="absolute top-0 left-1/4 w-px h-full bg-gradient-to-b from-transparent via-border/30 to-transparent" />
           <div className="absolute top-0 right-1/4 w-px h-full bg-gradient-to-b from-transparent via-border/30 to-transparent" />
         </div>
-        
+
         <div className="container max-w-7xl mx-auto px-4 pt-40 pb-24 md:pt-48 md:pb-32 lg:pt-56 lg:pb-40">
           {/* Version Badge */}
           <div className="mb-16">
@@ -40,8 +43,18 @@ export default function Home() {
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border/50 hover:border-border transition-colors text-xs font-normal text-muted-foreground hover:text-foreground"
             >
               FrogBytes v2.0
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </Link>
           </div>
@@ -52,20 +65,20 @@ export default function Home() {
             <div className="space-y-12 relative z-20">
               <div className="space-y-8">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-normal tracking-tight leading-[1.15] text-foreground">
-                  Transform lectures into comprehensive study materials for <AnimatedText words={['students', 'teachers']} />
+                  Transform lectures into comprehensive study materials for{' '}
+                  <AnimatedText words={['students', 'teachers']} />
                 </h1>
 
                 <p className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed">
-                  Automatic transcription, intelligent summaries, and interactive <br />learning tools designed for modern students and educators.
+                  Automatic transcription, intelligent summaries, and
+                  interactive <br />
+                  learning tools designed for modern students and educators.
                 </p>
               </div>
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  asChild
-                  className="h-11 px-8 font-normal"
-                >
+                <Button asChild className="h-11 px-8 font-normal">
                   <Link href="/register">Start free trial</Link>
                 </Button>
                 <Button
@@ -100,14 +113,17 @@ export default function Home() {
       <section className="relative py-32 px-4 overflow-hidden -mt-32 pt-48">
         {/* Gradual background fade - starts very transparent to let dashboard shadow show through */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent from-0% via-transparent via-60% to-background to-100% pointer-events-none" />
-        
+
         {/* Subtle pattern background */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.08]">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 2px, transparent 0)`,
-            backgroundSize: '40px 40px',
-            color: 'hsl(var(--foreground))'
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 2px, transparent 0)`,
+              backgroundSize: '40px 40px',
+              color: 'hsl(var(--foreground))'
+            }}
+          />
         </div>
 
         {/* Radial glows */}
@@ -115,31 +131,39 @@ export default function Home() {
 
         <div className="container max-w-5xl relative z-20">
           <div className="text-center mb-20 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-normal text-foreground tracking-tight">How it works</h2>
-            <p className="text-sm text-muted-foreground">Four simple steps from lecture to mastery</p>
+            <h2 className="text-3xl md:text-4xl font-normal text-foreground tracking-tight">
+              How it works
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Four simple steps from lecture to mastery
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 relative z-20">
             {[
               {
-                step: "01",
-                title: "Upload",
-                description: "Upload audio or video files up to 500MB. Supports MP3, MP4, WAV, and more."
+                step: '01',
+                title: 'Upload',
+                description:
+                  'Upload audio or video files up to 500MB. Supports MP3, MP4, WAV, and more.'
               },
               {
-                step: "02",
-                title: "Transcribe",
-                description: "AI automatically transcribes your lecture with speaker identification and timestamps."
+                step: '02',
+                title: 'Transcribe',
+                description:
+                  'AI automatically transcribes your lecture with speaker identification and timestamps.'
               },
               {
-                step: "03",
-                title: "Summarize",
-                description: "Generate intelligent summaries, flashcards, and key concept highlights instantly."
+                step: '03',
+                title: 'Summarize',
+                description:
+                  'Generate intelligent summaries, flashcards, and key concept highlights instantly.'
               },
               {
-                step: "04",
-                title: "Learn",
-                description: "Study with interactive tools, take quizzes, and export materials for offline review."
+                step: '04',
+                title: 'Learn',
+                description:
+                  'Study with interactive tools, take quizzes, and export materials for offline review.'
               }
             ].map((item, index) => (
               <div key={index} className="group space-y-5 relative z-20">
@@ -148,13 +172,19 @@ export default function Home() {
 
                 <div className="relative z-30">
                   <div className="relative inline-block mb-4">
-                    <div className="text-xs font-mono text-muted-foreground/50 relative z-10">{item.step}</div>
+                    <div className="text-xs font-mono text-muted-foreground/50 relative z-10">
+                      {item.step}
+                    </div>
                     {/* Shadow under the step number */}
                     <div className="absolute -bottom-2 left-0 right-0 h-4 bg-gradient-to-b from-muted/50 via-muted/20 to-transparent blur-md" />
                   </div>
                   <div className="space-y-3">
-                    <h3 className="text-base font-normal text-foreground">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                    <h3 className="text-base font-normal text-foreground">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {item.description}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -167,12 +197,15 @@ export default function Home() {
       <section className="relative py-32 px-4 bg-gradient-to-b from-muted/10 via-background to-background">
         {/* Subtle pattern background - offset to prevent overlap with How It Works */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.08]">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 2px, transparent 0)`,
-            backgroundSize: '40px 40px',
-            backgroundPosition: '20px 20px',
-            color: 'hsl(var(--foreground))'
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 2px, transparent 0)`,
+              backgroundSize: '40px 40px',
+              backgroundPosition: '20px 20px',
+              color: 'hsl(var(--foreground))'
+            }}
+          />
         </div>
 
         {/* Subtle decorative elements */}
@@ -187,16 +220,17 @@ export default function Home() {
               Try it now
             </h2>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Upload your lecture file and experience automatic transcription, intelligent summaries, and study material generation.
+              Upload your lecture file and experience automatic transcription,
+              intelligent summaries, and study material generation.
             </p>
           </div>
-
-    {/* Upload box with enhanced styling to ensure visibility in light mode */}
-    <div className="max-w-2xl mx-auto">
-      <div className="relative z-10 bg-card border border-border p-6 rounded-lg shadow-lg">
-        <HeroFileUpload />
-      </div>
-    </div>          <div className="text-center text-xs text-muted-foreground mt-6">
+          {/* Upload box with enhanced styling to ensure visibility in light mode */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative z-10 bg-card border border-border p-6 rounded-lg shadow-lg">
+              <HeroFileUpload />
+            </div>
+          </div>{' '}
+          <div className="text-center text-xs text-muted-foreground mt-6">
             No account required to try. Sign up after to save your materials.
           </div>
         </div>
@@ -210,9 +244,12 @@ export default function Home() {
       <section className="relative py-32 px-4 bg-background">
         <div className="container max-w-7xl relative z-10">
           <div className="text-center mb-20 space-y-4">
-            <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">Powerful features for modern learning</h3>
+            <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">
+              Powerful features for modern learning
+            </h3>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Everything you need to transform lectures into effective study materials
+              Everything you need to transform lectures into effective study
+              materials
             </p>
           </div>
 
@@ -222,20 +259,29 @@ export default function Home() {
               <TranscriptionMockup />
             </div>
             <div className="space-y-6">
-              <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">AI-Powered Transcription</h3>
+              <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">
+                AI-Powered Transcription
+              </h3>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Upload audio or video lectures and receive highly accurate transcriptions with precise timestamps. Our AI handles multiple speakers, diverse accents, and technical terminology.
+                Upload audio or video lectures and receive highly accurate
+                transcriptions with precise timestamps. Our AI handles multiple
+                speakers, diverse accents, and technical terminology.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { text: "Fast processing" },
-                  { text: "High accuracy" },
-                  { text: "Multi-language" },
-                  { text: "Speaker detection" }
+                  { text: 'Fast processing' },
+                  { text: 'High accuracy' },
+                  { text: 'Multi-language' },
+                  { text: 'Speaker detection' }
                 ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card">
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card"
+                  >
                     <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-sm text-foreground">{feature.text}</span>
+                    <span className="text-sm text-foreground">
+                      {feature.text}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -245,20 +291,29 @@ export default function Home() {
           {/* Feature 2: Smart Summaries */}
           <div className="grid lg:grid-cols-2 gap-16 items-center mb-32">
             <div className="space-y-6 lg:order-1">
-              <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">Intelligent Summaries & Study Materials</h3>
+              <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">
+                Intelligent Summaries & Study Materials
+              </h3>
               <p className="text-base text-muted-foreground leading-relaxed">
-                AI generates comprehensive summaries, extracts key concepts, creates flashcards, and builds custom quizzes. Transform hours of lectures into digestible study materials instantly.
+                AI generates comprehensive summaries, extracts key concepts,
+                creates flashcards, and builds custom quizzes. Transform hours
+                of lectures into digestible study materials instantly.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { text: "Key concepts" },
-                  { text: "Flashcards" },
-                  { text: "Custom quizzes" },
-                  { text: "Smart highlights" }
+                  { text: 'Key concepts' },
+                  { text: 'Flashcards' },
+                  { text: 'Custom quizzes' },
+                  { text: 'Smart highlights' }
                 ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card">
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card"
+                  >
                     <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-sm text-foreground">{feature.text}</span>
+                    <span className="text-sm text-foreground">
+                      {feature.text}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -274,20 +329,29 @@ export default function Home() {
               <LearningMockup />
             </div>
             <div className="space-y-6">
-              <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">Interactive Learning Tools</h3>
+              <h3 className="text-2xl md:text-3xl font-normal text-foreground tracking-tight">
+                Interactive Learning Tools
+              </h3>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Study with interactive flashcards, take AI-generated quizzes, and export beautifully formatted PDFs. Access text-to-speech for studying on the go.
+                Study with interactive flashcards, take AI-generated quizzes,
+                and export beautifully formatted PDFs. Access text-to-speech for
+                studying on the go.
               </p>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { text: "Text-to-speech" },
-                  { text: "PDF export" },
-                  { text: "Cloud backup" },
-                  { text: "Mobile access" }
+                  { text: 'Text-to-speech' },
+                  { text: 'PDF export' },
+                  { text: 'Cloud backup' },
+                  { text: 'Mobile access' }
                 ].map((feature, i) => (
-                  <div key={i} className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card">
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-4 rounded-lg border border-border bg-card"
+                  >
                     <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-sm text-foreground">{feature.text}</span>
+                    <span className="text-sm text-foreground">
+                      {feature.text}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -313,11 +377,14 @@ export default function Home() {
 
         {/* Subtle dot pattern */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.04]">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-            backgroundSize: '20px 20px',
-            color: 'hsl(var(--foreground))'
-          }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+              backgroundSize: '20px 20px',
+              color: 'hsl(var(--foreground))'
+            }}
+          />
         </div>
 
         <div className="container max-w-3xl text-center relative z-10">
@@ -327,7 +394,8 @@ export default function Home() {
                 Ready to study smarter?
               </h2>
               <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Log in to access your library or start for free to explore automatic transcription and AI-powered study tools.
+                Log in to access your library or start for free to explore
+                automatic transcription and AI-powered study tools.
               </p>
             </div>
 
@@ -356,5 +424,5 @@ export default function Home() {
 
       <Footer />
     </main>
-  );
+  )
 }

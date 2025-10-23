@@ -4,7 +4,8 @@ import { logger } from '@/lib/utils/logger'
  * Admin Dashboard API: Working Keys (valid/quota_exceeded)
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 function getSupabaseClient() {
@@ -29,7 +30,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
-    const status = searchParams.get('status') as 'valid' | 'quota_exceeded' | null
+    const status = searchParams.get('status') as
+      | 'valid'
+      | 'quota_exceeded'
+      | null
     const minQuotaCount = parseInt(searchParams.get('minQuotaCount') || '0')
     const minTokens = parseInt(searchParams.get('minTokens') || '0')
 
@@ -69,6 +73,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     logger.error('Working keys API error', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    )
   }
 }

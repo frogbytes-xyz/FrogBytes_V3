@@ -5,28 +5,33 @@ import { logger } from '@/lib/utils/logger'
  * GET - Get current status of scraper and validator
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getSystemStatus, getExecutionHistory } from '@/lib/api-keys/logger-service';
-import { getPoolStats } from '@/lib/api-keys/key-pool-service';
-import { getTokenStatistics } from '@/lib/api-keys/github-token-manager';
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import {
+  getSystemStatus,
+  getExecutionHistory
+} from '@/lib/api-keys/logger-service'
+import { getPoolStats } from '@/lib/api-keys/key-pool-service'
+import { getTokenStatistics } from '@/lib/api-keys/github-token-manager'
 
 function verifyAdminAuth(request: NextRequest): boolean {
-  const apiKey = request.headers.get('x-api-key');
-  return apiKey === process.env.ADMIN_API_KEY;
+  const apiKey = request.headers.get('x-api-key')
+  return apiKey === process.env.ADMIN_API_KEY
 }
 
 export async function GET(request: NextRequest) {
   try {
     if (!verifyAdminAuth(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const [systemStatus, keyPoolStats, tokenStats, executionHistory] = await Promise.all([
-      getSystemStatus(),
-      getPoolStats(),
-      getTokenStatistics(),
-      getExecutionHistory(undefined, 10)
-    ]);
+    const [systemStatus, keyPoolStats, tokenStats, executionHistory] =
+      await Promise.all([
+        getSystemStatus(),
+        getPoolStats(),
+        getTokenStatistics(),
+        getExecutionHistory(undefined, 10)
+      ])
 
     return NextResponse.json({
       success: true,
@@ -36,12 +41,12 @@ export async function GET(request: NextRequest) {
         githubTokens: tokenStats,
         recentExecutions: executionHistory
       }
-    });
+    })
   } catch (error: any) {
-    logger.error('Dashboard status API error', error);
+    logger.error('Dashboard status API error', error)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
-    );
+    )
   }
 }

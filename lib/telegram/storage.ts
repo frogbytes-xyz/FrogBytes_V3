@@ -1,6 +1,6 @@
 /**
  * Telegram Cloud Storage Integration
- * 
+ *
  * Provides primary storage for uploaded files, transcriptions, and PDFs using Telegram bot API.
  * Uses a group with 2 topics:
  * - Topic 1 (Archive): ZIP file containing audio, transcription text, and PDF
@@ -54,15 +54,22 @@ function createBot(): Telegraf | null {
 
   if (apiUrl.protocol === 'https:') {
     const agentOptions: https.AgentOptions = {}
-    if (process.env.TELEGRAM_INSECURE_TLS === '1' || process.env.TELEGRAM_INSECURE_TLS === 'true') {
-      logger.warn('Telegram: TLS verification disabled via TELEGRAM_INSECURE_TLS')
+    if (
+      process.env.TELEGRAM_INSECURE_TLS === '1' ||
+      process.env.TELEGRAM_INSECURE_TLS === 'true'
+    ) {
+      logger.warn(
+        'Telegram: TLS verification disabled via TELEGRAM_INSECURE_TLS'
+      )
       agentOptions.rejectUnauthorized = false
     }
     selectedAgent = new https.Agent(agentOptions)
   } else if (apiUrl.protocol === 'http:') {
     selectedAgent = new http.Agent()
   } else {
-    throw new Error(`Unsupported protocol in TELEGRAM_API_ROOT: ${apiUrl.protocol}`)
+    throw new Error(
+      `Unsupported protocol in TELEGRAM_API_ROOT: ${apiUrl.protocol}`
+    )
   }
 
   if (selectedAgent) {
@@ -92,7 +99,7 @@ export async function createArchive(
       resolve(true)
     })
 
-    archive.on('error', (err) => {
+    archive.on('error', err => {
       reject(err)
     })
 
@@ -118,18 +125,18 @@ export async function uploadToTelegramTopic(
   caption?: string
 ): Promise<TelegramUploadResult> {
   const bot = createBot()
-  
+
   if (!bot) {
     return {
       success: false,
-      error: 'Telegram bot not configured',
+      error: 'Telegram bot not configured'
     }
   }
 
   if (!TELEGRAM_GROUP_ID) {
     return {
       success: false,
-      error: 'Telegram group ID not configured',
+      error: 'Telegram group ID not configured'
     }
   }
 
@@ -138,7 +145,7 @@ export async function uploadToTelegramTopic(
   if (fileSize > MAX_SIZE) {
     return {
       success: false,
-      error: `File size exceeds 4GB limit (${(fileSize / 1024 / 1024 / 1024).toFixed(2)}GB)`,
+      error: `File size exceeds 4GB limit (${(fileSize / 1024 / 1024 / 1024).toFixed(2)}GB)`
     }
   }
 
@@ -149,7 +156,9 @@ export async function uploadToTelegramTopic(
     const isAudio = ['mp3', 'wav', 'm4a', 'ogg'].includes(fileExt || '')
 
     const messageOptions: any = {
-      caption: caption || `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)}MB`,
+      caption:
+        caption ||
+        `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)}MB`,
       message_thread_id: parseInt(topicId)
     }
 
@@ -187,13 +196,14 @@ export async function uploadToTelegramTopic(
     const res: TelegramUploadResult = { success: true }
     if (fileId) res.fileId = fileId
     if (message.message_id) res.messageId = message.message_id
-    if (message.message_thread_id) res.messageThreadId = message.message_thread_id
+    if (message.message_thread_id)
+      res.messageThreadId = message.message_thread_id
     return res
   } catch (error) {
     logger.error('Telegram upload error', error)
     return {
       success: false,
-      error: (error as Error).message || 'Upload failed',
+      error: (error as Error).message || 'Upload failed'
     }
   }
 }
@@ -218,17 +228,17 @@ export async function uploadCompletePackage(
     // Create temporary directory for archive
     const tmpDir = join(process.cwd(), 'tmp', 'archives')
     await fs.mkdir(tmpDir, { recursive: true })
-    
+
     const archivePath = join(tmpDir, `${metadata.uploadId}.zip`)
-    
+
     // Create ZIP archive
     logger.info('Creating archive...')
     await createArchive(audioPath, transcriptionPath, pdfPath, archivePath)
-    
+
     // Get file stats
     const archiveStats = await fs.stat(archivePath)
     const pdfStats = await fs.stat(pdfPath)
-    
+
     // Upload archive to Archive topic
     logger.info('Uploading archive to Topic 1 (Archive)...')
     const archiveCaption = [
@@ -239,7 +249,7 @@ export async function uploadCompletePackage(
       `Summary: ${metadata.summaryId}`,
       `Size: ${(archiveStats.size / 1024 / 1024).toFixed(2)}MB`
     ].join('\n')
-    
+
     const archiveResult = await uploadToTelegramTopic(
       archivePath,
       `${metadata.uploadId}.zip`,
@@ -247,11 +257,13 @@ export async function uploadCompletePackage(
       TELEGRAM_ARCHIVE_TOPIC_ID,
       archiveCaption
     )
-    
+
     if (!archiveResult.success) {
-      throw new Error(`Failed to upload archive to storage: ${archiveResult.error}`)
+      throw new Error(
+        `Failed to upload archive to storage: ${archiveResult.error}`
+      )
     }
-    
+
     // Upload PDF to PDF topic for quick access
     logger.info('Uploading PDF to Topic 2 (PDFs)...')
     const pdfCaption = [
@@ -260,7 +272,7 @@ export async function uploadCompletePackage(
       `Upload: ${metadata.uploadId}`,
       `Size: ${(pdfStats.size / 1024 / 1024).toFixed(2)}MB`
     ].join('\n')
-    
+
     const pdfResult = await uploadToTelegramTopic(
       pdfPath,
       `${metadata.summaryId}.pdf`,
@@ -268,26 +280,28 @@ export async function uploadCompletePackage(
       TELEGRAM_PDF_TOPIC_ID,
       pdfCaption
     )
-    
+
     if (!pdfResult.success) {
-      logger.warn('PDF upload failed, but archive was successful', { error: pdfResult.error })
+      logger.warn('PDF upload failed, but archive was successful', {
+        error: pdfResult.error
+      })
     }
 
     // Clean up archive file
-    await fs.unlink(archivePath).catch(err =>
-      logger.warn('Failed to delete temporary archive', err)
-    )
-    
+    await fs
+      .unlink(archivePath)
+      .catch(err => logger.warn('Failed to delete temporary archive', err))
+
     return {
       success: true,
       archiveResult,
-      pdfResult,
+      pdfResult
     }
   } catch (error) {
     logger.error('Complete package upload error', error)
     return {
       success: false,
-      error: (error as Error).message || 'Package upload failed',
+      error: (error as Error).message || 'Package upload failed'
     }
   }
 }
@@ -305,7 +319,7 @@ export async function uploadToTelegram(
   const caption = sourceUrl
     ? `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)} MB\nSource: ${sourceUrl}`
     : `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)} MB`
-  
+
   // Use archive topic as default
   return uploadToTelegramTopic(
     filePath,
@@ -321,9 +335,9 @@ export async function uploadToTelegram(
  */
 export function isTelegramConfigured(): boolean {
   return !!(
-    TELEGRAM_BOT_TOKEN && 
-    TELEGRAM_GROUP_ID && 
-    TELEGRAM_ARCHIVE_TOPIC_ID && 
+    TELEGRAM_BOT_TOKEN &&
+    TELEGRAM_GROUP_ID &&
+    TELEGRAM_ARCHIVE_TOPIC_ID &&
     TELEGRAM_PDF_TOPIC_ID
   )
 }
@@ -332,9 +346,11 @@ export function isTelegramConfigured(): boolean {
  * Get file download link from Telegram
  * Returns a direct link that can be used to access the file
  */
-export async function getTelegramFileLink(fileId: string): Promise<string | null> {
+export async function getTelegramFileLink(
+  fileId: string
+): Promise<string | null> {
   const bot = createBot()
-  
+
   if (!bot) {
     return null
   }

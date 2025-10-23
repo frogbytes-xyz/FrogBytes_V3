@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
 import { createInvitationService } from '@/lib/services/invitation-service'
 import { getSafeErrorMessage, ValidationError } from '@/lib/utils/errors'
@@ -40,7 +41,7 @@ export async function GET(
       )
     }
 
-    // Don't expose sensitive information
+    // Don&apos;t expose sensitive information
     const publicInvitation = {
       inviterEmail: invitation.inviterEmail,
       status: invitation.status,
@@ -81,7 +82,10 @@ export async function POST(
     }
 
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json(
@@ -108,10 +112,7 @@ export async function POST(
     logger.error('Error accepting invitation', error)
 
     if (error instanceof ValidationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     return NextResponse.json(

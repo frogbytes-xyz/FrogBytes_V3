@@ -3,13 +3,26 @@
 import { logger } from '@/lib/utils/logger'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import {
   Mail,
   Copy,
@@ -75,7 +88,9 @@ export function InvitationManager(): JSX.Element {
       const result = await response.json()
       setData(result.data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load invitations')
+      setError(
+        err instanceof Error ? err.message : 'Failed to load invitations'
+      )
     } finally {
       setLoading(false)
     }
@@ -115,7 +130,9 @@ export function InvitationManager(): JSX.Element {
       // Refresh the invitations list
       await fetchInvitations()
     } catch (err) {
-      setInviteError(err instanceof Error ? err.message : 'Failed to send invitation')
+      setInviteError(
+        err instanceof Error ? err.message : 'Failed to send invitation'
+      )
     } finally {
       setIsInviting(false)
     }
@@ -207,7 +224,8 @@ export function InvitationManager(): JSX.Element {
                 Invitation Progress
               </CardTitle>
               <CardDescription>
-                Invite {data.stats.needsForUpgrade} friends to unlock unlimited access
+                Invite {data.stats.needsForUpgrade} friends to unlock unlimited
+                access
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -221,7 +239,8 @@ export function InvitationManager(): JSX.Element {
                 <DialogHeader>
                   <DialogTitle>Invite a Friend</DialogTitle>
                   <DialogDescription>
-                    Send an invitation to join FrogBytes. They'll get access to our AI-powered learning platform!
+                    Send an invitation to join FrogBytes. They&apos;ll get
+                    access to our AI-powered learning platform!
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -232,8 +251,10 @@ export function InvitationManager(): JSX.Element {
                       type="email"
                       placeholder="friend@example.com"
                       value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendInvitation()}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      onKeyPress={e =>
+                        e.key === 'Enter' && handleSendInvitation()
+                      }
                     />
                   </div>
                   <Button
@@ -261,20 +282,29 @@ export function InvitationManager(): JSX.Element {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{data.stats.totalSent}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {data.stats.totalSent}
+              </div>
               <div className="text-sm text-gray-600">Total Sent</div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{data.stats.totalAccepted}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {data.stats.totalAccepted}
+              </div>
               <div className="text-sm text-gray-600">Accepted</div>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">{data.stats.totalPending}</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {data.stats.totalPending}
+              </div>
               <div className="text-sm text-gray-600">Pending</div>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">
-                {Math.max(0, data.stats.needsForUpgrade - data.stats.totalAccepted)}
+                {Math.max(
+                  0,
+                  data.stats.needsForUpgrade - data.stats.totalAccepted
+                )}
               </div>
               <div className="text-sm text-gray-600">Needed</div>
             </div>
@@ -284,7 +314,9 @@ export function InvitationManager(): JSX.Element {
             <Alert className="mt-4">
               <Gift className="h-4 w-4" />
               <AlertDescription>
-                🎉 Congratulations! You've successfully invited {data.stats.totalAccepted} friends and unlocked unlimited access!
+                🎉 Congratulations! You&apos;ve successfully invited{' '}
+                {data.stats.totalAccepted} friends and unlocked unlimited
+                access!
               </AlertDescription>
             </Alert>
           )}
@@ -307,11 +339,13 @@ export function InvitationManager(): JSX.Element {
             <div className="text-center py-8 text-gray-500">
               <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No invitations sent yet</p>
-              <p className="text-sm">Start inviting friends to unlock unlimited access!</p>
+              <p className="text-sm">
+                Start inviting friends to unlock unlimited access!
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {data.invitations.map((invitation) => (
+              {data.invitations.map(invitation => (
                 <div
                   key={invitation.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
@@ -337,7 +371,9 @@ export function InvitationManager(): JSX.Element {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => copyInvitationLink(invitation.invitationCode)}
+                        onClick={() =>
+                          copyInvitationLink(invitation.invitationCode)
+                        }
                       >
                         {copiedCode === invitation.invitationCode ? (
                           <>
@@ -372,19 +408,31 @@ export function InvitationManager(): JSX.Element {
           <ul className="space-y-2 text-sm">
             <li className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Share invitation links with friends who are interested in AI-powered learning</span>
+              <span>
+                Share invitation links with friends who are interested in
+                AI-powered learning
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Invitations expire after 7 days, so encourage friends to sign up quickly</span>
+              <span>
+                Invitations expire after 7 days, so encourage friends to sign up
+                quickly
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Once you have 3 successful invitations, you'll get unlimited access for 30 days</span>
+              <span>
+                Once you have 3 successful invitations, you&apos;ll get
+                unlimited access for 30 days
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Your friends will also benefit from joining our growing learning community</span>
+              <span>
+                Your friends will also benefit from joining our growing learning
+                community
+              </span>
             </li>
           </ul>
         </CardContent>

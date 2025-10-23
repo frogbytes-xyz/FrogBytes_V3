@@ -25,4 +25,3 @@ export function initializeErrorHandling() {
 if (typeof process !== 'undefined' && typeof process.on === 'function') {
   initializeErrorHandling()
 }
-

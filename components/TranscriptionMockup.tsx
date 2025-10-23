@@ -22,7 +22,8 @@ export default function TranscriptionMockup() {
     }
 
     const handleMouseLeave = () => {
-      container.style.transform = 'perspective(2000px) rotateX(0deg) rotateY(0deg)'
+      container.style.transform =
+        'perspective(2000px) rotateX(0deg) rotateY(0deg)'
     }
 
     container.addEventListener('mousemove', handleMouseMove)
@@ -41,7 +42,7 @@ export default function TranscriptionMockup() {
         className="relative w-full max-w-2xl h-full transition-transform duration-300 ease-out"
         style={{
           transformStyle: 'preserve-3d',
-          transform: 'perspective(2000px) rotateX(-5deg) rotateY(8deg)',
+          transform: 'perspective(2000px) rotateX(-5deg) rotateY(8deg)'
         }}
       >
         {/* Upload/Processing Screen Mockup */}
@@ -49,7 +50,7 @@ export default function TranscriptionMockup() {
           className="relative w-full h-full rounded-2xl border-2 border-border/60 bg-card shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
           style={{
             transform: 'translateZ(0px)',
-            transformStyle: 'preserve-3d',
+            transformStyle: 'preserve-3d'
           }}
         >
           {/* Content */}
@@ -57,8 +58,18 @@ export default function TranscriptionMockup() {
             {/* Audio/Microphone Icon with Animation */}
             <div className="relative">
               <div className="w-28 h-28 rounded-2xl bg-primary/10 dark:bg-primary/20 border-2 border-primary/30 dark:border-primary/40 flex items-center justify-center shadow-lg">
-                <svg className="w-14 h-14 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                <svg
+                  className="w-14 h-14 text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                  />
                 </svg>
               </div>
               {/* Animated pulse ring */}
@@ -84,7 +95,7 @@ export default function TranscriptionMockup() {
         <div
           className="absolute inset-0 rounded-2xl bg-gradient-to-b from-gray-300/40 to-gray-400/60 dark:from-black/30 dark:to-black/50 blur-3xl"
           style={{
-            transform: 'translateZ(-50px) translateY(25px)',
+            transform: 'translateZ(-50px) translateY(25px)'
           }}
         />
       </div>

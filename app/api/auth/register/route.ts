@@ -1,6 +1,8 @@
 import { createClient } from '@/services/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { logger } from '@/lib/utils/logger'
 
 // Validation schema for registration
 const registerSchema = z.object({
@@ -12,7 +14,7 @@ const registerSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   full_name: z.string().min(1, 'Full name is required').max(255),
-  university: z.string().optional(),
+  university: z.string().optional()
 })
 
 export type RegisterRequest = z.infer<typeof registerSchema>
@@ -34,18 +36,17 @@ export interface ErrorResponse {
 
 /**
  * POST /api/auth/register
- * 
+ *
  * Register a new user with email and password.
  * This endpoint uses Supabase Auth which automatically:
  * - Hashes the password securely
  * - Creates an entry in auth.users
  * - Triggers handle_new_user() to create public.users profile
- * 
+ *
  * @param request - Contains email, password, full_name, and optional university
  * @returns 201 on success, 400 for validation errors, 409 for duplicate email
  */
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     // Parse and validate request body
     const body = await request.json()
@@ -56,7 +57,9 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Validation failed',
-          details: validation.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+          details: validation.error.errors.map(
+            e => `${e.path.join('.')}: ${e.message}`
+          )
         },
         { status: 400 }
       )
@@ -76,19 +79,22 @@ import { logger } from '@/lib/utils/logger'
       options: {
         data: {
           full_name,
-          university: university || null,
-        },
-      },
+          university: university || null
+        }
+      }
     })
 
     if (error) {
       // Handle specific Supabase errors
-      if (error.message.includes('already registered') || error.message.includes('already exists')) {
+      if (
+        error.message.includes('already registered') ||
+        error.message.includes('already exists')
+      ) {
         return NextResponse.json<ErrorResponse>(
           {
             success: false,
             error: 'User already exists',
-            details: ['An account with this email address already exists'],
+            details: ['An account with this email address already exists']
           },
           { status: 409 }
         )
@@ -100,7 +106,7 @@ import { logger } from '@/lib/utils/logger'
           {
             success: false,
             error: 'Password validation failed',
-            details: [error.message],
+            details: [error.message]
           },
           { status: 400 }
         )
@@ -112,7 +118,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Registration failed',
-          details: [error.message],
+          details: [error.message]
         },
         { status: 500 }
       )
@@ -123,7 +129,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Registration failed',
-          details: ['User creation failed'],
+          details: ['User creation failed']
         },
         { status: 500 }
       )
@@ -136,8 +142,8 @@ import { logger } from '@/lib/utils/logger'
         message: 'User registered successfully',
         user: {
           id: data.user.id,
-          email: data.user.email!,
-        },
+          email: data.user.email!
+        }
       },
       { status: 201 }
     )
@@ -148,7 +154,7 @@ import { logger } from '@/lib/utils/logger'
       {
         success: false,
         error: 'Internal server error',
-        details: ['An unexpected error occurred during registration'],
+        details: ['An unexpected error occurred during registration']
       },
       { status: 500 }
     )

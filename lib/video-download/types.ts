@@ -45,4 +45,3 @@ export interface DownloadOptions {
   cookies?: string // Browser name for yt-dlp --cookies-from-browser (e.g., 'chrome', 'firefox')
   cookieText?: string // Manual cookie text in Netscape or header format
 }
-

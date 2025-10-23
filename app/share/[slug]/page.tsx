@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import { createDocumentSharingService } from '@/lib/services/document-sharing-service'
+import { logger } from '@/lib/utils/logger'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -10,7 +11,9 @@ interface PageProps {
  * Shared Document Page
  * Displays a publicly shared document with authentication requirement
  */
-export default async function SharedDocumentPage({ params }: PageProps): Promise<JSX.Element> {
+export default async function SharedDocumentPage({
+  params
+}: PageProps): Promise<JSX.Element> {
   const { slug } = await params
 
   if (!slug || typeof slug !== 'string') {
@@ -26,14 +29,13 @@ export default async function SharedDocumentPage({ params }: PageProps): Promise
   }
 
   // Redirect to /learn/<id>. We include a flag so the learn page can show CTA overlay for guests.
-  redirect(`/learn/${shared!.id}?shared=1`)
+  redirect(`/learn/${shared.id}?shared=1`)
 }
 
 /**
  * Generate metadata for shared documents (SEO)
  */
 export async function generateMetadata({ params }: PageProps) {
-import { logger } from '@/lib/utils/logger'
   const { slug } = await params
 
   try {
@@ -43,7 +45,8 @@ import { logger } from '@/lib/utils/logger'
     if (!sharedDocument) {
       return {
         title: 'Document Not Found | FrogBytes',
-        description: 'The shared document you are looking for could not be found.'
+        description:
+          'The shared document you are looking for could not be found.'
       }
     }
 
@@ -67,7 +70,8 @@ import { logger } from '@/lib/utils/logger'
     logger.error('Error generating metadata for shared document', error)
     return {
       title: 'Shared Document | FrogBytes',
-      description: 'View shared documents on FrogBytes - AI-powered learning platform.'
+      description:
+        'View shared documents on FrogBytes - AI-powered learning platform.'
     }
   }
 }

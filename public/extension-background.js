@@ -6,33 +6,36 @@
 // Listen for cookie requests
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_COOKIES') {
-    getCookiesForUrl(request.url).then(cookies => {
-      sendResponse({ success: true, cookies });
-    }).catch(error => {
-      console.error('Error getting cookies:', error);
-      sendResponse({ success: false, error: error.message });
-    });
-    return true; // Keep channel open for async response
+    getCookiesForUrl(request.url)
+      .then(cookies => {
+        sendResponse({ success: true, cookies })
+      })
+      .catch(error => {
+        console.error('Error getting cookies:', error)
+        sendResponse({ success: false, error: error.message })
+      })
+    return true // Keep channel open for async response
   }
-});
+})
 
 /**
  * Extract cookies for a given URL in Netscape format
  */
 async function getCookiesForUrl(url) {
   try {
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname;
-    
+    const urlObj = new URL(url)
+    const domain = urlObj.hostname
+
     // Get all cookies for this domain
-    const cookies = await chrome.cookies.getAll({ domain });
-    
+    const cookies = await chrome.cookies.getAll({ domain })
+
     // Convert to Netscape format
     const netscapeCookies = cookies.map(cookie => {
-      const httpOnly = cookie.httpOnly ? 'TRUE' : 'FALSE';
-      const secure = cookie.secure ? 'TRUE' : 'FALSE';
-      const expirationDate = cookie.expirationDate || (Date.now() / 1000 + 31536000); // 1 year default
-      
+      const httpOnly = cookie.httpOnly ? 'TRUE' : 'FALSE'
+      const secure = cookie.secure ? 'TRUE' : 'FALSE'
+      const expirationDate =
+        cookie.expirationDate || Date.now() / 1000 + 31536000 // 1 year default
+
       // Netscape format: domain, flag, path, secure, expiration, name, value
       return [
         cookie.domain.startsWith('.') ? cookie.domain : `.${cookie.domain}`,
@@ -42,9 +45,9 @@ async function getCookiesForUrl(url) {
         Math.floor(expirationDate),
         cookie.name,
         cookie.value
-      ].join('\t');
-    });
-    
+      ].join('\t')
+    })
+
     // Add Netscape header
     const netscapeFormat = [
       '# Netscape HTTP Cookie File',
@@ -52,12 +55,11 @@ async function getCookiesForUrl(url) {
       '# Edit at your own risk.',
       '',
       ...netscapeCookies
-    ].join('\n');
-    
-    return netscapeFormat;
+    ].join('\n')
+
+    return netscapeFormat
   } catch (error) {
-    console.error('Error extracting cookies:', error);
-    throw error;
+    console.error('Error extracting cookies:', error)
+    throw error
   }
 }
-

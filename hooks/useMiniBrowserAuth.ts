@@ -27,7 +27,7 @@ export function useMiniBrowserAuth() {
     sessionId: null,
     authUrl: null,
     error: null,
-    isAuthenticated: false,
+    isAuthenticated: false
   })
 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -38,7 +38,7 @@ export function useMiniBrowserAuth() {
       ...prev,
       isLoading: false, // No loading since we're not calling backend
       error: null,
-      isAuthenticated: false,
+      isAuthenticated: false
     }))
 
     try {
@@ -50,18 +50,20 @@ export function useMiniBrowserAuth() {
         isOpen: true,
         sessionId,
         authUrl: options.url,
-        error: null,
+        error: null
       }))
 
       // No polling needed - the mini-browser handles authentication directly
       // The success/error callbacks will be called by the MiniBrowser component
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to start authentication'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to start authentication'
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: errorMessage,
+        error: errorMessage
       }))
       options.onError?.(errorMessage)
     }
@@ -78,7 +80,7 @@ export function useMiniBrowserAuth() {
       sessionId: null,
       authUrl: null,
       error: null,
-      isAuthenticated: false,
+      isAuthenticated: false
     }))
 
     // Stop polling
@@ -100,6 +102,6 @@ export function useMiniBrowserAuth() {
     ...state,
     startAuth,
     closeAuth,
-    cleanup,
+    cleanup
   }
 }

@@ -34,7 +34,7 @@ export default function HeroFileUpload() {
       'audio/mp4',
       'video/mp4',
       'video/mpeg',
-      'video/quicktime',
+      'video/quicktime'
     ]
 
     if (file.size === 0) {
@@ -58,7 +58,7 @@ export default function HeroFileUpload() {
     setDragActive(false)
     setError(null)
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       const droppedFile = e.dataTransfer.files[0]
       const validationError = validateFile(droppedFile)
 
@@ -75,7 +75,7 @@ export default function HeroFileUpload() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null)
 
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       const selectedFile = e.target.files[0]
       const validationError = validateFile(selectedFile)
 
@@ -122,7 +122,12 @@ export default function HeroFileUpload() {
 
         <div className="space-y-6">
           <div className="mx-auto w-16 h-16 text-muted-foreground transition-colors">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+            <svg
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1}
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -130,16 +135,14 @@ export default function HeroFileUpload() {
               />
             </svg>
           </div>
-          
+
           <div className="space-y-3">
             <h3 className="text-lg font-normal text-foreground">
               Drop your lecture file here
             </h3>
-            <p className="text-sm text-muted-foreground">
-              or click to browse
-            </p>
+            <p className="text-sm text-muted-foreground">or click to browse</p>
           </div>
-          
+
           <Button
             onClick={() => fileInputRef.current?.click()}
             variant="outline"
@@ -147,7 +150,7 @@ export default function HeroFileUpload() {
           >
             Select File
           </Button>
-          
+
           <div className="pt-6 border-t border-border">
             <p className="text-xs text-muted-foreground">
               Supported: MP3, WAV, MP4, M4A, MOV • Maximum 500MB

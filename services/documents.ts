@@ -2,9 +2,9 @@ import { createClient } from '@/services/supabase/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/utils/logger'
 
 export interface DocumentUploadResult {
-import { logger } from '@/lib/utils/logger'
   success: boolean
   fileId: string
   filePath: string
@@ -42,7 +42,7 @@ export async function uploadDocumentToFilesystem(
     return {
       success: true,
       fileId,
-      filePath,
+      filePath
     }
   } catch (error) {
     logger.error('Filesystem upload error', error)
@@ -50,7 +50,7 @@ export async function uploadDocumentToFilesystem(
       success: false,
       fileId: '',
       filePath: '',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -83,14 +83,14 @@ export async function saveUploadMetadata(
       file_size: fileSize,
       mime_type: mimeType,
       file_path: filePath,
-      status: 'uploaded',
+      status: 'uploaded'
     })
 
     if (error) {
       logger.error('Database error', error)
       return {
         success: false,
-        error: 'Failed to save file metadata',
+        error: 'Failed to save file metadata'
       }
     }
 
@@ -99,7 +99,7 @@ export async function saveUploadMetadata(
     logger.error('Save metadata error', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -124,7 +124,7 @@ export async function updateTelegramBackupId(
       logger.error('Failed to update Telegram file ID', error)
       return {
         success: false,
-        error: 'Failed to update Telegram backup ID',
+        error: 'Failed to update Telegram backup ID'
       }
     }
 
@@ -133,7 +133,7 @@ export async function updateTelegramBackupId(
     logger.error('Update Telegram ID error', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }

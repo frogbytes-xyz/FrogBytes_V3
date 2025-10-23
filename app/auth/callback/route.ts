@@ -1,15 +1,15 @@
 import { createClient } from '@/services/supabase/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * Auth Callback Handler
- * 
+ *
  * This route handles OAuth callbacks from social providers (Google, GitHub, etc.)
  * and magic link email confirmations. It exchanges the authorization code for a session.
  */
 export async function GET(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') ?? '/dashboard'
@@ -18,7 +18,7 @@ import { logger } from '@/lib/utils/logger'
 
   // Handle OAuth errors (e.g., user denied access, provider not configured)
   if (error) {
-    logger.error('OAuth error', error, errorDescription)
+    logger.error('OAuth error', { error, errorDescription })
     return NextResponse.redirect(
       new URL(`/auth?error=${encodeURIComponent(error)}`, request.url)
     )
@@ -26,21 +26,23 @@ import { logger } from '@/lib/utils/logger'
 
   // No code means invalid callback
   if (!code) {
-    return NextResponse.redirect(
-      new URL('/auth?error=no_code', request.url)
-    )
+    return NextResponse.redirect(new URL('/auth?error=no_code', request.url))
   }
 
   try {
     const supabase = await createClient()
-    
+
     // Exchange the code for a session
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    const { error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
       logger.error('Code exchange error', exchangeError)
       return NextResponse.redirect(
-        new URL(`/auth?error=${encodeURIComponent(exchangeError.message)}`, request.url)
+        new URL(
+          `/auth?error=${encodeURIComponent(exchangeError.message)}`,
+          request.url
+        )
       )
     }
 

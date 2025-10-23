@@ -10,7 +10,16 @@ export interface LibraryMetadata {
   // Document info
   title?: string
   documentType?: 'lecture' | 'tutorial' | 'seminar' | 'exam' | 'notes' | 'other'
-  fileCategory?: 'lecture' | 'notes' | 'slides' | 'handout' | 'assignment' | 'exam' | 'tutorial' | 'project' | 'other'
+  fileCategory?:
+    | 'lecture'
+    | 'notes'
+    | 'slides'
+    | 'handout'
+    | 'assignment'
+    | 'exam'
+    | 'tutorial'
+    | 'project'
+    | 'other'
 
   // Educational metadata
   university?: string
@@ -27,7 +36,7 @@ export interface LibraryMetadata {
   language?: string
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
   tags?: string[]
-  
+
   // Privacy
   makePublic?: boolean
 }
@@ -39,11 +48,11 @@ interface MetadataFormProps {
   showPublicOption?: boolean
 }
 
-export default function MetadataForm({ 
-  onComplete, 
-  onSkip, 
+export default function MetadataForm({
+  onComplete,
+  onSkip,
   initialData = {},
-  showPublicOption = true 
+  showPublicOption = true
 }: MetadataFormProps) {
   const [metadata, setMetadata] = useState<LibraryMetadata>({
     documentType: 'lecture',
@@ -57,7 +66,10 @@ export default function MetadataForm({
   const [tagInput, setTagInput] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const updateMetadata = <K extends keyof LibraryMetadata>(field: K, value: LibraryMetadata[K]) => {
+  const updateMetadata = <K extends keyof LibraryMetadata>(
+    field: K,
+    value: LibraryMetadata[K]
+  ) => {
     setMetadata(prev => ({ ...prev, [field]: value }))
     // Clear error for this field
     if (errors[field]) {
@@ -77,7 +89,10 @@ export default function MetadataForm({
   }
 
   const removeTag = (tagToRemove: string) => {
-    updateMetadata('tags', metadata.tags?.filter(tag => tag !== tagToRemove) || [])
+    updateMetadata(
+      'tags',
+      metadata.tags?.filter(tag => tag !== tagToRemove) || []
+    )
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -116,14 +131,19 @@ export default function MetadataForm({
     }
   }
 
-  const Label = ({ htmlFor, children, className = '', required = false }: { 
+  const Label = ({
+    htmlFor,
+    children,
+    className = '',
+    required = false
+  }: {
     htmlFor: string
     children: React.ReactNode
     className?: string
     required?: boolean
   }) => (
-    <label 
-      htmlFor={htmlFor} 
+    <label
+      htmlFor={htmlFor}
       className={`text-sm font-medium text-foreground/80 ${className}`}
     >
       {children}
@@ -135,7 +155,9 @@ export default function MetadataForm({
     <div className="w-full max-w-3xl mx-auto">
       {/* Header */}
       <div className="mb-12 text-center">
-        <h1 className="text-3xl font-semibold mb-3 text-foreground">Document Information</h1>
+        <h1 className="text-3xl font-semibold mb-3 text-foreground">
+          Document Information
+        </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Help us organize your document by providing some basic information
         </p>
@@ -145,12 +167,14 @@ export default function MetadataForm({
       <div className="space-y-8">
         {/* Title - Full Width */}
         <div className="space-y-2">
-          <Label htmlFor="title" required>Title</Label>
+          <Label htmlFor="title" required>
+            Title
+          </Label>
           <Input
             id="title"
             placeholder="Introduction to Machine Learning"
             value={metadata.title || ''}
-            onChange={(e) => updateMetadata('title', e.target.value)}
+            onChange={e => updateMetadata('title', e.target.value)}
             className={`h-12 ${errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
           />
           {errors.title && (
@@ -160,13 +184,15 @@ export default function MetadataForm({
 
         {/* University - Full Width */}
         <div className="space-y-2">
-          <Label htmlFor="university" required>University</Label>
+          <Label htmlFor="university" required>
+            University
+          </Label>
           <AutocompleteInput
             id="university"
             field="university"
             placeholder="MIT, Stanford University..."
             value={metadata.university || ''}
-            onChange={(value) => updateMetadata('university', value)}
+            onChange={value => updateMetadata('university', value)}
             className={`h-12 ${errors.university ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
           />
           {errors.university && (
@@ -177,14 +203,16 @@ export default function MetadataForm({
         {/* Course Name and Code - Two Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="courseName" required>Course Name</Label>
+            <Label htmlFor="courseName" required>
+              Course Name
+            </Label>
             <AutocompleteInput
               id="courseName"
               field="course_name"
               placeholder="Introduction to Computer Science"
               value={metadata.courseName || ''}
-              onChange={(value) => updateMetadata('courseName', value)}
-              onSelect={(suggestion) => {
+              onChange={value => updateMetadata('courseName', value)}
+              onSelect={suggestion => {
                 if (suggestion.courseCode) {
                   updateMetadata('courseCode', suggestion.courseCode)
                 }
@@ -206,8 +234,8 @@ export default function MetadataForm({
               field="course_code"
               placeholder="CS101"
               value={metadata.courseCode || ''}
-              onChange={(value) => updateMetadata('courseCode', value)}
-              onSelect={(suggestion) => {
+              onChange={value => updateMetadata('courseCode', value)}
+              onSelect={suggestion => {
                 if (suggestion.courseName) {
                   updateMetadata('courseName', suggestion.courseName)
                 }
@@ -222,13 +250,15 @@ export default function MetadataForm({
 
         {/* Subject - Full Width */}
         <div className="space-y-2">
-          <Label htmlFor="subject" required>Subject</Label>
+          <Label htmlFor="subject" required>
+            Subject
+          </Label>
           <AutocompleteInput
             id="subject"
             field="subject"
             placeholder="Computer Science, Mathematics..."
             value={metadata.subject || ''}
-            onChange={(value) => updateMetadata('subject', value)}
+            onChange={value => updateMetadata('subject', value)}
             className={`h-12 ${errors.subject ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
           />
           {errors.subject && (
@@ -243,7 +273,7 @@ export default function MetadataForm({
             id="professor"
             placeholder="Dr. Jane Smith"
             value={metadata.professor || ''}
-            onChange={(e) => updateMetadata('professor', e.target.value)}
+            onChange={e => updateMetadata('professor', e.target.value)}
             className="h-12"
           />
         </div>
@@ -268,13 +298,13 @@ export default function MetadataForm({
               id="tags"
               placeholder="Add tags (press Enter)"
               value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
+              onChange={e => setTagInput(e.target.value)}
               onKeyPress={handleKeyPress}
               className="h-12"
             />
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={addTag}
               className="h-12 px-6"
             >
@@ -284,9 +314,9 @@ export default function MetadataForm({
           {metadata.tags && metadata.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {metadata.tags.map((tag, idx) => (
-                <Badge 
-                  key={idx} 
-                  variant="secondary" 
+                <Badge
+                  key={idx}
+                  variant="secondary"
                   className="px-3 py-1.5 text-sm"
                 >
                   {tag}
@@ -311,11 +341,14 @@ export default function MetadataForm({
                 type="checkbox"
                 id="makePrivate"
                 checked={!metadata.makePublic}
-                onChange={(e) => updateMetadata('makePublic', !e.target.checked)}
+                onChange={e => updateMetadata('makePublic', !e.target.checked)}
                 className="mt-1 h-4 w-4 rounded border-border"
               />
               <div className="flex-1">
-                <Label htmlFor="makePrivate" className="cursor-pointer text-base font-medium">
+                <Label
+                  htmlFor="makePrivate"
+                  className="cursor-pointer text-base font-medium"
+                >
                   Keep this document private
                 </Label>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -331,17 +364,17 @@ export default function MetadataForm({
         {/* Actions */}
         <div className="flex items-center justify-between pt-8 border-t border-border">
           {onSkip && (
-            <Button 
-              type="button" 
-              variant="ghost" 
+            <Button
+              type="button"
+              variant="ghost"
               onClick={onSkip}
               className="text-muted-foreground hover:text-foreground"
             >
               Skip for now
             </Button>
           )}
-          <Button 
-            type="button" 
+          <Button
+            type="button"
             onClick={handleSubmit}
             size="lg"
             className="ml-auto px-8 h-12"

@@ -5,8 +5,7 @@ import { logger } from '@/lib/utils/logger'
  * Robust mechanism to automatically detect when a user has successfully logged in
  */
 
-import { Page } from 'puppeteer'
-import { authRequirementDetector } from './auth-requirement-detector'
+import type { Page } from 'puppeteer'
 
 export interface LoginSuccessConfig {
   // Selectors to wait for (elements that only appear after login)
@@ -57,7 +56,7 @@ class LoginSuccessDetector {
       '.course-content',
       '.lecture-content',
       '.video-player',
-      '.media-player',
+      '.media-player'
     ],
     successUrlPatterns: [
       /\/dashboard/i,
@@ -71,7 +70,7 @@ class LoginSuccessDetector {
       /\/content/i,
       /\/student/i,
       /\/portal/i,
-      /\/lms/i,
+      /\/lms/i
     ],
     loginUrlPatterns: [
       /\/login/i,
@@ -79,7 +78,7 @@ class LoginSuccessDetector {
       /\/auth/i,
       /\/oauth/i,
       /\/sso/i,
-      /\/authenticate/i,
+      /\/authenticate/i
     ],
     authCookieNames: [
       'session',
@@ -90,27 +89,30 @@ class LoginSuccessDetector {
       'user',
       'access',
       'authentication',
-      'authorization',
+      'authorization'
     ],
     timeout: 300000, // 5 minutes
-    checkInterval: 1000, // 1 second
+    checkInterval: 1000 // 1 second
   }
 
-  private readonly platformConfigs: Record<string, Partial<LoginSuccessConfig>> = {
+  private readonly platformConfigs: Record<
+    string,
+    Partial<LoginSuccessConfig>
+  > = {
     panopto: {
       successSelectors: [
         '.panopto-user-menu',
         '.panopto-logout',
         '.panopto-dashboard',
         '.panopto-video-player',
-        '.panopto-content',
+        '.panopto-content'
       ],
       successUrlPatterns: [
         /\/Panopto\/Pages\/Viewer\.aspx/i,
         /\/Panopto\/Pages\/Sessions\/List\.aspx/i,
-        /\/Panopto\/Pages\/Dashboard\.aspx/i,
+        /\/Panopto\/Pages\/Dashboard\.aspx/i
       ],
-      authCookieNames: ['panopto_session', 'panopto_auth', 'panopto_token'],
+      authCookieNames: ['panopto_session', 'panopto_auth', 'panopto_token']
     },
     moodle: {
       successSelectors: [
@@ -119,57 +121,53 @@ class LoginSuccessDetector {
         '.dropdown-toggle',
         '.user-info',
         '.course-content',
-        '.course-header',
+        '.course-header'
       ],
       successUrlPatterns: [
         /\/course\/view\.php/i,
         /\/my\/index\.php/i,
-        /\/user\/profile\.php/i,
+        /\/user\/profile\.php/i
       ],
-      authCookieNames: ['MoodleSession', 'moodle_session', 'moodle_auth'],
+      authCookieNames: ['MoodleSession', 'moodle_session', 'moodle_auth']
     },
     canvas: {
       successSelectors: [
         '.ic-app-header__user-menu',
         '.ic-app-header__menu-list',
         '.dashboard-header',
-        '.course-header',
+        '.course-header'
       ],
-      successUrlPatterns: [
-        /\/dashboard/i,
-        /\/courses/i,
-        /\/profile/i,
-      ],
-      authCookieNames: ['canvas_session', 'canvas_auth', 'canvas_token'],
+      successUrlPatterns: [/\/dashboard/i, /\/courses/i, /\/profile/i],
+      authCookieNames: ['canvas_session', 'canvas_auth', 'canvas_token']
     },
     blackboard: {
       successSelectors: [
         '.user-menu',
         '.user-info',
         '.course-menu',
-        '.course-content',
+        '.course-content'
       ],
       successUrlPatterns: [
         /\/ultra\/course/i,
         /\/ultra\/dashboard/i,
-        /\/ultra\/profile/i,
+        /\/ultra\/profile/i
       ],
-      authCookieNames: ['JSESSIONID', 'blackboard_session', 'bb_session'],
+      authCookieNames: ['JSESSIONID', 'blackboard_session', 'bb_session']
     },
     kaltura: {
       successSelectors: [
         '.kaltura-user-menu',
         '.kaltura-dashboard',
         '.kaltura-video-player',
-        '.kaltura-content',
+        '.kaltura-content'
       ],
       successUrlPatterns: [
         /\/kaltura\/media/i,
         /\/kaltura\/dashboard/i,
-        /\/kaltura\/content/i,
+        /\/kaltura\/content/i
       ],
-      authCookieNames: ['kaltura_session', 'kaltura_auth', 'kaltura_token'],
-    },
+      authCookieNames: ['kaltura_session', 'kaltura_auth', 'kaltura_token']
+    }
   }
 
   /**
@@ -191,39 +189,39 @@ class LoginSuccessDetector {
       {
         name: 'selector',
         check: (page, config) => this.checkSuccessSelectors(page, config),
-        priority: 1,
+        priority: 1
       },
       {
         name: 'url_change',
         check: (page, config) => this.checkUrlChange(page, config),
-        priority: 2,
+        priority: 2
       },
       {
         name: 'cookie',
         check: (page, config) => this.checkAuthCookies(page, config),
-        priority: 3,
+        priority: 3
       },
       {
         name: 'navigation',
         check: (page, config) => this.checkNavigationSuccess(page, config),
-        priority: 4,
-      },
+        priority: 4
+      }
     ]
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const timeoutId = setTimeout(() => {
         resolve({
           success: false,
           method: 'timeout',
           detectedAt: Date.now(),
           details: 'Login detection timed out',
-          error: 'No login success indicators detected within timeout period',
+          error: 'No login success indicators detected within timeout period'
         })
       }, mergedConfig.timeout)
 
       const checkLoginSuccess = async () => {
         try {
-          // Check if we've exceeded the timeout
+          // Check if we&apos;ve exceeded the timeout
           if (Date.now() - startTime > mergedConfig.timeout) {
             clearTimeout(timeoutId)
             resolve({
@@ -231,13 +229,15 @@ class LoginSuccessDetector {
               method: 'timeout',
               detectedAt: Date.now(),
               details: 'Login detection timed out',
-              error: 'Timeout exceeded',
+              error: 'Timeout exceeded'
             })
             return
           }
 
           // Try each detection method in priority order
-          for (const method of detectionMethods.sort((a, b) => a.priority - b.priority)) {
+          for (const method of detectionMethods.sort(
+            (a, b) => a.priority - b.priority
+          )) {
             try {
               const isSuccess = await method.check(page, mergedConfig)
               if (isSuccess) {
@@ -246,12 +246,15 @@ class LoginSuccessDetector {
                   success: true,
                   method: method.name as any,
                   detectedAt: Date.now(),
-                  details: `Login success detected via ${method.name}`,
+                  details: `Login success detected via ${method.name}`
                 })
                 return
               }
             } catch (error) {
-              logger.warn(`Detection method ${method.name} failed:`, error)
+              logger.error(
+                `Detection method ${method.name} failed:`,
+                error instanceof Error ? error : new Error(String(error))
+              )
             }
           }
 
@@ -264,7 +267,7 @@ class LoginSuccessDetector {
             method: 'timeout',
             detectedAt: Date.now(),
             details: 'Error during login detection',
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : 'Unknown error'
           })
         }
       }
@@ -277,7 +280,10 @@ class LoginSuccessDetector {
   /**
    * Check for success selectors (elements that only appear after login)
    */
-  private async checkSuccessSelectors(page: Page, config: LoginSuccessConfig): Promise<boolean> {
+  private async checkSuccessSelectors(
+    page: Page,
+    config: LoginSuccessConfig
+  ): Promise<boolean> {
     try {
       for (const selector of config.successSelectors) {
         try {
@@ -302,10 +308,13 @@ class LoginSuccessDetector {
   /**
    * Check for URL changes that indicate successful login
    */
-  private async checkUrlChange(page: Page, config: LoginSuccessConfig): Promise<boolean> {
+  private async checkUrlChange(
+    page: Page,
+    config: LoginSuccessConfig
+  ): Promise<boolean> {
     try {
       const currentUrl = page.url()
-      
+
       // Check if URL matches success patterns
       for (const pattern of config.successUrlPatterns) {
         if (pattern.test(currentUrl)) {
@@ -325,9 +334,17 @@ class LoginSuccessDetector {
       // If no login patterns and URL has changed significantly, consider it success
       if (!hasLoginPattern && currentUrl !== 'about:blank') {
         // Additional check: ensure we're not on an error page
-        const errorPatterns = [/\/error/i, /\/404/i, /\/500/i, /\/unauthorized/i, /\/forbidden/i]
-        const hasErrorPattern = errorPatterns.some(pattern => pattern.test(currentUrl))
-        
+        const errorPatterns = [
+          /\/error/i,
+          /\/404/i,
+          /\/500/i,
+          /\/unauthorized/i,
+          /\/forbidden/i
+        ]
+        const hasErrorPattern = errorPatterns.some(pattern =>
+          pattern.test(currentUrl)
+        )
+
         if (!hasErrorPattern) {
           return true
         }
@@ -342,18 +359,26 @@ class LoginSuccessDetector {
   /**
    * Check for authentication cookies
    */
-  private async checkAuthCookies(page: Page, config: LoginSuccessConfig): Promise<boolean> {
+  private async checkAuthCookies(
+    page: Page,
+    config: LoginSuccessConfig
+  ): Promise<boolean> {
     try {
       const cookies = await page.cookies()
-      
+
       for (const cookie of cookies) {
         const cookieName = cookie.name.toLowerCase()
-        
+
         // Check if cookie name matches auth patterns
         for (const authPattern of config.authCookieNames) {
           if (cookieName.includes(authPattern.toLowerCase())) {
             // Verify cookie has a meaningful value
-            if (cookie.value && cookie.value.length > 0 && cookie.value !== 'null' && cookie.value !== 'undefined') {
+            if (
+              cookie.value &&
+              cookie.value.length > 0 &&
+              cookie.value !== 'null' &&
+              cookie.value !== 'undefined'
+            ) {
               return true
             }
           }
@@ -369,17 +394,22 @@ class LoginSuccessDetector {
   /**
    * Check for navigation success (wait for network idle)
    */
-  private async checkNavigationSuccess(page: Page, config: LoginSuccessConfig): Promise<boolean> {
+  private async checkNavigationSuccess(
+    page: Page,
+    config: LoginSuccessConfig
+  ): Promise<boolean> {
     try {
       // Wait for network to be idle (no requests for 500ms)
-      await page.waitForLoadState?.('networkidle') || 
-            page.waitForFunction(() => {
-              return new Promise(resolve => {
-                setTimeout(() => {
-                  resolve(true)
-                }, 500)
-              })
-            }, { timeout: 2000 })
+      await page.waitForFunction(
+        () => {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              resolve(true)
+            }, 500)
+          })
+        },
+        { timeout: 2000 }
+      )
 
       // Check if we're on a success page
       return await this.checkUrlChange(page, config)
@@ -391,11 +421,14 @@ class LoginSuccessDetector {
   /**
    * Wait for navigation to complete
    */
-  async waitForNavigation(page: Page, options: { timeout?: number; waitUntil?: string } = {}): Promise<boolean> {
+  async waitForNavigation(
+    page: Page,
+    options: { timeout?: number; waitUntil?: string } = {}
+  ): Promise<boolean> {
     try {
       await page.waitForNavigation({
         timeout: options.timeout || 30000,
-        waitUntil: (options.waitUntil as any) || 'networkidle2',
+        waitUntil: (options.waitUntil as any) || 'networkidle2'
       })
       return true
     } catch (error) {
@@ -406,7 +439,11 @@ class LoginSuccessDetector {
   /**
    * Wait for specific selector to appear
    */
-  async waitForSelector(page: Page, selector: string, timeout: number = 30000): Promise<boolean> {
+  async waitForSelector(
+    page: Page,
+    selector: string,
+    timeout: number = 30000
+  ): Promise<boolean> {
     try {
       await page.waitForSelector(selector, { timeout })
       return true
@@ -430,17 +467,32 @@ class LoginSuccessDetector {
     return {
       ...this.defaultConfig,
       ...config,
-      successSelectors: [...this.defaultConfig.successSelectors, ...(config.successSelectors || [])],
-      successUrlPatterns: [...this.defaultConfig.successUrlPatterns, ...(config.successUrlPatterns || [])],
-      loginUrlPatterns: [...this.defaultConfig.loginUrlPatterns, ...(config.loginUrlPatterns || [])],
-      authCookieNames: [...this.defaultConfig.authCookieNames, ...(config.authCookieNames || [])],
+      successSelectors: [
+        ...this.defaultConfig.successSelectors,
+        ...(config.successSelectors || [])
+      ],
+      successUrlPatterns: [
+        ...this.defaultConfig.successUrlPatterns,
+        ...(config.successUrlPatterns || [])
+      ],
+      loginUrlPatterns: [
+        ...this.defaultConfig.loginUrlPatterns,
+        ...(config.loginUrlPatterns || [])
+      ],
+      authCookieNames: [
+        ...this.defaultConfig.authCookieNames,
+        ...(config.authCookieNames || [])
+      ]
     }
   }
 
   /**
    * Create configuration for a specific platform
    */
-  createPlatformConfig(platform: string, customConfig: Partial<LoginSuccessConfig> = {}): LoginSuccessConfig {
+  createPlatformConfig(
+    platform: string,
+    customConfig: Partial<LoginSuccessConfig> = {}
+  ): LoginSuccessConfig {
     const platformConfig = this.getPlatformConfig(platform)
     const mergedConfig = this.mergeConfig(platformConfig)
     return this.mergeConfig({ ...mergedConfig, ...customConfig, platform })
@@ -456,7 +508,10 @@ class LoginSuccessDetector {
   /**
    * Validate configuration
    */
-  validateConfig(config: LoginSuccessConfig): { valid: boolean; errors: string[] } {
+  validateConfig(config: LoginSuccessConfig): {
+    valid: boolean
+    errors: string[]
+  } {
     const errors: string[] = []
 
     if (config.timeout <= 0) {
@@ -477,7 +532,7 @@ class LoginSuccessDetector {
 
     return {
       valid: errors.length === 0,
-      errors,
+      errors
     }
   }
 
@@ -494,7 +549,7 @@ class LoginSuccessDetector {
       availablePlatforms: Object.keys(this.platformConfigs).length,
       defaultSelectors: this.defaultConfig.successSelectors.length,
       defaultUrlPatterns: this.defaultConfig.successUrlPatterns.length,
-      defaultCookieNames: this.defaultConfig.authCookieNames.length,
+      defaultCookieNames: this.defaultConfig.authCookieNames.length
     }
   }
 }

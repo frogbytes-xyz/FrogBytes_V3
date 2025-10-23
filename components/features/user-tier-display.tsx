@@ -1,11 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Clock, Users, Zap, MessageSquare, HelpCircle } from 'lucide-react'
+import {
+  AlertTriangle,
+  Clock,
+  Users,
+  Zap,
+  MessageSquare,
+  HelpCircle
+} from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface UsageData {
@@ -145,8 +158,11 @@ export function UserTierDisplay(): JSX.Element {
             <Alert>
               <Clock className="h-4 w-4" />
               <AlertDescription>
-                Your {tierInfo.tierDisplay.name} tier expires in {tierInfo.daysUntilExpiration} days.
-                {tierInfo.upgradeInfo.canUpgrade ? ' You can extend it by inviting more friends!' : ''}
+                Your {tierInfo.tierDisplay.name} tier expires in{' '}
+                {tierInfo.daysUntilExpiration} days.
+                {tierInfo.upgradeInfo.canUpgrade
+                  ? ' You can extend it by inviting more friends!'
+                  : ''}
               </AlertDescription>
             </Alert>
           )}
@@ -173,7 +189,8 @@ export function UserTierDisplay(): JSX.Element {
                 Questions Asked
               </span>
               <span className="text-sm text-gray-600">
-                {usageData.questionsUsed} / {isUnlimited ? '∞' : usageData.questionsLimit}
+                {usageData.questionsUsed} /{' '}
+                {isUnlimited ? '∞' : usageData.questionsLimit}
               </span>
             </div>
             {!isUnlimited && (
@@ -196,7 +213,8 @@ export function UserTierDisplay(): JSX.Element {
                 Quiz Questions Generated
               </span>
               <span className="text-sm text-gray-600">
-                {usageData.quizQuestionsUsed} / {isUnlimited ? '∞' : usageData.quizQuestionsLimit}
+                {usageData.quizQuestionsUsed} /{' '}
+                {isUnlimited ? '∞' : usageData.quizQuestionsLimit}
               </span>
             </div>
             {!isUnlimited && (
@@ -219,7 +237,8 @@ export function UserTierDisplay(): JSX.Element {
                 Copilot Interactions
               </span>
               <span className="text-sm text-gray-600">
-                {usageData.copilotInteractionsUsed} / {isUnlimited ? '∞' : usageData.copilotInteractionsLimit}
+                {usageData.copilotInteractionsUsed} /{' '}
+                {isUnlimited ? '∞' : usageData.copilotInteractionsLimit}
               </span>
             </div>
             {!isUnlimited && (
@@ -245,23 +264,33 @@ export function UserTierDisplay(): JSX.Element {
               Get Unlimited Access
             </CardTitle>
             <CardDescription>
-              Invite {tierInfo.upgradeInfo.invitationsNeeded} more friends to unlock unlimited usage for 30 days
+              Invite {tierInfo.upgradeInfo.invitationsNeeded} more friends to
+              unlock unlimited usage for 30 days
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="text-sm font-medium">Successful Invitations</span>
+                <span className="text-sm font-medium">
+                  Successful Invitations
+                </span>
                 <span className="text-sm font-bold text-blue-600">
-                  {tierInfo.upgradeInfo.successfulInvitations} / {tierInfo.upgradeInfo.requiredInvitations}
+                  {tierInfo.upgradeInfo.successfulInvitations} /{' '}
+                  {tierInfo.upgradeInfo.requiredInvitations}
                 </span>
               </div>
               <Progress
-                value={(tierInfo.upgradeInfo.successfulInvitations / tierInfo.upgradeInfo.requiredInvitations) * 100}
+                value={
+                  (tierInfo.upgradeInfo.successfulInvitations /
+                    tierInfo.upgradeInfo.requiredInvitations) *
+                  100
+                }
                 className="h-2"
               />
               <Button
-                onClick={() => window.location.href = '/dashboard/invitations'}
+                onClick={() =>
+                  (window.location.href = '/dashboard/invitations')
+                }
                 className="w-full"
               >
                 Invite Friends
@@ -277,8 +306,9 @@ export function UserTierDisplay(): JSX.Element {
           <Zap className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              Congratulations! You've invited {tierInfo.upgradeInfo.successfulInvitations} friends.
-              Your upgrade to unlimited access is being processed.
+              Congratulations! You&apos;ve invited{' '}
+              {tierInfo.upgradeInfo.successfulInvitations} friends. Your upgrade
+              to unlimited access is being processed.
             </span>
           </AlertDescription>
         </Alert>

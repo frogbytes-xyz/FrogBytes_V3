@@ -48,7 +48,7 @@ class AuthRequirementDetector {
       /\/blackboard/i,
       /\/canvas/i,
       /\/sakai/i,
-      /\/brightspace/i,
+      /\/brightspace/i
     ],
 
     // Domain patterns that typically require authentication
@@ -74,8 +74,8 @@ class AuthRequirementDetector {
       /yuja/i,
       /screencast/i,
       /lecture/i,
-      /uva\.nl/i,  // University of Amsterdam
-      /\.uva\./i,  // UvA subdomains
+      /uva\.nl/i, // University of Amsterdam
+      /\.uva\./i // UvA subdomains
     ],
 
     // Platform-specific patterns
@@ -91,7 +91,7 @@ class AuthRequirementDetector {
       canvas: [/canvas/i, /\.canvas\./i],
       sakai: [/sakai/i, /\.sakai\./i],
       brightspace: [/brightspace/i, /\.brightspace\./i],
-      uva: [/uva\.nl/i, /\.uva\./i, /video\.uva\.nl/i], // University of Amsterdam video platform
+      uva: [/uva\.nl/i, /\.uva\./i, /video\.uva\.nl/i] // University of Amsterdam video platform
     },
 
     // HTTP response indicators
@@ -115,8 +115,8 @@ class AuthRequirementDetector {
       'blackboard-login',
       'canvas-login',
       'sakai-login',
-      'brightspace-login',
-    ],
+      'brightspace-login'
+    ]
   }
 
   /**
@@ -137,7 +137,7 @@ class AuthRequirementDetector {
           requiresAuth: false,
           confidence: 'high',
           indicators: ['Invalid URL format'],
-          reasoning: 'URL is not a valid video URL format',
+          reasoning: 'URL is not a valid video URL format'
         }
       }
 
@@ -159,7 +159,7 @@ class AuthRequirementDetector {
 
       // Method 3: Platform detection
       const platform = detectPlatform(url)
-      const platformAnalysis = this.analyzePlatform(platform, url)
+      const platformAnalysis = this.analyzePlatform(platform || 'unknown', url)
       indicators.push(...platformAnalysis.indicators)
       if (platformAnalysis.requiresAuth && confidence === 'low') {
         confidence = 'medium'
@@ -177,9 +177,10 @@ class AuthRequirementDetector {
       }
 
       // Determine final result
-      const requiresAuth = confidence === 'high' || 
-                          (confidence === 'medium' && indicators.length >= 2) ||
-                          (confidence === 'low' && indicators.length >= 3)
+      const requiresAuth =
+        confidence === 'high' ||
+        (confidence === 'medium' && indicators.length >= 2) ||
+        (confidence === 'low' && indicators.length >= 3)
 
       if (!requiresAuth) {
         reasoning = 'No strong indicators of authentication requirement found.'
@@ -189,17 +190,17 @@ class AuthRequirementDetector {
       return {
         requiresAuth,
         confidence,
-        platform,
+        ...(platform ? { platform } : {}),
         authType: this.determineAuthType(indicators),
         indicators: [...new Set(indicators)], // Remove duplicates
-        reasoning: reasoning.trim(),
+        reasoning: reasoning.trim()
       }
     } catch (error) {
       return {
         requiresAuth: false,
         confidence: 'low',
         indicators: ['Error during analysis'],
-        reasoning: `Error analyzing URL: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        reasoning: `Error analyzing URL: ${error instanceof Error ? error.message : 'Unknown error'}`
       }
     }
   }
@@ -207,7 +208,10 @@ class AuthRequirementDetector {
   /**
    * Analyze URL patterns for authentication indicators
    */
-  private analyzeUrlPatterns(url: string): { requiresAuth: boolean; indicators: string[] } {
+  private analyzeUrlPatterns(url: string): {
+    requiresAuth: boolean
+    indicators: string[]
+  } {
     const indicators: string[] = []
     let requiresAuth = false
 
@@ -224,13 +228,33 @@ class AuthRequirementDetector {
   /**
    * Analyze domain for authentication indicators
    */
-  private analyzeDomain(url: string): { requiresAuth: boolean; indicators: string[] } {
+  private analyzeDomain(url: string): {
+    requiresAuth: boolean
+    indicators: string[]
+  } {
     const indicators: string[] = []
     let requiresAuth = false
 
     try {
       const domain = new URL(url).hostname.toLowerCase()
 
+      // Check for known open platforms first (these should NOT require auth)
+      const openPlatforms = [
+        'youtube.com',
+        'youtu.be',
+        'vimeo.com',
+        'dailymotion.com',
+        'twitch.tv',
+        'facebook.com',
+        'instagram.com',
+        'tiktok.com'
+      ]
+
+      if (openPlatforms.some(platform => domain.includes(platform))) {
+        return { requiresAuth: false, indicators: ['Open platform detected'] }
+      }
+
+      // Check for specific authentication-required patterns
       for (const pattern of this.authIndicators.domainPatterns) {
         if (pattern.test(domain)) {
           indicators.push(`Domain pattern: ${pattern.source}`)
@@ -238,15 +262,25 @@ class AuthRequirementDetector {
         }
       }
 
-      // Check for educational domains
+      // More specific educational domain checks
       if (domain.endsWith('.edu')) {
         indicators.push('Educational domain (.edu)')
         requiresAuth = true
       }
 
       // Check for institutional subdomains
-      if (domain.includes('university') || domain.includes('college') || domain.includes('institute')) {
+      if (
+        domain.includes('university') ||
+        domain.includes('college') ||
+        domain.includes('institute')
+      ) {
         indicators.push('Institutional domain')
+        requiresAuth = true
+      }
+
+      // Special handling for known educational video platforms
+      if (domain.includes('video.uva.nl') || domain.includes('uva.nl')) {
+        indicators.push('University of Amsterdam video platform')
         requiresAuth = true
       }
     } catch (error) {
@@ -259,13 +293,19 @@ class AuthRequirementDetector {
   /**
    * Analyze platform-specific authentication requirements
    */
-  private analyzePlatform(platform: string, url: string): { requiresAuth: boolean; indicators: string[] } {
+  private analyzePlatform(
+    platform: string,
+    url: string
+  ): { requiresAuth: boolean; indicators: string[] } {
     const indicators: string[] = []
     let requiresAuth = false
 
     // Check platform-specific patterns
-    const platformPatterns = this.authIndicators.platformPatterns[platform as keyof typeof this.authIndicators.platformPatterns]
-    
+    const platformPatterns =
+      this.authIndicators.platformPatterns[
+        platform as keyof typeof this.authIndicators.platformPatterns
+      ]
+
     if (platformPatterns) {
       for (const pattern of platformPatterns) {
         if (pattern.test(url)) {
@@ -277,12 +317,28 @@ class AuthRequirementDetector {
 
     // Platform-specific authentication requirements
     const authRequiredPlatforms = [
-      'panopto', 'kaltura', 'echo360', 'mediasite', 'yuja', 'screencast',
-      'moodle', 'blackboard', 'canvas', 'sakai', 'brightspace'
+      'panopto',
+      'kaltura',
+      'echo360',
+      'mediasite',
+      'yuja',
+      'screencast',
+      'moodle',
+      'blackboard',
+      'canvas',
+      'sakai',
+      'brightspace',
+      'uva'
     ]
 
     if (authRequiredPlatforms.includes(platform)) {
       indicators.push(`Platform typically requires auth: ${platform}`)
+      requiresAuth = true
+    }
+
+    // Special case for UvA video platform
+    if (url.includes('video.uva.nl') || url.includes('uva.nl')) {
+      indicators.push('UvA video platform detected')
       requiresAuth = true
     }
 
@@ -295,7 +351,12 @@ class AuthRequirementDetector {
   private async analyzeHttpResponse(
     url: string,
     options: AuthDetectionOptions
-  ): Promise<{ requiresAuth: boolean; confidence: 'high' | 'medium' | 'low'; indicators: string[]; reasoning: string }> {
+  ): Promise<{
+    requiresAuth: boolean
+    confidence: 'high' | 'medium' | 'low'
+    indicators: string[]
+    reasoning: string
+  }> {
     const indicators: string[] = []
     let requiresAuth = false
     let confidence: 'high' | 'medium' | 'low' = 'low'
@@ -303,15 +364,20 @@ class AuthRequirementDetector {
 
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), options.timeout || 5000)
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        options.timeout || 5000
+      )
 
       const response = await fetch(url, {
         method: 'HEAD',
         signal: controller.signal,
         headers: {
-          'User-Agent': options.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent':
+            options.userAgent ||
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
-        redirect: options.followRedirects !== false ? 'follow' : 'manual',
+        redirect: options.followRedirects !== false ? 'follow' : 'manual'
       })
 
       clearTimeout(timeoutId)
@@ -345,26 +411,28 @@ class AuthRequirementDetector {
           method: 'GET',
           signal: controller.signal,
           headers: {
-            'User-Agent': options.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Range': 'bytes=0-1023', // Get first 1KB
-          },
+            'User-Agent':
+              options.userAgent ||
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            Range: 'bytes=0-1023' // Get first 1KB
+          }
         })
 
         if (textResponse.ok) {
           const text = await textResponse.text()
           const authIndicators = this.findAuthIndicatorsInText(text)
-          
+
           if (authIndicators.length > 0) {
             indicators.push(...authIndicators)
             requiresAuth = true
             if (confidence === 'low') {
               confidence = 'medium'
-              reasoning = 'Response content contains authentication indicators. '
+              reasoning =
+                'Response content contains authentication indicators. '
             }
           }
         }
       }
-
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         indicators.push('Request timeout')
@@ -397,8 +465,8 @@ class AuthRequirementDetector {
    */
   private containsAuthIndicators(url: string): boolean {
     const lowerUrl = url.toLowerCase()
-    
-    return this.authIndicators.responseIndicators.some(indicator => 
+
+    return this.authIndicators.responseIndicators.some(indicator =>
       lowerUrl.includes(indicator.toLowerCase())
     )
   }
@@ -406,7 +474,9 @@ class AuthRequirementDetector {
   /**
    * Determine authentication type based on indicators
    */
-  private determineAuthType(indicators: string[]): 'login' | 'oauth' | 'sso' | 'api_key' {
+  private determineAuthType(
+    indicators: string[]
+  ): 'login' | 'oauth' | 'sso' | 'api_key' {
     const indicatorText = indicators.join(' ').toLowerCase()
 
     if (indicatorText.includes('oauth')) {
@@ -426,14 +496,21 @@ class AuthRequirementDetector {
   quickCheck(url: string): boolean {
     try {
       const domain = new URL(url).hostname.toLowerCase()
-      
+
       // Quick domain checks
       if (domain.endsWith('.edu')) return true
-      if (domain.includes('university') || domain.includes('college')) return true
+      if (domain.includes('university') || domain.includes('college'))
+        return true
       if (domain.includes('portal') || domain.includes('lms')) return true
-      
+
       // Quick URL pattern checks
-      const authPatterns = [/\/login/i, /\/signin/i, /\/auth/i, /\/protected/i, /\/private/i]
+      const authPatterns = [
+        /\/login/i,
+        /\/signin/i,
+        /\/auth/i,
+        /\/protected/i,
+        /\/private/i
+      ]
       return authPatterns.some(pattern => pattern.test(url))
     } catch {
       return false
@@ -466,7 +543,8 @@ class AuthRequirementDetector {
         requiresAuth: true,
         authType: 'login' as const,
         commonSelectors: ['#loginForm', '.echo-login', '.institution-login'],
-        notes: 'Echo360 uses standard login forms with institutional credentials'
+        notes:
+          'Echo360 uses standard login forms with institutional credentials'
       },
       moodle: {
         requiresAuth: true,
@@ -488,12 +566,14 @@ class AuthRequirementDetector {
       }
     }
 
-    return requirements[platform as keyof typeof requirements] || {
-      requiresAuth: false,
-      authType: 'login' as const,
-      commonSelectors: [],
-      notes: 'Unknown platform'
-    }
+    return (
+      requirements[platform as keyof typeof requirements] || {
+        requiresAuth: false,
+        authType: 'login' as const,
+        commonSelectors: [],
+        notes: 'Unknown platform'
+      }
+    )
   }
 }
 

@@ -9,7 +9,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import PDFThumbnail from '@/components/PDFThumbnail'
 import { getRecommendationsForUser } from '@/lib/recommendations/similarity'
-import type { EnhancedSummary, DocumentType, FileCategory, DifficultyLevel } from '@/lib/types/library'
+import type {
+  EnhancedSummary,
+  DocumentType,
+  FileCategory,
+  DifficultyLevel
+} from '@/lib/types/library'
 import type { User } from '@supabase/supabase-js'
 
 // Database row type from Supabase query
@@ -78,7 +83,10 @@ interface ForYouSectionProps {
   onVote?: (summaryId: string, vote: 1 | -1) => void
 }
 
-export default function ForYouSection({ currentUser, onVote }: ForYouSectionProps) {
+export default function ForYouSection({
+  currentUser,
+  onVote
+}: ForYouSectionProps) {
   const supabase = createClient()
   const [recommendations, setRecommendations] = useState<Summary[]>([])
   const [loading, setLoading] = useState(true)
@@ -98,19 +106,21 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       setError(null)
 
       // Get user's uploaded documents
-      // Note: tags and keywords columns removed as they don't exist in current schema
+      // Note: tags and keywords columns removed as they don&apos;t exist in current schema
       const { data: userDocs, error: userDocsError } = await supabase
         .from('summaries')
-        .select(`
+        .select(
+          `
           id, title, university, subject, lecture_name,
           course_code, course_name, professor, semester, academic_year,
           document_type, file_category, difficulty_level, language,
           reputation_score, pdf_url, telegram_link, created_at,
           is_public, user_id
-        `)
+        `
+        )
         .eq('user_id', currentUser.id)
         .eq('is_public', true)
-      
+
       const typedUserDocs = (userDocs || []) as DbSummaryRow[]
 
       if (userDocsError) {
@@ -125,10 +135,11 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       }
 
       // Get all public documents for comparison
-      // Note: tags and keywords columns removed as they don't exist in current schema
+      // Note: tags and keywords columns removed as they don&apos;t exist in current schema
       const { data: allDocs, error: allDocsError } = await supabase
         .from('summaries')
-        .select(`
+        .select(
+          `
           id, title, university, subject, lecture_name,
           course_code, course_name, professor, semester, academic_year,
           document_type, file_category, difficulty_level, language,
@@ -138,11 +149,12 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
             full_name,
             reputation_score
           )
-        `)
+        `
+        )
         .eq('is_public', true)
         .not('pdf_url', 'is', null)
         .limit(200)
-      
+
       const typedAllDocs = (allDocs || []) as DbSummaryRow[]
 
       if (allDocsError) {
@@ -157,8 +169,12 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       }
 
       // Transform to EnhancedSummary format
-      const userDocuments: EnhancedSummary[] = typedUserDocs.map(transformToEnhancedSummary)
-      const allDocuments: EnhancedSummary[] = typedAllDocs.map(transformToEnhancedSummary)
+      const userDocuments: EnhancedSummary[] = typedUserDocs.map(
+        transformToEnhancedSummary
+      )
+      const allDocuments: EnhancedSummary[] = typedAllDocs.map(
+        transformToEnhancedSummary
+      )
 
       // Get recommendations
       const recommendationScores = getRecommendationsForUser(
@@ -170,7 +186,7 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       // Convert back to Summary format with recommendation scores
       const recommendedDocs = recommendationScores
         .map(rec => {
-          const doc = typedAllDocs.find((d) => d.id === rec.documentId)
+          const doc = typedAllDocs.find(d => d.id === rec.documentId)
           if (!doc) return null
 
           return {
@@ -194,13 +210,13 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
           }
         })
         .filter(Boolean) as (Summary & {
-          recommendationScore: number
-          recommendationFactors: SimilarityScore['factors']
-        })[]
+        recommendationScore: number
+        recommendationFactors: SimilarityScore['factors']
+      })[]
 
       // Fetch user votes if logged in
       if (currentUser && recommendedDocs.length > 0) {
-        const summaryIds = recommendedDocs.map((s) => s.id)
+        const summaryIds = recommendedDocs.map(s => s.id)
         const { data: votesData } = await supabase
           .from('votes')
           .select('summary_id, vote')
@@ -209,12 +225,12 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
 
         type VoteRow = { summary_id: string; vote: number }
         const typedVotesData = (votesData || []) as VoteRow[]
-        
+
         const votesMap = new Map(
-          typedVotesData.map((v) => [v.summary_id, v.vote])
+          typedVotesData.map(v => [v.summary_id, v.vote])
         )
 
-        const recommendedWithVotes = recommendedDocs.map((s) => ({
+        const recommendedWithVotes = recommendedDocs.map(s => ({
           ...s,
           user_vote: votesMap.get(s.id) || null
         }))
@@ -231,7 +247,9 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
         errorType: typeof err,
         errorConstructor: err?.constructor?.name
       })
-      setError(err instanceof Error ? err.message : 'Failed to load recommendations')
+      setError(
+        err instanceof Error ? err.message : 'Failed to load recommendations'
+      )
     } finally {
       setLoading(false)
     }
@@ -254,7 +272,7 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       created_at: doc.created_at,
       updated_at: doc.created_at
     }
-    
+
     // Only add optional properties if they have values
     if (doc.title) result.title = doc.title
     if (doc.lecture_name) result.lecture_name = doc.lecture_name
@@ -265,12 +283,15 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
     if (doc.professor) result.professor = doc.professor
     if (doc.semester) result.semester = doc.semester
     if (doc.academic_year) result.academic_year = doc.academic_year
-    if (doc.document_type) result.document_type = doc.document_type as DocumentType
-    if (doc.file_category) result.file_category = doc.file_category as FileCategory
-    if (doc.difficulty_level) result.difficulty_level = doc.difficulty_level as DifficultyLevel
+    if (doc.document_type)
+      result.document_type = doc.document_type as DocumentType
+    if (doc.file_category)
+      result.file_category = doc.file_category as FileCategory
+    if (doc.difficulty_level)
+      result.difficulty_level = doc.difficulty_level as DifficultyLevel
     if (doc.pdf_url) result.pdf_url = doc.pdf_url
     if (doc.telegram_link) result.telegram_link = doc.telegram_link
-    
+
     return result
   }
 
@@ -282,7 +303,8 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
         </div>
         <div className="rounded-2xl border border-border/30 bg-gradient-to-b from-muted/5 to-background p-12 text-center">
           <p className="text-muted-foreground mb-6 text-lg">
-            Sign in to get personalized recommendations based on your uploaded documents
+            Sign in to get personalized recommendations based on your uploaded
+            documents
           </p>
           <Button asChild size="lg">
             <a href="/login">Sign In</a>
@@ -300,7 +322,10 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-2xl border border-border/30 bg-gradient-to-b from-muted/5 to-background overflow-hidden animate-pulse">
+            <div
+              key={i}
+              className="rounded-2xl border border-border/30 bg-gradient-to-b from-muted/5 to-background overflow-hidden animate-pulse"
+            >
               <div className="h-[300px] bg-muted/20"></div>
               <div className="p-6 space-y-4">
                 <div className="h-4 bg-muted/50 rounded w-3/4"></div>
@@ -358,11 +383,18 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recommendations.map((summary) => (
-          <div key={summary.id} className="rounded-2xl border border-border/30 bg-gradient-to-b from-muted/5 to-background overflow-hidden group hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+        {recommendations.map(summary => (
+          <div
+            key={summary.id}
+            className="rounded-2xl border border-border/30 bg-gradient-to-b from-muted/5 to-background overflow-hidden group hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+          >
             {/* PDF Thumbnail Preview */}
             {summary.pdf_url && (
-              <Link href={`/learn/${summary.id}`} className="block relative overflow-hidden bg-gradient-to-br from-muted/20 to-muted/5 flex items-center justify-center" style={{ height: '300px' }}>
+              <Link
+                href={`/learn/${summary.id}`}
+                className="block relative overflow-hidden bg-gradient-to-br from-muted/20 to-muted/5 flex items-center justify-center"
+                style={{ height: '300px' }}
+              >
                 <PDFThumbnail
                   pdfUrl={summary.pdf_url}
                   width={450}
@@ -371,13 +403,21 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
                 />
                 <div className="absolute top-3 right-3 flex items-center gap-2 z-30">
                   {'recommendationScore' in summary && (
-                    <Badge variant="secondary" className="text-xs px-2 py-0.5 shadow-lg backdrop-blur-sm bg-background/80">
-                      {Math.round((summary as any).recommendationScore * 100)}% match
+                    <Badge
+                      variant="secondary"
+                      className="text-xs px-2 py-0.5 shadow-lg backdrop-blur-sm bg-background/80"
+                    >
+                      {Math.round((summary as any).recommendationScore * 100)}%
+                      match
                     </Badge>
                   )}
                   {summary.reputation_score !== 0 && (
-                    <Badge variant="tag-rounded" className="shadow-lg backdrop-blur-sm bg-background/80">
-                      {summary.reputation_score > 0 ? '+' : ''}{summary.reputation_score}
+                    <Badge
+                      variant="tag-rounded"
+                      className="shadow-lg backdrop-blur-sm bg-background/80"
+                    >
+                      {summary.reputation_score > 0 ? '+' : ''}
+                      {summary.reputation_score}
                     </Badge>
                   )}
                 </div>
@@ -394,12 +434,16 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {'recommendationScore' in summary && (
                         <Badge variant="secondary" className="text-xs px-2">
-                          {Math.round((summary as any).recommendationScore * 100)}%
+                          {Math.round(
+                            (summary as any).recommendationScore * 100
+                          )}
+                          %
                         </Badge>
                       )}
                       {summary.reputation_score !== 0 && (
                         <Badge variant="tag-rounded">
-                          {summary.reputation_score > 0 ? '+' : ''}{summary.reputation_score}
+                          {summary.reputation_score > 0 ? '+' : ''}
+                          {summary.reputation_score}
                         </Badge>
                       )}
                     </div>
@@ -444,8 +488,18 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
                         }`}
                         title="Upvote"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 15l7-7 7 7"
+                          />
                         </svg>
                       </button>
                       <span className="text-sm font-mono min-w-[3ch] text-center text-foreground">
@@ -460,18 +514,31 @@ export default function ForYouSection({ currentUser, onVote }: ForYouSectionProp
                         }`}
                         title="Downvote"
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 9l-7 7-7-7"
+                          />
                         </svg>
                       </button>
                     </>
                   )}
                 </div>
 
-                <Button asChild size="default" variant="outline" className="h-9">
-                  <Link href={`/learn/${summary.id}`}>
-                    Learn
-                  </Link>
+                <Button
+                  asChild
+                  size="default"
+                  variant="outline"
+                  className="h-9"
+                >
+                  <Link href={`/learn/${summary.id}`}>Learn</Link>
                 </Button>
               </div>
 

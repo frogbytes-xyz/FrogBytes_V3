@@ -5,7 +5,8 @@ import { logger } from '@/lib/utils/logger'
  * Provides secure, temporary storage for authentication cookies
  */
 
-import { createClient, RedisClientType } from 'redis'
+import type { RedisClientType } from 'redis'
+import { createClient } from 'redis'
 import { videoDownloadConfig } from '../config/video-download'
 import { randomUUID } from 'crypto'
 
@@ -40,14 +41,16 @@ class RedisService {
     try {
       this.client = createClient({
         url: videoDownloadConfig.redisUrl,
-        ...(videoDownloadConfig.redisPassword && { password: videoDownloadConfig.redisPassword }),
+        ...(videoDownloadConfig.redisPassword && {
+          password: videoDownloadConfig.redisPassword
+        }),
         database: videoDownloadConfig.redisDb,
         socket: {
-          connectTimeout: 5000,
-        },
+          connectTimeout: 5000
+        }
       })
 
-      this.client.on('error', (error) => {
+      this.client.on('error', error => {
         logger.error('Redis connection error', error)
         this.isConnected = false
       })
@@ -65,7 +68,9 @@ class RedisService {
       await this.client.connect()
     } catch (error) {
       logger.error('Failed to connect to Redis', error)
-      throw new Error('Redis connection failed. Please ensure Redis is running and accessible')
+      throw new Error(
+        'Redis connection failed. Please ensure Redis is running and accessible'
+      )
     }
   }
 
@@ -97,8 +102,8 @@ class RedisService {
       cookies,
       userId,
       sessionId,
-      expiresAt: Date.now() + (ttlSeconds * 1000),
-      createdAt: Date.now(),
+      expiresAt: Date.now() + ttlSeconds * 1000,
+      createdAt: Date.now()
     }
 
     const key = `cookies:${userId}:${sessionId}`
@@ -122,7 +127,7 @@ class RedisService {
 
     try {
       const cookieData: CookieData = JSON.parse(data)
-      
+
       // Check if cookies have expired
       if (Date.now() > cookieData.expiresAt) {
         await this.deleteCookies(userId, sessionId)
@@ -166,8 +171,8 @@ class RedisService {
       userId,
       sessionId,
       status,
-      expiresAt: Date.now() + (ttlSeconds * 1000),
-      createdAt: Date.now(),
+      expiresAt: Date.now() + ttlSeconds * 1000,
+      createdAt: Date.now()
     }
 
     const key = `session:${userId}:${sessionId}`
@@ -177,7 +182,10 @@ class RedisService {
   /**
    * Get session status
    */
-  async getSession(userId: string, sessionId: string): Promise<SessionData | null> {
+  async getSession(
+    userId: string,
+    sessionId: string
+  ): Promise<SessionData | null> {
     if (!this.client || !this.isConnected) {
       throw new Error('Redis connection not available. Please try again')
     }
@@ -191,7 +199,7 @@ class RedisService {
 
     try {
       const sessionData: SessionData = JSON.parse(data)
-      
+
       // Check if session has expired
       if (Date.now() > sessionData.expiresAt) {
         await this.deleteSession(userId, sessionId)

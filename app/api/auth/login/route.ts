@@ -1,11 +1,13 @@
 import { createClient } from '@/services/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { logger } from '@/lib/utils/logger'
 
 // Validation schema for login
 const loginSchema = z.object({
   email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
+  password: z.string().min(1, 'Password is required')
 })
 
 export type LoginRequest = z.infer<typeof loginSchema>
@@ -36,18 +38,17 @@ export interface ErrorResponse {
 
 /**
  * POST /api/auth/login
- * 
+ *
  * Authenticate a user with email and password.
  * This endpoint uses Supabase Auth which automatically:
  * - Verifies the password against the stored hash
  * - Generates JWT access and refresh tokens
  * - Creates a session
- * 
+ *
  * @param request - Contains email and password
  * @returns 200 on success with JWT tokens, 400 for validation, 401 for auth failure
  */
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     // Parse and validate request body
     const body = await request.json()
@@ -58,7 +59,9 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Validation failed',
-          details: validation.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
+          details: validation.error.errors.map(
+            e => `${e.path.join('.')}: ${e.message}`
+          )
         },
         { status: 400 }
       )
@@ -73,7 +76,7 @@ import { logger } from '@/lib/utils/logger'
     // Supabase Auth handles password comparison and JWT generation automatically
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password
     })
 
     if (error) {
@@ -87,7 +90,7 @@ import { logger } from '@/lib/utils/logger'
           {
             success: false,
             error: 'Authentication failed',
-            details: ['Invalid email or password'],
+            details: ['Invalid email or password']
           },
           { status: 401 }
         )
@@ -99,7 +102,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Login failed',
-          details: [error.message],
+          details: [error.message]
         },
         { status: 500 }
       )
@@ -110,7 +113,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Login failed',
-          details: ['Session creation failed'],
+          details: ['Session creation failed']
         },
         { status: 500 }
       )
@@ -133,14 +136,14 @@ import { logger } from '@/lib/utils/logger'
           refresh_token: data.session.refresh_token,
           expires_in: data.session.expires_in || 3600,
           expires_at: data.session.expires_at || Date.now() / 1000 + 3600,
-          token_type: data.session.token_type || 'bearer',
+          token_type: data.session.token_type || 'bearer'
         },
         user: {
           id: data.user.id,
           email: data.user.email!,
           full_name: (profile as any)?.full_name || null,
-          university: (profile as any)?.university || null,
-        },
+          university: (profile as any)?.university || null
+        }
       },
       { status: 200 }
     )
@@ -151,7 +154,7 @@ import { logger } from '@/lib/utils/logger'
       {
         success: false,
         error: 'Internal server error',
-        details: ['An unexpected error occurred during login'],
+        details: ['An unexpected error occurred during login']
       },
       { status: 500 }
     )

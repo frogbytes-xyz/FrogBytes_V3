@@ -26,17 +26,20 @@ interface SummaryCardProps {
   onDeleteSummary: (summaryId: string) => void
 }
 
-export default function SummaryCard({ 
-  summary, 
-  onTogglePublishStatus, 
-  onDeleteSummary 
+export default function SummaryCard({
+  summary,
+  onTogglePublishStatus,
+  onDeleteSummary
 }: SummaryCardProps) {
-
   return (
     <Card className="hover:shadow-lg transition-all overflow-hidden group">
       {/* PDF Thumbnail Preview */}
       {summary.pdf_url && summary.pdf_url.trim() !== '' && (
-        <Link href={`/learn/${summary.id}`} className="block relative overflow-hidden bg-gradient-to-br from-accent to-muted flex items-center justify-center" style={{ height: '300px' }}>
+        <Link
+          href={`/learn/${summary.id}`}
+          className="block relative overflow-hidden bg-gradient-to-br from-accent to-muted flex items-center justify-center"
+          style={{ height: '300px' }}
+        >
           <PDFThumbnail
             pdfUrl={summary.pdf_url}
             width={450}
@@ -44,7 +47,10 @@ export default function SummaryCard({
             className="cursor-pointer transition-transform group-hover:scale-105"
           />
           <div className="absolute top-2 right-6 z-30">
-            <Badge variant={summary.is_public ? 'default' : 'secondary'} className="shadow-lg">
+            <Badge
+              variant={summary.is_public ? 'default' : 'secondary'}
+              className="shadow-lg"
+            >
               {summary.is_public ? 'Published' : 'Private'}
             </Badge>
           </div>
@@ -57,7 +63,10 @@ export default function SummaryCard({
             {summary.title || summary.lecture_name || 'Untitled'}
           </CardTitle>
           {!summary.pdf_url && (
-            <Badge variant={summary.is_public ? 'default' : 'secondary'} className="flex-shrink-0">
+            <Badge
+              variant={summary.is_public ? 'default' : 'secondary'}
+              className="flex-shrink-0"
+            >
               {summary.is_public ? 'Published' : 'Private'}
             </Badge>
           )}
@@ -71,15 +80,27 @@ export default function SummaryCard({
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent>
         <div className="space-y-3">
           {summary.is_public && (
             <div className="flex items-center gap-2 text-sm">
-              <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              <svg
+                className="w-4 h-4 text-muted-foreground"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 15l7-7 7 7"
+                />
               </svg>
-              <span className="font-medium">{summary.reputation_score ?? 0}</span>
+              <span className="font-medium">
+                {summary.reputation_score ?? 0}
+              </span>
               <span className="text-muted-foreground">upvotes</span>
             </div>
           )}
@@ -102,7 +123,9 @@ export default function SummaryCard({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onTogglePublishStatus(summary.id, summary.is_public)}
+              onClick={() =>
+                onTogglePublishStatus(summary.id, summary.is_public)
+              }
               title={summary.is_public ? 'Make private' : 'Publish to library'}
             >
               {summary.is_public ? (

@@ -2,6 +2,7 @@ import { createClient } from '@/services/supabase/server'
 import { DatabaseError } from '@/lib/utils/errors'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/services/supabase/database.types'
+import { logger } from '@/lib/utils/logger'
 
 type DbClient = SupabaseClient<Database>
 
@@ -88,7 +89,8 @@ export class UserTierService {
         .eq('id', userId)
         .single()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = not found
         throw new DatabaseError(
           `Failed to fetch user profile: ${error.message}`,
           'select',
@@ -162,7 +164,10 @@ export class UserTierService {
    */
   async checkTierExpiration(userId: string): Promise<UserTier> {
     try {
-      const { data, error } = await (this.supabase as any).rpc('check_tier_expiration', { user_id_param: userId })
+      const { data, error } = await (this.supabase as any).rpc(
+        'check_tier_expiration',
+        { user_id_param: userId }
+      )
 
       if (error) {
         throw new DatabaseError(
@@ -206,7 +211,9 @@ export class UserTierService {
       }
 
       const expiresAt = durationDays
-        ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+        ? new Date(
+            Date.now() + durationDays * 24 * 60 * 60 * 1000
+          ).toISOString()
         : null
 
       // Update user tier
@@ -260,7 +267,7 @@ export class UserTierService {
    */
   async getTierUpgradeHistory(userId: string): Promise<TierUpgrade[]> {
     try {
-      const { data, error} = await (this.supabase as any)
+      const { data, error } = await (this.supabase as any)
         .from('user_tier_upgrades')
         .select('*')
         .eq('user_id', userId)
@@ -371,7 +378,10 @@ export class UserTierService {
   /**
    * Get tier display information
    */
-  getTierDisplay(tier: UserTier, tierExpiresAt: string | null): {
+  getTierDisplay(
+    tier: UserTier,
+    tierExpiresAt: string | null
+  ): {
     name: string
     color: string
     badge: string
@@ -386,9 +396,8 @@ export class UserTierService {
             name: 'Unlimited',
             color: 'text-purple-600',
             badge: 'bg-purple-100 text-purple-800',
-            status: daysRemaining > 0
-              ? `${daysRemaining} days remaining`
-              : 'Expired'
+            status:
+              daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Expired'
           }
         }
         return {
@@ -421,7 +430,9 @@ export class UserTierService {
       tier: String(data.tier) as UserTier,
       tierExpiresAt: data.tier_expires_at ? String(data.tier_expires_at) : null,
       invitedBy: data.invited_by ? String(data.invited_by) : null,
-      invitationCode: data.invitation_code ? String(data.invitation_code) : null,
+      invitationCode: data.invitation_code
+        ? String(data.invitation_code)
+        : null,
       createdAt: String(data.created_at),
       updatedAt: String(data.updated_at)
     }
@@ -453,7 +464,6 @@ export async function createUserTierService(): Promise<UserTierService> {
  * Hook-like function to get user tier information (for use in components)
  */
 export async function getUserTierInfo(userId: string): Promise<{
-import { logger } from '@/lib/utils/logger'
   profile: UserProfile | null
   tierBenefits: TierBenefits
   canUpgrade: boolean

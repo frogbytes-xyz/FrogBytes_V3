@@ -2,7 +2,10 @@ import { createClient } from '@/services/supabase/server'
 import { DatabaseError, AuthenticationError } from '@/lib/utils/errors'
 import type { Database } from '@/services/supabase/database.types'
 
-export type UsageType = 'questions_asked' | 'quiz_questions_generated' | 'copilot_interactions'
+export type UsageType =
+  | 'questions_asked'
+  | 'quiz_questions_generated'
+  | 'copilot_interactions'
 
 export interface UserUsageStatus {
   currentTier: 'free' | 'unlimited'
@@ -53,9 +56,9 @@ export class RateLimitService {
         )
       }
 
-  const usage = await this.getUserUsageStatus(userId)
+      const usage = await this.getUserUsageStatus(userId)
 
-  const res: RateLimitResult = { allowed: Boolean(data), usage }
+      const res: RateLimitResult = { allowed: Boolean(data), usage }
       if (data === false) res.reason = `Daily limit exceeded for ${usageType}`
       return res
     } catch (error) {
@@ -94,9 +97,9 @@ export class RateLimitService {
         )
       }
 
-  const usage = await this.getUserUsageStatus(userId)
+      const usage = await this.getUserUsageStatus(userId)
 
-  const res: RateLimitResult = { allowed: Boolean(data), usage }
+      const res: RateLimitResult = { allowed: Boolean(data), usage }
       if (data === false) res.reason = `Daily limit exceeded for ${usageType}`
       return res
     } catch (error) {
@@ -164,42 +167,60 @@ export class RateLimitService {
   /**
    * Check if user can ask questions (helper method)
    */
-  async canAskQuestions(userId: string, count: number = 1): Promise<RateLimitResult> {
+  async canAskQuestions(
+    userId: string,
+    count: number = 1
+  ): Promise<RateLimitResult> {
     return this.checkRateLimit(userId, 'questions_asked', count)
   }
 
   /**
    * Check if user can generate quiz questions (helper method)
    */
-  async canGenerateQuizQuestions(userId: string, count: number = 1): Promise<RateLimitResult> {
+  async canGenerateQuizQuestions(
+    userId: string,
+    count: number = 1
+  ): Promise<RateLimitResult> {
     return this.checkRateLimit(userId, 'quiz_questions_generated', count)
   }
 
   /**
    * Check if user can use copilot (helper method)
    */
-  async canUseCopilot(userId: string, count: number = 1): Promise<RateLimitResult> {
+  async canUseCopilot(
+    userId: string,
+    count: number = 1
+  ): Promise<RateLimitResult> {
     return this.checkRateLimit(userId, 'copilot_interactions', count)
   }
 
   /**
    * Record question asked (helper method)
    */
-  async recordQuestionAsked(userId: string, count: number = 1): Promise<RateLimitResult> {
+  async recordQuestionAsked(
+    userId: string,
+    count: number = 1
+  ): Promise<RateLimitResult> {
     return this.incrementUsage(userId, 'questions_asked', count)
   }
 
   /**
    * Record quiz questions generated (helper method)
    */
-  async recordQuizQuestionsGenerated(userId: string, count: number = 1): Promise<RateLimitResult> {
+  async recordQuizQuestionsGenerated(
+    userId: string,
+    count: number = 1
+  ): Promise<RateLimitResult> {
     return this.incrementUsage(userId, 'quiz_questions_generated', count)
   }
 
   /**
    * Record copilot interaction (helper method)
    */
-  async recordCopilotInteraction(userId: string, count: number = 1): Promise<RateLimitResult> {
+  async recordCopilotInteraction(
+    userId: string,
+    count: number = 1
+  ): Promise<RateLimitResult> {
     return this.incrementUsage(userId, 'copilot_interactions', count)
   }
 
@@ -259,10 +280,16 @@ export async function withRateLimit<T>(
   const rateLimitService = await createRateLimitService()
 
   // Check rate limit before operation
-  const rateLimitResult = await rateLimitService.checkRateLimit(userId, usageType)
+  const rateLimitResult = await rateLimitService.checkRateLimit(
+    userId,
+    usageType
+  )
 
   if (!rateLimitResult.allowed) {
-    throw new Error(rateLimitResult.reason ?? 'Daily usage limit exceeded. Please try again tomorrow or upgrade your account')
+    throw new Error(
+      rateLimitResult.reason ??
+        'Daily usage limit exceeded. Please try again tomorrow or upgrade your account'
+    )
   }
 
   // Perform operation

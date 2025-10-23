@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createDocumentSharingService } from '@/lib/services/document-sharing-service'
 import { getSafeErrorMessage } from '@/lib/utils/errors'
 import { logger } from '@/lib/utils/logger'
@@ -15,10 +16,7 @@ export async function GET(
     const { slug } = await params
 
     if (!slug || typeof slug !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid share link' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid share link' }, { status: 400 })
     }
 
     const sharingService = await createDocumentSharingService()

@@ -33,10 +33,12 @@ export const usernameSchema = z
 export const fileUploadSchema = z.object({
   name: z.string().min(1, 'File name is required'),
   size: z.number().max(10 * 1024 * 1024, 'File size must be less than 10MB'),
-  type: z.string().refine(
-    (type) => ['application/pdf', 'image/png', 'image/jpeg'].includes(type),
-    'File type must be PDF, PNG, or JPEG'
-  )
+  type: z
+    .string()
+    .refine(
+      type => ['application/pdf', 'image/png', 'image/jpeg'].includes(type),
+      'File type must be PDF, PNG, or JPEG'
+    )
 })
 
 // Pagination validation
@@ -138,10 +140,6 @@ export function sanitizeFilename(filename: string): string {
     .substring(0, 255)
 }
 
-export type {
-  z as ZodType
-}
+export type { z as ZodType }
 
-export {
-  z
-}
+export { z }

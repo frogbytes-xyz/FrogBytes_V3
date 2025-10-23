@@ -3,13 +3,25 @@
  * Displays user's API keys with management capabilities
  */
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -17,16 +29,16 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+  DialogTrigger
+} from '@/components/ui/dialog'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Key,
   CheckCircle,
@@ -40,40 +52,40 @@ import {
   TrendingUp,
   Database,
   Zap
-} from 'lucide-react';
+} from 'lucide-react'
 
 interface KeyValidationStats {
-  totalScraped: number;
-  totalValidated: number;
-  totalValid: number;
-  totalInvalid: number;
-  pendingValidation: number;
-  validationProgress: number;
+  totalScraped: number
+  totalValidated: number
+  totalValid: number
+  totalInvalid: number
+  pendingValidation: number
+  validationProgress: number
   capabilityBreakdown: {
-    canGenerateText: number;
-    canGenerateImages: number;
-    canProcessVideo: number;
-    canProcessAudio: number;
-    canExecuteCode: number;
-    canCallFunctions: number;
-    canSearchGrounding: number;
-  };
+    canGenerateText: number
+    canGenerateImages: number
+    canProcessVideo: number
+    canProcessAudio: number
+    canExecuteCode: number
+    canCallFunctions: number
+    canSearchGrounding: number
+  }
 }
 
 interface ApiKeyEntry {
-  id: string;
-  api_key: string;
-  source: string;
-  source_url?: string;
-  scraped_at: string;
-  validation_status: 'pending' | 'validating' | 'processed';
-  is_valid?: boolean;
-  total_models_accessible?: number;
-  total_models_tested?: number;
-  best_model?: string;
-  max_token_limit?: number;
-  capabilities?: any[];
-  validated_at?: string;
+  id: string
+  api_key: string
+  source: string
+  source_url?: string
+  scraped_at: string
+  validation_status: 'pending' | 'validating' | 'processed'
+  is_valid?: boolean
+  total_models_accessible?: number
+  total_models_tested?: number
+  best_model?: string
+  max_token_limit?: number
+  capabilities?: any[]
+  validated_at?: string
 }
 
 async function getKeyValidationStats(): Promise<KeyValidationStats> {
@@ -94,10 +106,13 @@ async function getKeyValidationStats(): Promise<KeyValidationStats> {
       canCallFunctions: 123,
       canSearchGrounding: 45
     }
-  };
+  }
 }
 
-async function getApiKeys(_page = 1, _filters?: any): Promise<{ keys: ApiKeyEntry[], total: number }> {
+async function getApiKeys(
+  _page = 1,
+  _filters?: any
+): Promise<{ keys: ApiKeyEntry[]; total: number }> {
   // This would be replaced with actual API call
   return {
     keys: [
@@ -129,15 +144,21 @@ async function getApiKeys(_page = 1, _filters?: any): Promise<{ keys: ApiKeyEntr
       }
     ],
     total: 1247
-  };
+  }
 }
 
-function StatsCard({ title, value, description, icon: Icon, trend }: {
-  title: string;
-  value: string | number;
-  description: string;
-  icon: any;
-  trend?: 'up' | 'down' | 'neutral';
+function StatsCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  trend
+}: {
+  title: string
+  value: string | number
+  description: string
+  icon: any
+  trend?: 'up' | 'down' | 'neutral'
 }) {
   return (
     <Card>
@@ -149,37 +170,73 @@ function StatsCard({ title, value, description, icon: Icon, trend }: {
         <div className="text-2xl font-bold">{value}</div>
         <p className="text-xs text-muted-foreground">{description}</p>
         {trend && (
-          <div className={`flex items-center text-xs ${trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
+          <div
+            className={`flex items-center text-xs ${trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}
+          >
             <TrendingUp className="h-3 w-3 mr-1" />
             Trending {trend}
           </div>
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
 
-function CapabilityBreakdown({ breakdown }: { breakdown: KeyValidationStats['capabilityBreakdown'] }) {
+function CapabilityBreakdown({
+  breakdown
+}: {
+  breakdown: KeyValidationStats['capabilityBreakdown']
+}) {
   const capabilities = [
-    { name: 'Text Generation', count: breakdown.canGenerateText, color: 'bg-blue-500' },
-    { name: 'Image Generation', count: breakdown.canGenerateImages, color: 'bg-purple-500' },
-    { name: 'Video Processing', count: breakdown.canProcessVideo, color: 'bg-green-500' },
-    { name: 'Audio Processing', count: breakdown.canProcessAudio, color: 'bg-yellow-500' },
-    { name: 'Code Execution', count: breakdown.canExecuteCode, color: 'bg-red-500' },
-    { name: 'Function Calling', count: breakdown.canCallFunctions, color: 'bg-indigo-500' },
-    { name: 'Search Grounding', count: breakdown.canSearchGrounding, color: 'bg-pink-500' }
-  ];
+    {
+      name: 'Text Generation',
+      count: breakdown.canGenerateText,
+      color: 'bg-blue-500'
+    },
+    {
+      name: 'Image Generation',
+      count: breakdown.canGenerateImages,
+      color: 'bg-purple-500'
+    },
+    {
+      name: 'Video Processing',
+      count: breakdown.canProcessVideo,
+      color: 'bg-green-500'
+    },
+    {
+      name: 'Audio Processing',
+      count: breakdown.canProcessAudio,
+      color: 'bg-yellow-500'
+    },
+    {
+      name: 'Code Execution',
+      count: breakdown.canExecuteCode,
+      color: 'bg-red-500'
+    },
+    {
+      name: 'Function Calling',
+      count: breakdown.canCallFunctions,
+      color: 'bg-indigo-500'
+    },
+    {
+      name: 'Search Grounding',
+      count: breakdown.canSearchGrounding,
+      color: 'bg-pink-500'
+    }
+  ]
 
-  const maxCount = Math.max(...Object.values(breakdown));
+  const maxCount = Math.max(...Object.values(breakdown))
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Key Capabilities</CardTitle>
-        <CardDescription>Distribution of features across valid API keys</CardDescription>
+        <CardDescription>
+          Distribution of features across valid API keys
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {capabilities.map((capability) => (
+        {capabilities.map(capability => (
           <div key={capability.name} className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>{capability.name}</span>
@@ -195,7 +252,7 @@ function CapabilityBreakdown({ breakdown }: { breakdown: KeyValidationStats['cap
         ))}
       </CardContent>
     </Card>
-  );
+  )
 }
 
 function ApiKeyTable({ keys }: { keys: ApiKeyEntry[] }) {
@@ -215,7 +272,7 @@ function ApiKeyTable({ keys }: { keys: ApiKeyEntry[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {keys.map((key) => (
+          {keys.map(key => (
             <TableRow key={key.id}>
               <TableCell className="font-mono text-sm">
                 {key.api_key.substring(0, 20)}...
@@ -251,17 +308,23 @@ function ApiKeyTable({ keys }: { keys: ApiKeyEntry[] }) {
                 )}
               </TableCell>
               <TableCell>
-                {key.is_valid ? `${key.total_models_accessible}/${key.total_models_tested}` : '-'}
+                {key.is_valid
+                  ? `${key.total_models_accessible}/${key.total_models_tested}`
+                  : '-'}
               </TableCell>
               <TableCell>
                 {key.best_model ? (
                   <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
                     {key.best_model}
                   </code>
-                ) : '-'}
+                ) : (
+                  '-'
+                )}
               </TableCell>
               <TableCell>
-                {key.max_token_limit ? key.max_token_limit.toLocaleString() : '-'}
+                {key.max_token_limit
+                  ? key.max_token_limit.toLocaleString()
+                  : '-'}
               </TableCell>
               <TableCell className="text-sm text-gray-500">
                 {new Date(key.scraped_at).toLocaleDateString()}
@@ -289,7 +352,9 @@ function ApiKeyTable({ keys }: { keys: ApiKeyEntry[] }) {
                           </code>
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Source URL</label>
+                          <label className="text-sm font-medium">
+                            Source URL
+                          </label>
                           <a
                             href={key.source_url}
                             target="_blank"
@@ -301,27 +366,50 @@ function ApiKeyTable({ keys }: { keys: ApiKeyEntry[] }) {
                         </div>
                         {key.capabilities && (
                           <div>
-                            <label className="text-sm font-medium">Model Capabilities</label>
+                            <label className="text-sm font-medium">
+                              Model Capabilities
+                            </label>
                             <div className="mt-2 space-y-2">
-                              {key.capabilities.map((capability: any, index: number) => (
-                                <div key={index} className="border rounded p-2">
-                                  <div className="flex justify-between items-center">
-                                    <span className="font-medium">{capability.modelName}</span>
-                                    <Badge variant={capability.isAccessible ? 'default' : 'destructive'}>
-                                      {capability.isAccessible ? 'Accessible' : 'Blocked'}
-                                    </Badge>
-                                  </div>
-                                  {capability.features && (
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                      {capability.features.map((feature: string) => (
-                                        <Badge key={feature} variant="outline" className="text-xs">
-                                          {feature}
-                                        </Badge>
-                                      ))}
+                              {key.capabilities.map(
+                                (capability: any, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="border rounded p-2"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span className="font-medium">
+                                        {capability.modelName}
+                                      </span>
+                                      <Badge
+                                        variant={
+                                          capability.isAccessible
+                                            ? 'default'
+                                            : 'destructive'
+                                        }
+                                      >
+                                        {capability.isAccessible
+                                          ? 'Accessible'
+                                          : 'Blocked'}
+                                      </Badge>
                                     </div>
-                                  )}
-                                </div>
-                              ))}
+                                    {capability.features && (
+                                      <div className="mt-1 flex flex-wrap gap-1">
+                                        {capability.features.map(
+                                          (feature: string) => (
+                                            <Badge
+                                              key={feature}
+                                              variant="outline"
+                                              className="text-xs"
+                                            >
+                                              {feature}
+                                            </Badge>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              )}
                             </div>
                           </div>
                         )}
@@ -335,18 +423,20 @@ function ApiKeyTable({ keys }: { keys: ApiKeyEntry[] }) {
         </TableBody>
       </Table>
     </div>
-  );
+  )
 }
 
 export default async function ApiKeysPage() {
-  const stats = await getKeyValidationStats();
-  const { keys } = await getApiKeys();
+  const stats = await getKeyValidationStats()
+  const { keys } = await getApiKeys()
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">API Key Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            API Key Management
+          </h1>
           <p className="text-muted-foreground">
             Monitor and manage scraped Gemini API keys and their capabilities
           </p>
@@ -466,7 +556,9 @@ export default async function ApiKeysPage() {
             </TabsContent>
 
             <TabsContent value="pending" className="space-y-4">
-              <ApiKeyTable keys={keys.filter(k => k.validation_status === 'pending')} />
+              <ApiKeyTable
+                keys={keys.filter(k => k.validation_status === 'pending')}
+              />
             </TabsContent>
           </Tabs>
         </div>
@@ -498,11 +590,12 @@ export default async function ApiKeysPage() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Rate Limiting</AlertTitle>
             <AlertDescription>
-              Validation is rate-limited to avoid API quotas. Large batches may take time to complete.
+              Validation is rate-limited to avoid API quotas. Large batches may
+              take time to complete.
             </AlertDescription>
           </Alert>
         </div>
       </div>
     </div>
-  );
+  )
 }

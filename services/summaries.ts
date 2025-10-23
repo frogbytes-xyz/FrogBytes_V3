@@ -1,4 +1,5 @@
 import { createClient } from '@/services/supabase/client'
+import { logger } from '@/lib/utils/logger'
 
 export interface SummaryListItem {
   id: string
@@ -26,14 +27,17 @@ export interface FetchSummariesResult {
  * @param userId - The ID of the user
  * @returns Result with summaries array and success status
  */
-export async function getUserSummaries(userId: string): Promise<FetchSummariesResult> {
-import { logger } from '@/lib/utils/logger'
+export async function getUserSummaries(
+  userId: string
+): Promise<FetchSummariesResult> {
   try {
     const supabase = createClient()
 
     const { data, error } = await supabase
       .from('summaries')
-      .select('id, title, lecture_name, university, subject, is_public, reputation_score, created_at, updated_at, pdf_url')
+      .select(
+        'id, title, lecture_name, university, subject, is_public, reputation_score, created_at, updated_at, pdf_url'
+      )
       .eq('user_id', userId)
       .not('user_id', 'is', null) // Explicitly exclude orphaned summaries
       .order('created_at', { ascending: false })
@@ -43,20 +47,20 @@ import { logger } from '@/lib/utils/logger'
       return {
         success: false,
         summaries: [],
-        error: 'Failed to load summaries',
+        error: 'Failed to load summaries'
       }
     }
 
     return {
       success: true,
-      summaries: data || [],
+      summaries: data || []
     }
   } catch (error) {
     logger.error('Unexpected error fetching summaries', error)
     return {
       success: false,
       summaries: [],
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -75,8 +79,7 @@ export async function toggleSummaryPublishStatus(
   try {
     const supabase = createClient()
 
-    const { error } = await (supabase
-      .from('summaries') as any)
+    const { error } = await (supabase.from('summaries') as any)
       .update({ is_public: newStatus })
       .eq('id', summaryId)
 
@@ -84,7 +87,7 @@ export async function toggleSummaryPublishStatus(
       logger.error('Error updating summary status', error)
       return {
         success: false,
-        error: 'Failed to update summary status',
+        error: 'Failed to update summary status'
       }
     }
 
@@ -93,7 +96,7 @@ export async function toggleSummaryPublishStatus(
     logger.error('Unexpected error updating summary', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -110,8 +113,7 @@ export async function deleteSummary(
   try {
     const supabase = createClient()
 
-    const { error } = await (supabase
-      .from('summaries') as any)
+    const { error } = await (supabase.from('summaries') as any)
       .delete()
       .eq('id', summaryId)
 
@@ -119,7 +121,7 @@ export async function deleteSummary(
       logger.error('Error deleting summary', error)
       return {
         success: false,
-        error: 'Failed to delete summary',
+        error: 'Failed to delete summary'
       }
     }
 
@@ -128,7 +130,7 @@ export async function deleteSummary(
     logger.error('Unexpected error deleting summary', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }

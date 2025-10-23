@@ -23,7 +23,8 @@ export default function SummaryMockup() {
     }
 
     const handleMouseLeave = () => {
-      container.style.transform = 'perspective(2000px) rotateX(0deg) rotateY(0deg)'
+      container.style.transform =
+        'perspective(2000px) rotateX(0deg) rotateY(0deg)'
     }
 
     container.addEventListener('mousemove', handleMouseMove)
@@ -50,7 +51,7 @@ export default function SummaryMockup() {
         className="relative w-full max-w-2xl h-full transition-transform duration-300 ease-out"
         style={{
           transformStyle: 'preserve-3d',
-          transform: 'perspective(1500px) rotateX(-5deg) rotateY(-8deg)',
+          transform: 'perspective(1500px) rotateX(-5deg) rotateY(-8deg)'
         }}
       >
         {/* Minimalist Study Interface */}
@@ -58,7 +59,7 @@ export default function SummaryMockup() {
           className="relative w-full h-full rounded-xl border border-border/60 bg-card shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden"
           style={{
             transform: 'translateZ(0px)',
-            transformStyle: 'preserve-3d',
+            transformStyle: 'preserve-3d'
           }}
         >
           {/* Simple Header */}
@@ -79,18 +80,18 @@ export default function SummaryMockup() {
               </div>
 
               {/* Flashcard - Clean Minimal Design */}
-              <div 
+              <div
                 className="relative h-56"
                 style={{
                   transformStyle: 'preserve-3d',
-                  perspective: '1000px',
+                  perspective: '1000px'
                 }}
               >
                 <div
                   className="w-full h-full transition-transform duration-700"
                   style={{
                     transformStyle: 'preserve-3d',
-                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
                   }}
                 >
                   {/* Front of card */}
@@ -98,11 +99,13 @@ export default function SummaryMockup() {
                     className="absolute inset-0 rounded-lg border border-border bg-card p-6 flex items-center justify-center shadow-lg"
                     style={{
                       backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden'
                     }}
                   >
                     <div className="text-center space-y-3">
-                      <div className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted-foreground font-medium">Question</div>
+                      <div className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted-foreground font-medium">
+                        Question
+                      </div>
                       <p className="text-foreground text-sm font-normal leading-relaxed">
                         What is the primary goal of supervised learning?
                       </p>
@@ -115,13 +118,17 @@ export default function SummaryMockup() {
                     style={{
                       backfaceVisibility: 'hidden',
                       WebkitBackfaceVisibility: 'hidden',
-                      transform: 'rotateY(180deg)',
+                      transform: 'rotateY(180deg)'
                     }}
                   >
                     <div className="text-center space-y-3">
-                      <div className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted-foreground font-medium">Answer</div>
+                      <div className="text-[9px] uppercase tracking-wider text-gray-500 dark:text-muted-foreground font-medium">
+                        Answer
+                      </div>
                       <p className="text-foreground text-xs leading-relaxed">
-                        To learn a function that maps inputs to outputs based on labeled training data, enabling predictions on new, unseen data.
+                        To learn a function that maps inputs to outputs based on
+                        labeled training data, enabling predictions on new,
+                        unseen data.
                       </p>
                     </div>
                   </div>
@@ -142,16 +149,40 @@ export default function SummaryMockup() {
               {/* Action Buttons - Correct/Incorrect */}
               <div className="flex items-center justify-center gap-3 pt-2">
                 <button className="px-4 py-2 rounded-md border border-red-200 dark:border-red-800/40 bg-red-50/50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">
-                  <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-4 h-4 text-red-600 dark:text-red-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
-                  <span className="text-xs text-red-600 dark:text-red-400">Incorrect</span>
+                  <span className="text-xs text-red-600 dark:text-red-400">
+                    Incorrect
+                  </span>
                 </button>
                 <button className="px-4 py-2 rounded-md border border-green-200 dark:border-green-800/40 bg-green-50/50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/30 transition-colors flex items-center gap-2">
-                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-4 h-4 text-green-600 dark:text-green-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
-                  <span className="text-xs text-green-600 dark:text-green-400">Correct</span>
+                  <span className="text-xs text-green-600 dark:text-green-400">
+                    Correct
+                  </span>
                 </button>
               </div>
             </div>
@@ -162,7 +193,7 @@ export default function SummaryMockup() {
         <div
           className="absolute inset-0 rounded-xl bg-gradient-to-b from-black/10 to-black/20 dark:from-black/20 dark:to-black/30 blur-3xl"
           style={{
-            transform: 'translateZ(-50px) translateY(25px)',
+            transform: 'translateZ(-50px) translateY(25px)'
           }}
         />
       </div>

@@ -1,5 +1,6 @@
 import { createClient } from '@/services/supabase/server'
 import { DatabaseError, AuthorizationError } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 export interface SharedDocument {
   id: string
   title: string
@@ -39,7 +40,9 @@ export class DocumentSharingService {
       // Verify user owns the document
       const { data: document, error: fetchError } = await this.supabase
         .from('summaries')
-        .select('id, title, lecture_name, user_id, is_public, share_slug, view_count')
+        .select(
+          'id, title, lecture_name, user_id, is_public, share_slug, view_count'
+        )
         .eq('id', documentId)
         .eq('user_id', userId)
         .single()
@@ -77,7 +80,10 @@ export class DocumentSharingService {
         )
       }
 
-      const title = updatedDocument.title || updatedDocument.lecture_name || 'Untitled Document'
+      const title =
+        updatedDocument.title ||
+        updatedDocument.lecture_name ||
+        'Untitled Document'
       const shareUrl = updatedDocument.share_slug
         ? this.generateShareUrl(updatedDocument.share_slug)
         : null
@@ -91,7 +97,10 @@ export class DocumentSharingService {
         shareUrl
       }
     } catch (error) {
-      if (error instanceof DatabaseError || error instanceof AuthorizationError) {
+      if (
+        error instanceof DatabaseError ||
+        error instanceof AuthorizationError
+      ) {
         throw error
       }
       throw new DatabaseError(
@@ -105,7 +114,10 @@ export class DocumentSharingService {
   /**
    * Get sharing information for a document
    */
-  async getDocumentShareInfo(documentId: string, userId: string): Promise<DocumentShareInfo> {
+  async getDocumentShareInfo(
+    documentId: string,
+    userId: string
+  ): Promise<DocumentShareInfo> {
     try {
       const { data: document, error } = await this.supabase
         .from('summaries')
@@ -130,7 +142,8 @@ export class DocumentSharingService {
         )
       }
 
-      const title = document.title || document.lecture_name || 'Untitled Document'
+      const title =
+        document.title || document.lecture_name || 'Untitled Document'
       const shareUrl = document.share_slug
         ? this.generateShareUrl(document.share_slug)
         : null
@@ -144,7 +157,10 @@ export class DocumentSharingService {
         shareUrl
       }
     } catch (error) {
-      if (error instanceof DatabaseError || error instanceof AuthorizationError) {
+      if (
+        error instanceof DatabaseError ||
+        error instanceof AuthorizationError
+      ) {
         throw error
       }
       throw new DatabaseError(
@@ -162,7 +178,8 @@ export class DocumentSharingService {
     try {
       const { data: document, error } = await this.supabase
         .from('summaries')
-        .select(`
+        .select(
+          `
           id,
           title,
           lecture_name,
@@ -173,12 +190,14 @@ export class DocumentSharingService {
           created_at,
           user_id,
           users!summaries_user_id_fkey(email)
-        `)
+        `
+        )
         .eq('share_slug', shareSlug)
         .eq('is_public', true)
         .single()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = not found
         throw new DatabaseError(
           `Failed to fetch shared document: ${error.message}`,
           'select',
@@ -193,7 +212,8 @@ export class DocumentSharingService {
       // Increment view count
       await this.incrementViewCount(document.id)
 
-      const title = document.title || document.lecture_name || 'Untitled Document'
+      const title =
+        document.title || document.lecture_name || 'Untitled Document'
 
       return {
         id: document.id,
@@ -232,7 +252,8 @@ export class DocumentSharingService {
     try {
       const { data: document, error } = await this.supabase
         .from('summaries')
-        .select(`
+        .select(
+          `
           id,
           title,
           lecture_name,
@@ -241,12 +262,14 @@ export class DocumentSharingService {
           view_count,
           created_at,
           users!summaries_user_id_fkey(email)
-        `)
+        `
+        )
         .eq('share_slug', shareSlug)
         .eq('is_public', true)
         .single()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = not found
         throw new DatabaseError(
           `Failed to fetch shared document content: ${error.message}`,
           'select',
@@ -261,7 +284,8 @@ export class DocumentSharingService {
       // Increment view count
       await this.incrementViewCount(document.id)
 
-      const title = document.title || document.lecture_name || 'Untitled Document'
+      const title =
+        document.title || document.lecture_name || 'Untitled Document'
 
       return {
         id: document.id,
@@ -304,7 +328,7 @@ export class DocumentSharingService {
         )
       }
 
-        return documents.map((doc: any) => {
+      return documents.map((doc: any) => {
         const title = doc.title || doc.lecture_name || 'Untitled Document'
         const shareUrl = doc.share_slug
           ? this.generateShareUrl(doc.share_slug)
@@ -342,11 +366,11 @@ export class DocumentSharingService {
 
       if (error) {
         logger.warn('Failed to increment view count', { error: error })
-        // Don't throw error as this is not critical
+        // Don&apos;t throw error as this is not critical
       }
     } catch (error) {
       logger.warn('Failed to increment view count', { error: error })
-      // Don't throw error as this is not critical
+      // Don&apos;t throw error as this is not critical
     }
   }
 
@@ -391,7 +415,10 @@ export class DocumentSharingService {
       }
 
       const totalShared = documents.length
-        const totalViews = documents.reduce((sum: number, doc: any) => sum + doc.view_count, 0)
+      const totalViews = documents.reduce(
+        (sum: number, doc: any) => sum + doc.view_count,
+        0
+      )
 
       let mostViewedDocument = null
       if (documents.length > 0) {
@@ -399,7 +426,8 @@ export class DocumentSharingService {
           doc.view_count > max.view_count ? doc : max
         )
         mostViewedDocument = {
-          title: mostViewed.title || mostViewed.lecture_name || 'Untitled Document',
+          title:
+            mostViewed.title || mostViewed.lecture_name || 'Untitled Document',
           views: mostViewed.view_count
         }
       }
@@ -426,7 +454,6 @@ export class DocumentSharingService {
  * Factory function to create document sharing service
  */
 export async function createDocumentSharingService(): Promise<DocumentSharingService> {
-import { logger } from '@/lib/utils/logger'
   const supabase = await createClient()
   return new DocumentSharingService(supabase)
 }

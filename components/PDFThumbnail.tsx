@@ -6,44 +6,42 @@ import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import react-pdf to prevent SSR issues
-const Document = dynamic(
-  () => import('react-pdf').then((mod) => mod.Document),
-  { ssr: false }
-)
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), {
+  ssr: false
+})
 
-const Page = dynamic(
-  () => import('react-pdf').then((mod) => mod.Page),
-  { ssr: false }
-)
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), {
+  ssr: false
+})
 
 // Configure PDF.js worker with better error handling
 let pdfVersion: string | null = null
 if (typeof window !== 'undefined') {
   let workerConfigured = false
-  
+
   const configureWorker = async () => {
     if (workerConfigured) return
-    
+
     try {
       const mod = await import('react-pdf')
       const pdfjs = (mod as any).pdfjs
-      
+
       if (!pdfjs) {
         logger.warn('PDF.js not available in react-pdf module')
         return
       }
-      
+
       // Use CDN with the correct version to avoid version mismatch
       pdfVersion = pdfjs.version || '4.0.379'
       pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfVersion}/build/pdf.worker.min.mjs`
-      
+
       workerConfigured = true
       logger.info(`PDF.js worker configured with version ${pdfVersion}`)
     } catch (err) {
       logger.error('Failed to configure PDF.js worker', err)
     }
   }
-  
+
   // Configure worker immediately
   configureWorker()
 }
@@ -61,12 +59,12 @@ interface PDFThumbnailProps {
 /**
  * Wrapper component for PDF Page with error boundary
  */
-function PageWrapper({ 
-  pdfUrl, 
-  pageNumber, 
-  width, 
-  onRenderError 
-}: { 
+function PageWrapper({
+  pdfUrl,
+  pageNumber,
+  width,
+  onRenderError
+}: {
   pdfUrl: string
   pageNumber: number
   width: number
@@ -92,7 +90,7 @@ function PageWrapper({
         renderAnnotationLayer={false}
         loading=""
         className="shadow-sm mx-auto"
-        onRenderError={(error) => {
+        onRenderError={error => {
           setHasError(true)
           onRenderError(error)
         }}
@@ -135,7 +133,7 @@ const PDFThumbnail = memo(function PDFThumbnail({
   useEffect(() => {
     setIsMounted(true)
     isUnmountingRef.current = false
-    
+
     return () => {
       setIsMounted(false)
       isUnmountingRef.current = true
@@ -150,8 +148,9 @@ const PDFThumbnail = memo(function PDFThumbnail({
   }, [])
 
   // Check for Telegram URLs immediately (not in useEffect)
-  const isTelegramUrl = pdfUrl && (pdfUrl.includes('telegram') || pdfUrl.includes('t.me'))
-  
+  const isTelegramUrl =
+    pdfUrl && (pdfUrl.includes('telegram') || pdfUrl.includes('t.me'))
+
   // Reset states when pdfUrl changes (unless it's a Telegram URL)
   useEffect(() => {
     if (!isTelegramUrl) {
@@ -174,13 +173,14 @@ const PDFThumbnail = memo(function PDFThumbnail({
 
   // Memoize file configuration to prevent unnecessary reloads
   const fileConfig = useMemo(() => {
-    if (!pdfUrl || typeof pdfUrl !== 'string' || pdfUrl.trim() === '') return null
-    
+    if (!pdfUrl || typeof pdfUrl !== 'string' || pdfUrl.trim() === '')
+      return null
+
     // Block Telegram URLs immediately to prevent fetch attempts
     if (pdfUrl.includes('telegram') || pdfUrl.includes('t.me')) {
       return null
     }
-    
+
     // Validate URL format
     try {
       new URL(pdfUrl)
@@ -188,10 +188,10 @@ const PDFThumbnail = memo(function PDFThumbnail({
       logger.error('Invalid PDF URL format', pdfUrl)
       return null
     }
-    
+
     return {
       url: pdfUrl,
-      withCredentials: false,
+      withCredentials: false
     }
   }, [pdfUrl])
 
@@ -201,23 +201,23 @@ const PDFThumbnail = memo(function PDFThumbnail({
     return {
       cMapUrl: `https://unpkg.com/pdfjs-dist@${version}/cmaps/`,
       cMapPacked: true,
-      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${version}/standard_fonts/`,
+      standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${version}/standard_fonts/`
     }
   }, [])
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     if (isUnmountingRef.current) return
-    
+
     setNumPages(numPages)
     setLoading(false)
     setError(false)
-    
+
     // Clear any existing timer
     if (workerTimerRef.current) {
       clearTimeout(workerTimerRef.current)
       workerTimerRef.current = null
     }
-    
+
     // Add a small delay to ensure the PDF.js worker is fully initialized
     // before attempting to render the Page component
     workerTimerRef.current = setTimeout(() => {
@@ -229,7 +229,7 @@ const PDFThumbnail = memo(function PDFThumbnail({
 
   function onDocumentLoadError(error: Error) {
     if (isUnmountingRef.current) return
-    
+
     logger.error('PDF thumbnail load error', {
       error: error.message,
       pdfUrl,
@@ -239,21 +239,21 @@ const PDFThumbnail = memo(function PDFThumbnail({
     setError(true)
     setPageReady(false)
   }
-  
+
   function onPageRenderError(error: Error) {
     if (isUnmountingRef.current) return
-    
+
     logger.error('PDF page render error', {
       error: error.message,
       pdfUrl,
       attempts: renderAttempts
     })
-    
+
     // Try to recover by resetting pageReady and retrying (max 2 attempts)
     if (renderAttempts < 2) {
       setPageReady(false)
       setRenderAttempts(prev => prev + 1)
-      
+
       // Wait a bit longer before retry
       if (workerTimerRef.current) {
         clearTimeout(workerTimerRef.current)
@@ -306,7 +306,9 @@ const PDFThumbnail = memo(function PDFThumbnail({
               />
             </svg>
             <p className="text-xs text-muted-foreground">PDF Preview</p>
-            <p className="text-xs text-muted-foreground mt-1">(Telegram storage not supported)</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              (Telegram storage not supported)
+            </p>
           </div>
         )}
       </div>
@@ -403,13 +405,17 @@ const PDFThumbnail = memo(function PDFThumbnail({
         ) : (
           <div className="flex items-center justify-center w-full h-full">
             {/* Placeholder until the page can be safely rendered */}
-            <div className="text-muted-foreground text-sm">Preview loading...</div>
+            <div className="text-muted-foreground text-sm">
+              Preview loading...
+            </div>
           </div>
         )}
       </Document>
 
       {numPages > 1 && (
-        <div className={`absolute bottom-3 ${pageCountPosition} bg-black text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg z-20`}>
+        <div
+          className={`absolute bottom-3 ${pageCountPosition} bg-black text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg z-20`}
+        >
           {numPages} pages
         </div>
       )}

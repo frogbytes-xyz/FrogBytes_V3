@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { retryWithKeyRotation } from '@/lib/api-keys/retry-with-fallback'
+import { logger } from '@/lib/utils/logger'
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent'
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent'
 
 interface Flashcard {
   front: string
@@ -23,7 +26,6 @@ interface FlashcardResponse {
 }
 
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     const body: FlashcardRequest = await request.json()
     const { content, cardCount = 10, difficulty = 'bachelor' } = body
@@ -33,7 +35,9 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Content is required',
-          details: ['Please provide lecture content to generate flashcards from'],
+          details: [
+            'Please provide lecture content to generate flashcards from'
+          ]
         },
         { status: 400 }
       )
@@ -70,24 +74,30 @@ Respond with ONLY the JSON array, no other text.`
         const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: prompt
-              }]
-            }],
+            contents: [
+              {
+                parts: [
+                  {
+                    text: prompt
+                  }
+                ]
+              }
+            ],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 3048,
-            },
-          }),
+              maxOutputTokens: 3048
+            }
+          })
         })
 
         if (!response.ok) {
           const errorText = await response.text()
-          const error: any = new Error(`HTTP ${response.status}: ${response.statusText}`)
+          const error: any = new Error(
+            `HTTP ${response.status}: ${response.statusText}`
+          )
           error.responseText = errorText
           throw error
         }
@@ -97,7 +107,9 @@ Respond with ONLY the JSON array, no other text.`
       {
         maxRetries: 5,
         onRetry: (attempt, error) => {
-          logger.info(`[Flashcards] Retry attempt ${attempt} due to: ${error.message}`)
+          logger.info(
+            `[Flashcards] Retry attempt ${attempt} due to: ${error.message}`
+          )
         }
       }
     )
@@ -123,7 +135,7 @@ Respond with ONLY the JSON array, no other text.`
         {
           success: false,
           error: 'Failed to parse generated flashcards',
-          details: ['The AI response was not in the expected format'],
+          details: ['The AI response was not in the expected format']
         },
         { status: 500 }
       )
@@ -135,7 +147,7 @@ Respond with ONLY the JSON array, no other text.`
         {
           success: false,
           error: 'Invalid flashcards format',
-          details: ['Generated flashcards were empty or malformed'],
+          details: ['Generated flashcards were empty or malformed']
         },
         { status: 500 }
       )
@@ -144,7 +156,7 @@ Respond with ONLY the JSON array, no other text.`
     return NextResponse.json<FlashcardResponse>(
       {
         success: true,
-        flashcards,
+        flashcards
       },
       { status: 200 }
     )
@@ -157,7 +169,9 @@ Respond with ONLY the JSON array, no other text.`
         {
           success: false,
           error: 'AI service temporarily unavailable',
-          details: ['All available API keys are currently exhausted. Please try again in a few moments.'],
+          details: [
+            'All available API keys are currently exhausted. Please try again in a few moments.'
+          ]
         },
         { status: 503 }
       )
@@ -167,7 +181,7 @@ Respond with ONLY the JSON array, no other text.`
       {
         success: false,
         error: 'Internal server error',
-        details: [error.message || 'An unexpected error occurred'],
+        details: [error.message || 'An unexpected error occurred']
       },
       { status: 500 }
     )

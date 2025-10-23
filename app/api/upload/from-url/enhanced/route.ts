@@ -2,13 +2,13 @@ import { logger } from '@/lib/utils/logger'
 
 /**
  * Enhanced POST /api/upload/from-url/enhanced
- * 
+ *
  * Protected endpoint for downloading videos from URLs with automatic authentication.
  * Orchestrates the complete flow: cookie checking, auth detection, login handling, and download.
- * 
+ *
  * Accepts JSON with:
  * - url: Video URL (YouTube, Vimeo, Panopto, Moodle, etc.)
- * 
+ *
  * @returns Job status with tracking information
  */
 
@@ -19,9 +19,10 @@ import { withErrorHandler } from '@/lib/middleware/error-handler'
 import '@/lib/middleware/setup-error-handlers' // Initialize error handling for Node.js runtime
 import {
   saveUploadMetadata,
-  updateTelegramBackupId,
+  updateTelegramBackupId
 } from '@/services/documents'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
@@ -30,7 +31,13 @@ export interface EnhancedUploadResponse {
   success: boolean
   message: string
   jobId: string
-  status: 'processing' | 'authentication_required' | 'authentication_successful' | 'download_started' | 'completed' | 'failed'
+  status:
+    | 'processing'
+    | 'authentication_required'
+    | 'authentication_successful'
+    | 'download_started'
+    | 'completed'
+    | 'failed'
   authRequired?: boolean
   authPerformed?: boolean
   platform?: string
@@ -52,12 +59,12 @@ export interface ErrorResponse {
   details?: string[]
 }
 
-// Import shared job status map
-import { jobStatus } from './[jobId]/route'
+// Import shared job store
+import { jobStore } from '@/lib/services/job-store'
 
 /**
  * Orchestrate the complete video download flow as specified in Task #10
- * 
+ *
  * Flow:
  * 1. Extract url and userId from the request
  * 2. Check for cached cookies using CookieService.get()
@@ -77,25 +84,33 @@ async function orchestrateVideoDownload(
 
     // Lazy import services to avoid stealth plugin initialization issues
     const { cookieService } = await import('@/lib/services/cookie-service')
-    const { authRequirementDetector } = await import('@/lib/services/auth-requirement-detector')
-    const { authenticationManager } = await import('@/lib/services/authentication-manager')
+    const { authRequirementDetector } = await import(
+      '@/lib/services/auth-requirement-detector'
+    )
+    // Import authentication manager for future use
+    // const { authenticationManager } = await import('@/lib/services/authentication-manager')
 
     // Step 2: Check for cached cookies using CookieService.get()
     const domain = new URL(url).hostname
     const sessionId = cookieService.generateSessionId()
-    
+
     // Try to get existing cookies for this domain
-    const existingCookies = await cookieService.getNetscapeCookies(userId, sessionId)
-    
+    const existingCookies = await cookieService.getNetscapeCookies(
+      userId,
+      sessionId
+    )
+
     if (existingCookies.success && existingCookies.data) {
-      logger.info(`Found cached cookies for ${domain}, proceeding with download`)
-      
+      logger.info(
+        `Found cached cookies for ${domain}, proceeding with download`
+      )
+
       // Update job status
-      jobStatus.set(jobId, {
+      jobStore.set(jobId, {
         status: 'authentication_successful',
         userId,
         url,
-        startTime: Date.now(),
+        startTime: Date.now()
       })
 
       // Step 6: Trigger DownloadManager.downloadWithCookies() in the background
@@ -104,19 +119,31 @@ async function orchestrateVideoDownload(
     }
 
     // Step 3: If no valid cookies, call isAuthRequired(url)
-    logger.info(`No cached cookies found, checking if authentication is required for ${url}`)
-    
-    const authDetection = await authRequirementDetector.detectAuthRequirement(url)
-    
+    logger.info(
+      `No cached cookies found, checking if authentication is required for ${url}`
+    )
+
+    const authDetection =
+      await authRequirementDetector.detectAuthRequirement(url)
+    logger.info(`Auth detection result for ${url}:`, {
+      requiresAuth: authDetection.requiresAuth,
+      confidence: authDetection.confidence,
+      platform: authDetection.platform,
+      indicators: authDetection.indicators,
+      reasoning: authDetection.reasoning
+    })
+
     if (!authDetection.requiresAuth) {
-      logger.info(`No authentication required for ${url}, proceeding with normal download`)
-      
+      logger.info(
+        `No authentication required for ${url}, proceeding with normal download`
+      )
+
       // Update job status
-      jobStatus.set(jobId, {
+      jobStore.set(jobId, {
         status: 'download_started',
         userId,
         url,
-        startTime: Date.now(),
+        startTime: Date.now()
       })
 
       // Proceed with normal download
@@ -126,27 +153,31 @@ async function orchestrateVideoDownload(
 
     // Step 4: If auth is required, return authentication required status
     // The frontend will handle authentication via mini-browser
-    logger.info(`Authentication required for ${url} (${authDetection.platform}), returning auth required status`)
-    
-    jobStatus.set(jobId, {
+    logger.info(
+      `Authentication required for ${url} (${authDetection.platform}), returning auth required status`
+    )
+
+    jobStore.set(jobId, {
       status: 'authentication_required',
       userId,
       url,
-      startTime: Date.now(),
+      startTime: Date.now()
     })
 
-    // Don't try to handle authentication in the backend
+    // Don&apos;t try to handle authentication in the backend
     // The frontend mini-browser will handle it
     return
-
   } catch (error) {
     logger.error(`Job ${jobId} orchestration failed:`, error)
-    jobStatus.set(jobId, {
+    jobStore.set(jobId, {
       status: 'failed',
       userId,
       url,
       startTime: Date.now(),
-      error: error instanceof Error ? error.message : 'Unknown error during orchestration',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Unknown error during orchestration'
     })
   }
 }
@@ -162,16 +193,18 @@ async function triggerDownloadWithCookies(
 ): Promise<void> {
   try {
     logger.info(`Starting download with cookies for job ${jobId}`)
-    
-    jobStatus.set(jobId, {
+
+    jobStore.set(jobId, {
       status: 'download_started',
       userId,
       url,
-      startTime: Date.now(),
+      startTime: Date.now()
     })
 
     // Lazy import enhanced download manager
-    const { enhancedDownloadManager } = await import('@/lib/services/enhanced-download-manager')
+    const { enhancedDownloadManager } = await import(
+      '@/lib/services/enhanced-download-manager'
+    )
 
     // Use EnhancedDownloadManager to download with cookies
     const downloadResult = await enhancedDownloadManager.downloadWithCookies({
@@ -179,17 +212,17 @@ async function triggerDownloadWithCookies(
       userId,
       netscapeCookies,
       options: {
-        maxFileSize: MAX_FILE_SIZE,
+        maxFileSize: MAX_FILE_SIZE
       }
     })
 
     if (!downloadResult.success) {
-      jobStatus.set(jobId, {
+      jobStore.set(jobId, {
         status: 'failed',
         userId,
         url,
         startTime: Date.now(),
-        error: downloadResult.error,
+        ...(downloadResult.error ? { error: downloadResult.error } : {})
       })
       return
     }
@@ -205,12 +238,12 @@ async function triggerDownloadWithCookies(
     )
 
     if (!metadataResult.success) {
-      jobStatus.set(jobId, {
+      jobStore.set(jobId, {
         status: 'failed',
         userId,
         url,
         startTime: Date.now(),
-        error: 'Failed to save file metadata',
+        error: 'Failed to save file metadata'
       })
       return
     }
@@ -223,26 +256,29 @@ async function triggerDownloadWithCookies(
         downloadResult.size,
         downloadResult.metadata?.sourceUrl
       )
-        .then(async (result) => {
+        .then(async result => {
           if (result.success && result.fileId) {
             const updateResult = await updateTelegramBackupId(
               downloadResult.fileId,
               result.fileId
             )
             if (!updateResult.success) {
-              logger.error('Failed to update Telegram file ID', updateResult.error)
+              logger.error(
+                'Failed to update Telegram file ID',
+                updateResult.error
+              )
             }
           } else {
             logger.warn('Telegram backup failed', { error: result.error })
           }
         })
-        .catch((error) => {
+        .catch(error => {
           logger.error('Telegram upload error', error)
         })
     }
 
     // Mark job as completed
-    jobStatus.set(jobId, {
+    jobStore.set(jobId, {
       status: 'completed',
       userId,
       url,
@@ -257,20 +293,20 @@ async function triggerDownloadWithCookies(
         authPerformed: true,
         platform: 'unknown',
         authMethod: 'interactive',
-        cookiesExtracted: 0,
-      },
+        cookiesExtracted: 0
+      }
     })
 
     logger.info(`Job ${jobId} completed successfully`)
-
   } catch (error) {
     logger.error(`Download with cookies failed for job ${jobId}:`, error)
-    jobStatus.set(jobId, {
+    jobStore.set(jobId, {
       status: 'failed',
       userId,
       url,
       startTime: Date.now(),
-      error: error instanceof Error ? error.message : 'Unknown error during download',
+      error:
+        error instanceof Error ? error.message : 'Unknown error during download'
     })
   }
 }
@@ -286,8 +322,13 @@ async function triggerNormalDownload(
   try {
     logger.info(`Starting normal download for job ${jobId}`)
 
-    // Lazy import enhanced download manager
-    const { enhancedDownloadManager } = await import('@/lib/services/enhanced-download-manager')
+    // Lazy import enhanced download manager and auth detector
+    const { enhancedDownloadManager } = await import(
+      '@/lib/services/enhanced-download-manager'
+    )
+    const { authRequirementDetector } = await import(
+      '@/lib/services/auth-requirement-detector'
+    )
 
     // Use EnhancedDownloadManager for normal download
     const downloadResult = await enhancedDownloadManager.downloadVideo(
@@ -295,17 +336,56 @@ async function triggerNormalDownload(
       userId,
       {
         skipAuthDetection: true, // Skip auth detection since we already checked
-        maxFileSize: MAX_FILE_SIZE,
+        maxFileSize: MAX_FILE_SIZE
       }
     )
 
     if (!downloadResult.success) {
-      jobStatus.set(jobId, {
+      // Check if the failure is due to authentication requirements
+      const isAuthError =
+        downloadResult.error?.includes('authentication') ||
+        downloadResult.error?.includes('login') ||
+        downloadResult.error?.includes('private') ||
+        downloadResult.error?.includes('unauthorized') ||
+        downloadResult.error?.includes('forbidden') ||
+        downloadResult.error?.includes('signin') ||
+        downloadResult.error?.includes('auth')
+
+      if (isAuthError) {
+        logger.info(
+          `Download failed due to authentication for ${url}, triggering fallback auth detection`
+        )
+
+        // Re-run auth detection with higher sensitivity
+        const fallbackAuthDetection =
+          await authRequirementDetector.detectAuthRequirement(url, {
+            timeout: 10000,
+            followRedirects: true
+          })
+
+        if (fallbackAuthDetection.requiresAuth) {
+          logger.info(
+            `Fallback auth detection confirmed authentication required for ${url}`
+          )
+          jobStore.set(jobId, {
+            status: 'authentication_required',
+            userId,
+            url,
+            startTime: Date.now(),
+            error:
+              'Authentication required - download failed due to access restrictions'
+          })
+          return
+        }
+      }
+
+      // If not an auth error or fallback detection didn't find auth requirement, mark as failed
+      jobStore.set(jobId, {
         status: 'failed',
         userId,
         url,
         startTime: Date.now(),
-        error: downloadResult.error,
+        ...(downloadResult.error ? { error: downloadResult.error } : {})
       })
       return
     }
@@ -321,12 +401,12 @@ async function triggerNormalDownload(
     )
 
     if (!metadataResult.success) {
-      jobStatus.set(jobId, {
+      jobStore.set(jobId, {
         status: 'failed',
         userId,
         url,
         startTime: Date.now(),
-        error: 'Failed to save file metadata',
+        error: 'Failed to save file metadata'
       })
       return
     }
@@ -339,26 +419,29 @@ async function triggerNormalDownload(
         downloadResult.size,
         downloadResult.metadata?.sourceUrl
       )
-        .then(async (result) => {
+        .then(async result => {
           if (result.success && result.fileId) {
             const updateResult = await updateTelegramBackupId(
               downloadResult.fileId,
               result.fileId
             )
             if (!updateResult.success) {
-              logger.error('Failed to update Telegram file ID', updateResult.error)
+              logger.error(
+                'Failed to update Telegram file ID',
+                updateResult.error
+              )
             }
           } else {
             logger.warn('Telegram backup failed', { error: result.error })
           }
         })
-        .catch((error) => {
+        .catch(error => {
           logger.error('Telegram upload error', error)
         })
     }
 
     // Mark job as completed
-    jobStatus.set(jobId, {
+    jobStore.set(jobId, {
       status: 'completed',
       userId,
       url,
@@ -373,20 +456,20 @@ async function triggerNormalDownload(
         authPerformed: false,
         platform: downloadResult.platform,
         authMethod: 'none',
-        cookiesExtracted: 0,
-      },
+        cookiesExtracted: 0
+      }
     })
 
     logger.info(`Job ${jobId} completed successfully`)
-
   } catch (error) {
     logger.error(`Normal download failed for job ${jobId}:`, error)
-    jobStatus.set(jobId, {
+    jobStore.set(jobId, {
       status: 'failed',
       userId,
       url,
       startTime: Date.now(),
-      error: error instanceof Error ? error.message : 'Unknown error during download',
+      error:
+        error instanceof Error ? error.message : 'Unknown error during download'
     })
   }
 }
@@ -395,60 +478,60 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   // Get authenticated user
   const user = await getAuthUser(request)
 
-    if (!user) {
-      return NextResponse.json<ErrorResponse>(
-        {
-          success: false,
-          error: 'Unauthorized',
-          details: ['Authentication required'],
-        },
-        { status: 401 }
-      )
-    }
+  if (!user) {
+    return NextResponse.json<ErrorResponse>(
+      {
+        success: false,
+        error: 'Unauthorized',
+        details: ['Authentication required']
+      },
+      { status: 401 }
+    )
+  }
 
-    // Parse request body
-    const body = await request.json()
-    const url = body.url as string | undefined
+  // Parse request body
+  const body = await request.json()
+  const url = body.url as string | undefined
 
-    if (!url) {
-      return NextResponse.json<ErrorResponse>(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: ['No URL provided'],
-        },
-        { status: 400 }
-      )
-    }
+  if (!url) {
+    return NextResponse.json<ErrorResponse>(
+      {
+        success: false,
+        error: 'Validation failed',
+        details: ['No URL provided']
+      },
+      { status: 400 }
+    )
+  }
 
-    // Validate URL
-    const validation = isValidVideoUrl(url)
-    if (!validation.isValid) {
-      return NextResponse.json<ErrorResponse>(
-        {
-          success: false,
-          error: 'Validation failed',
-          details: [validation.error || 'Invalid video URL'],
-        },
-        { status: 400 }
-      )
-    }
+  // Validate URL
+  const validation = isValidVideoUrl(url)
+  if (!validation.isValid) {
+    return NextResponse.json<ErrorResponse>(
+      {
+        success: false,
+        error: 'Validation failed',
+        details: [validation.error || 'Invalid video URL']
+      },
+      { status: 400 }
+    )
+  }
 
-    // Generate job ID
-    const jobId = randomUUID()
+  // Generate job ID
+  const jobId = randomUUID()
 
-    // Initialize job status
-    jobStatus.set(jobId, {
-      status: 'processing',
-      userId: user.id,
-      url,
-      startTime: Date.now(),
-    })
+  // Initialize job status
+  jobStore.set(jobId, {
+    status: 'processing',
+    userId: user.id,
+    url,
+    startTime: Date.now()
+  })
 
-    // Start background orchestration process
-    orchestrateVideoDownload(jobId, url, user.id).catch((error) => {
-      logger.error(`Background job ${jobId} failed:`, error)
-    })
+  // Start background orchestration process
+  orchestrateVideoDownload(jobId, url, user.id).catch(error => {
+    logger.error(`Background job ${jobId} failed:`, error)
+  })
 
   // Return immediate response with job ID
   return NextResponse.json<EnhancedUploadResponse>(
@@ -456,9 +539,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       success: true,
       message: 'Video download job started',
       jobId,
-      status: 'processing',
+      status: 'processing'
     },
     { status: 202 } // Accepted - processing asynchronously
   )
 })
-

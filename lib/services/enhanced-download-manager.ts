@@ -4,10 +4,11 @@
  */
 
 import { randomUUID } from 'crypto'
-import { mkdir, stat, unlink, writeFile } from 'fs/promises'
+import { unlink, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { downloadVideo as originalDownloadVideo, type DownloadResult, type DownloadOptions, type DownloadProgress } from '../video-download/downloader'
+import { downloadVideo as originalDownloadVideo } from '../video-download/downloader'
+import type { DownloadResult, DownloadOptions } from '../video-download/types'
 import { cookieExtractionService } from './cookie-extraction-service'
 import { cookieService } from './cookie-service'
 import { authRequirementDetector } from './auth-requirement-detector'
@@ -67,33 +68,35 @@ class EnhancedDownloadManager {
     userId: string,
     options: EnhancedDownloadOptions = {}
   ): Promise<EnhancedDownloadResult> {
-    const startTime = Date.now()
     let authRequired = false
     let authPerformed = false
-    let cookiesExtracted = 0
+    const cookiesExtracted = 0
     let platform: string | undefined
     let authMethod: 'stored' | 'interactive' | 'none' = 'none'
 
     try {
       // Step 1: Detect if authentication is required
       if (!options.skipAuthDetection) {
-        const authDetection = await authRequirementDetector.detectAuthRequirement(url)
+        const authDetection =
+          await authRequirementDetector.detectAuthRequirement(url)
         authRequired = authDetection.requiresAuth
         platform = authDetection.platform
 
         if (authRequired && authDetection.confidence === 'high') {
-          logger.info(`Authentication required for ${url}`, { platform: authDetection.platform || 'unknown' })
+          logger.info(`Authentication required for ${url}`, {
+            platform: authDetection.platform || 'unknown'
+          })
         }
       }
 
       // Step 2: Handle authentication if required
       if (authRequired || options.forceAuth) {
         const authResult = await this.handleAuthentication(url, userId, options)
-        
+
         if (authResult.success) {
           authPerformed = true
           authMethod = authResult.method
-          
+
           // Use the extracted cookies for download
           if (authResult.cookies) {
             const downloadResult = await this.downloadWithCookies({
@@ -101,8 +104,7 @@ class EnhancedDownloadManager {
               userId,
               netscapeCookies: authResult.cookies,
               options: {
-                ...options,
-                cookieText: undefined, // Don't use cookieText when we have netscapeCookies
+                ...options
               }
             })
 
@@ -111,72 +113,108 @@ class EnhancedDownloadManager {
               authRequired,
               authPerformed,
               cookiesExtracted: authResult.cookieCount || 0,
-              platform,
-              authMethod,
+              ...(platform ? { platform } : {}),
+              authMethod
             }
           }
         } else {
-          logger.warn(`Authentication failed for ${url}`, { error: authResult.error })
+          logger.warn(`Authentication failed for ${url}`, {
+            error: authResult.error
+          })
           // Continue with download attempt without authentication
         }
       }
 
       // Step 3: Try download without authentication
       const downloadResult = await originalDownloadVideo(url, userId, options)
-      
+
       // Step 4: If download failed with auth error and we haven't tried authentication yet, show popup
-      if (!downloadResult.success && 
-          downloadResult.errorType === 'auth' && 
-          !authPerformed && 
-          !options.skipAuthDetection) {
+      if (
+        !downloadResult.success &&
+        downloadResult.errorType === 'auth' &&
+        !authPerformed &&
+        !options.skipAuthDetection
+      ) {
+        logger.info(
+          `Download failed with auth error for ${url}, showing authentication popup`
+        )
 
-        logger.info(`Download failed with auth error for ${url}, showing authentication popup`)
+        // Show mini-browser and try authentication
+        const popupAuthResult = await this.handleAuthenticationWithPopup(
+          url,
+          userId,
+          options
+        )
 
-        // Show popup and try authentication
-        const popupAuthResult = await this.handleAuthenticationWithPopup(url, userId, options)
-        
         if (popupAuthResult.success && popupAuthResult.cookies) {
+          logger.info(
+            `Authentication successful, retrying download with cookies`,
+            {
+              url,
+              userId,
+              cookieCount: popupAuthResult.cookieCount
+            }
+          )
+
           // Retry download with authentication
           const retryResult = await this.downloadWithCookies({
             url,
             userId,
             netscapeCookies: popupAuthResult.cookies,
             options: {
-              ...options,
-              cookieText: undefined,
+              ...options
             }
           })
-          
+
           return {
             ...retryResult,
             authRequired: true,
             authPerformed: true,
-            cookiesExtracted: this.countCookiesInNetscapeFormat(popupAuthResult.cookies),
-            platform,
-            authMethod: 'interactive',
+            cookiesExtracted: this.countCookiesInNetscapeFormat(
+              popupAuthResult.cookies
+            ),
+            ...(platform ? { platform } : {}),
+            authMethod: 'interactive'
           }
         } else {
-          // Authentication failed, return original result with auth info
+          // Authentication failed, return error with details
+          const errorMessage = this.getAuthErrorMessage(
+            popupAuthResult.errorType ?? 'unknown',
+            popupAuthResult.error
+          )
+
+          logger.warn(`Authentication failed for ${url}`, {
+            userId,
+            errorType: popupAuthResult.errorType,
+            error: popupAuthResult.error
+          })
+
           return {
             ...downloadResult,
             authRequired: true,
             authPerformed: false,
             cookiesExtracted: 0,
-            platform,
+            ...(platform ? { platform } : {}),
             authMethod: 'none',
+            error: errorMessage,
+            errorType:
+              popupAuthResult.errorType === 'credentials'
+                ? 'auth'
+                : popupAuthResult.errorType === 'browser'
+                  ? 'auth'
+                  : (popupAuthResult.errorType ?? 'auth')
           }
         }
       }
-      
+
       return {
         ...downloadResult,
         authRequired,
         authPerformed,
         cookiesExtracted,
-        platform,
-        authMethod,
+        ...(platform ? { platform } : {}),
+        authMethod
       }
-
     } catch (error) {
       return await this.handleDownloadError(error, url, userId, options)
     }
@@ -184,6 +222,12 @@ class EnhancedDownloadManager {
 
   /**
    * Download video with provided Netscape cookies
+   *
+   * Implements retry logic for transient failures (network errors, timeouts).
+   * Does NOT retry authentication errors as they require user intervention.
+   *
+   * @param options - Download configuration with cookies
+   * @returns Download result with success status and file information
    */
   async downloadWithCookies({
     url,
@@ -195,6 +239,10 @@ class EnhancedDownloadManager {
     const tempDir = tmpdir()
     const cookieFilePath = join(tempDir, `cookies_${fileId}_${Date.now()}.txt`)
 
+    const maxRetries = 3
+    const retryDelayMs = 1000
+    let lastError: DownloadResult | null = null
+
     try {
       // Write cookies to temporary file
       await writeFile(cookieFilePath, netscapeCookies, 'utf-8')
@@ -202,37 +250,118 @@ class EnhancedDownloadManager {
       // Create download options with cookie file
       const downloadOptions: DownloadOptions = {
         ...options,
-        cookieText: undefined, // Don't use cookieText when we have a cookie file
-        onProgress: options.onProgress,
-        maxFileSize: options.maxFileSize,
+        ...(options.onProgress ? { onProgress: options.onProgress } : {}),
+        ...(options.maxFileSize ? { maxFileSize: options.maxFileSize } : {})
       }
 
-      // Download with cookie file
-      const result = await originalDownloadVideo(url, userId, {
-        ...downloadOptions,
-        cookieText: netscapeCookies, // Use the netscape cookies directly
-      })
+      // Retry loop for transient failures
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        logger.info(`Download attempt ${attempt}/${maxRetries}`, {
+          url,
+          userId
+        })
 
-      // Handle download errors (including cookie invalidation for auth errors)
-      if (!result.success && result.errorType === 'auth') {
-        const domain = new URL(url).hostname
-        await this.invalidateCookies(userId, domain)
+        // Download with cookie file
+        const result = await originalDownloadVideo(url, userId, {
+          ...downloadOptions,
+          cookieText: netscapeCookies // Use the netscape cookies directly
+        })
+
+        // Success - return immediately
+        if (result.success) {
+          logger.info(`Download successful on attempt ${attempt}`, {
+            url,
+            userId
+          })
+          return result
+        }
+
+        // Store error for potential return
+        lastError = result
+
+        // Handle different error types
+        if (result.errorType === 'auth') {
+          // Authentication errors - invalidate cookies and do NOT retry
+          logger.warn(`Authentication error - not retrying`, {
+            url,
+            userId,
+            attempt
+          })
+          const domain = new URL(url).hostname
+          await this.invalidateCookies(userId, domain)
+          return result
+        } else if (
+          result.errorType === 'network' ||
+          result.errorType === 'timeout'
+        ) {
+          // Network/timeout errors - retry with exponential backoff
+          if (attempt < maxRetries) {
+            const delay = retryDelayMs * Math.pow(2, attempt - 1)
+            logger.info(`Transient error - retrying in ${delay}ms`, {
+              url,
+              userId,
+              attempt,
+              errorType: result.errorType,
+              error: result.error
+            })
+            await new Promise(resolve => setTimeout(resolve, delay))
+            continue
+          } else {
+            logger.warn(`Max retries reached for transient error`, {
+              url,
+              userId,
+              errorType: result.errorType
+            })
+            return result
+          }
+        } else {
+          // Other errors (format, unknown) - do NOT retry
+          logger.warn(`Non-retryable error encountered`, {
+            url,
+            userId,
+            errorType: result.errorType,
+            attempt
+          })
+          return result
+        }
       }
 
-      return result
-
+      // Should not reach here, but return last error if we do
+      return (
+        lastError ?? {
+          success: false,
+          fileId: '',
+          filename: '',
+          size: 0,
+          mimeType: '',
+          path: '',
+          error: 'Maximum retry attempts exceeded',
+          errorType: 'unknown'
+        }
+      )
     } finally {
       // Clean up temporary cookie file
       try {
         await unlink(cookieFilePath)
       } catch (error) {
-        logger.warn(`Failed to cleanup temp cookie file`, { path: cookieFilePath, error })
+        logger.warn(`Failed to cleanup temp cookie file`, {
+          path: cookieFilePath,
+          error
+        })
       }
     }
   }
 
   /**
-   * Handle authentication with popup when media is not found
+   * Handle authentication with mini-browser when media is not found
+   *
+   * This method integrates with the mini-browser authentication flow by creating
+   * a Puppeteer session, waiting for user authentication, and extracting cookies.
+   *
+   * @param url - The video URL requiring authentication
+   * @param userId - The user ID requesting the download
+   * @param options - Enhanced download options including auth configuration
+   * @returns Authentication result with cookies if successful
    */
   private async handleAuthenticationWithPopup(
     url: string,
@@ -244,47 +373,201 @@ class EnhancedDownloadManager {
     cookieCount?: number
     method: 'stored' | 'interactive' | 'none'
     error?: string
+    errorType?: 'timeout' | 'credentials' | 'network' | 'browser' | 'unknown'
   }> {
     const authOptions = options.authOptions
     if (!authOptions) {
-      return { success: false, method: 'none', error: 'No authentication options provided' }
+      return {
+        success: false,
+        method: 'none',
+        error: 'No authentication options provided',
+        errorType: 'unknown'
+      }
     }
 
     try {
-      // Use the new popup authentication method
-      const authResult = await authenticationManager.handleAuthenticationWithPopup(url, userId, {
+      logger.info(`Starting mini-browser authentication for ${url}`, { userId })
+
+      // Create mini-browser session using authentication manager
+      const sessionId = await authenticationManager.createMiniBrowserSession({
+        url,
         userId: authOptions.userId,
-        authUrl: url,
-        timeout: authOptions.timeout,
-        successSelectors: authOptions.successSelectors,
-        successUrlPatterns: authOptions.successUrlPatterns,
-        authCookieNames: authOptions.authCookieNames,
-        platform: authOptions.platform,
+        ...(authOptions.timeout ? { timeout: authOptions.timeout } : {})
       })
 
-      if (authResult.success && authResult.cookies) {
-        // Store cookies for future use
-        await this.storeCookies(userId, url, authResult.cookies)
-        
-        return {
-          success: true,
-          cookies: authResult.cookies,
-          cookieCount: this.countCookiesInNetscapeFormat(authResult.cookies),
-          method: 'interactive',
+      logger.info(`Mini-browser session created: ${sessionId}`, { url, userId })
+
+      // Poll for authentication completion with timeout
+      const timeout = authOptions.timeout ?? 300000
+      const pollInterval = 2000
+      const maxAttempts = Math.floor(timeout / pollInterval)
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
+
+        const status =
+          authenticationManager.getMiniBrowserSessionStatus(sessionId)
+
+        if (status.status === 'authenticated' && status.cookies) {
+          logger.info(`Mini-browser authentication successful for ${url}`, {
+            userId,
+            sessionId,
+            cookieCount: this.countCookiesInNetscapeFormat(status.cookies)
+          })
+
+          // Store cookies for future use
+          await this.storeCookies(userId, url, status.cookies)
+
+          return {
+            success: true,
+            cookies: status.cookies,
+            cookieCount: this.countCookiesInNetscapeFormat(status.cookies),
+            method: 'interactive'
+          }
+        } else if (status.status === 'failed') {
+          logger.warn(`Mini-browser authentication failed for ${url}`, {
+            userId,
+            sessionId,
+            error: status.message
+          })
+
+          return {
+            success: false,
+            method: 'interactive',
+            error: status.message ?? 'Authentication failed',
+            errorType: 'credentials'
+          }
+        } else if (status.status === 'timeout') {
+          logger.warn(`Mini-browser authentication timed out for ${url}`, {
+            userId,
+            sessionId
+          })
+
+          return {
+            success: false,
+            method: 'interactive',
+            error: status.message ?? 'Authentication session timed out',
+            errorType: 'timeout'
+          }
         }
-      } else {
-        return {
-          success: false,
-          method: 'interactive',
-          error: authResult.error || 'Authentication failed',
-        }
+
+        // Status is still 'pending', continue polling
+        logger.debug(`Mini-browser authentication pending for ${url}`, {
+          userId,
+          sessionId,
+          attempt: attempt + 1,
+          maxAttempts
+        })
       }
-    } catch (error) {
+
+      // Max attempts reached - timeout
+      logger.warn(`Mini-browser authentication polling timeout for ${url}`, {
+        userId,
+        sessionId: sessionId ?? 'unknown'
+      })
+
       return {
         success: false,
         method: 'interactive',
-        error: error instanceof Error ? error.message : 'Authentication error',
+        error:
+          'Authentication polling timeout - user did not complete login within time limit',
+        errorType: 'timeout'
       }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Authentication error'
+      logger.error(`Mini-browser authentication error for ${url}`, error, {
+        userId
+      })
+
+      return {
+        success: false,
+        method: 'interactive',
+        error: errorMessage,
+        errorType: this.classifyAuthError(errorMessage)
+      }
+    }
+  }
+
+  /**
+   * Classify authentication error type for proper user feedback
+   *
+   * @param errorMessage - The error message to classify
+   * @returns The classified error type
+   */
+  private classifyAuthError(
+    errorMessage: string
+  ): 'timeout' | 'credentials' | 'network' | 'browser' | 'unknown' {
+    const lowerError = errorMessage.toLowerCase()
+
+    if (
+      lowerError.includes('timeout') ||
+      lowerError.includes('timed out') ||
+      lowerError.includes('time limit')
+    ) {
+      return 'timeout'
+    }
+
+    if (
+      lowerError.includes('credential') ||
+      lowerError.includes('login') ||
+      lowerError.includes('password')
+    ) {
+      return 'credentials'
+    }
+
+    if (
+      lowerError.includes('network') ||
+      lowerError.includes('connection') ||
+      lowerError.includes('dns')
+    ) {
+      return 'network'
+    }
+
+    if (
+      lowerError.includes('browser') ||
+      lowerError.includes('puppeteer') ||
+      lowerError.includes('launch')
+    ) {
+      return 'browser'
+    }
+
+    return 'unknown'
+  }
+
+  /**
+   * Get user-friendly error message based on authentication error type
+   *
+   * Provides clear, actionable error messages to help users understand and resolve
+   * authentication issues during video download.
+   *
+   * @param errorType - The classified error type
+   * @param originalError - The original error message (optional)
+   * @returns User-friendly error message
+   */
+  private getAuthErrorMessage(
+    errorType: 'timeout' | 'credentials' | 'network' | 'browser' | 'unknown',
+    originalError?: string
+  ): string {
+    switch (errorType) {
+      case 'timeout':
+        return 'Authentication session timed out. Please try again and complete the login process more quickly. If the issue persists, check if the authentication page is loading properly.'
+
+      case 'credentials':
+        return 'Authentication failed. Please verify your login credentials are correct. If you are using institutional authentication, ensure you have active access to the service.'
+
+      case 'network':
+        return 'Network error occurred during authentication. Please check your internet connection and try again. If the problem persists, the authentication service may be temporarily unavailable.'
+
+      case 'browser':
+        return 'Browser automation error occurred. This may be due to system resource constraints or browser configuration issues. Please try again or contact support if the issue persists.'
+
+      case 'unknown':
+      default:
+        return (
+          originalError ??
+          'An unexpected error occurred during authentication. Please try again or contact support if the issue persists.'
+        )
     }
   }
 
@@ -304,7 +587,11 @@ class EnhancedDownloadManager {
   }> {
     const authOptions = options.authOptions
     if (!authOptions) {
-      return { success: false, method: 'none', error: 'No authentication options provided' }
+      return {
+        success: false,
+        method: 'none',
+        error: 'No authentication options provided'
+      }
     }
 
     // Step 1: Check for existing stored cookies
@@ -314,8 +601,10 @@ class EnhancedDownloadManager {
       return {
         success: true,
         cookies: storedCookies.cookies,
-        cookieCount: storedCookies.cookieCount,
-        method: 'stored',
+        ...(storedCookies.cookieCount
+          ? { cookieCount: storedCookies.cookieCount }
+          : {}),
+        method: 'stored'
       }
     }
 
@@ -325,40 +614,40 @@ class EnhancedDownloadManager {
         const authResult = await authenticationManager.handleLogin({
           userId: authOptions.userId,
           authUrl: url,
-          timeout: authOptions.timeout,
-          successSelectors: authOptions.successSelectors,
-          successUrlPatterns: authOptions.successUrlPatterns,
-          authCookieNames: authOptions.authCookieNames,
-          platform: authOptions.platform,
+          ...(authOptions.timeout ? { timeout: authOptions.timeout } : {})
         })
 
         if (authResult.success && authResult.cookies) {
           // Store cookies for future use
           await this.storeCookies(userId, url, authResult.cookies)
-          
+
           return {
             success: true,
             cookies: authResult.cookies,
             cookieCount: this.countCookiesInNetscapeFormat(authResult.cookies),
-            method: 'interactive',
+            method: 'interactive'
           }
         } else {
           return {
             success: false,
             method: 'interactive',
-            error: authResult.error || 'Authentication failed',
+            error: authResult.error || 'Authentication failed'
           }
         }
       } catch (error) {
         return {
           success: false,
           method: 'interactive',
-          error: error instanceof Error ? error.message : 'Authentication error',
+          error: error instanceof Error ? error.message : 'Authentication error'
         }
       }
     }
 
-    return { success: false, method: 'none', error: 'No authentication method available' }
+    return {
+      success: false,
+      method: 'none',
+      error: 'No authentication method available'
+    }
   }
 
   /**
@@ -366,7 +655,7 @@ class EnhancedDownloadManager {
    */
   private async getStoredCookies(
     userId: string,
-    url: string
+    _url: string
   ): Promise<{
     success: boolean
     cookies?: string
@@ -374,16 +663,15 @@ class EnhancedDownloadManager {
     error?: string
   }> {
     try {
-      const domain = new URL(url).hostname
       const sessionId = cookieService.generateSessionId()
-      
+
       const result = await cookieService.get(userId, sessionId)
-      
+
       if (result.success && result.data) {
         return {
           success: true,
-          cookies: result.data,
-          cookieCount: this.countCookiesInNetscapeFormat(result.data),
+          cookies: result.data.cookies,
+          cookieCount: this.countCookiesInNetscapeFormat(result.data.cookies)
         }
       }
 
@@ -391,7 +679,10 @@ class EnhancedDownloadManager {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to retrieve stored cookies',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to retrieve stored cookies'
       }
     }
   }
@@ -399,11 +690,15 @@ class EnhancedDownloadManager {
   /**
    * Store cookies for future use
    */
-  private async storeCookies(userId: string, url: string, cookies: string): Promise<void> {
+  private async storeCookies(
+    userId: string,
+    url: string,
+    cookies: string
+  ): Promise<void> {
     try {
       const domain = new URL(url).hostname
       const sessionId = cookieService.generateSessionId()
-      
+
       await cookieService.set(userId, domain, cookies, sessionId)
     } catch (error) {
       logger.warn(`Failed to store cookies`, { userId, url, error })
@@ -432,8 +727,11 @@ class EnhancedDownloadManager {
   ): Promise<EnhancedDownloadResult> {
     try {
       // Extract cookies from the page
-      const extractionResult = await cookieExtractionService.extractCookies(page, options.cookieOptions)
-      
+      const extractionResult = await cookieExtractionService.extractCookies(
+        page,
+        options.cookieOptions
+      )
+
       if (!extractionResult.success || !extractionResult.cookies) {
         return {
           success: false,
@@ -442,10 +740,11 @@ class EnhancedDownloadManager {
           size: 0,
           mimeType: '',
           path: '',
-          error: extractionResult.error || 'Failed to extract cookies from page',
+          error:
+            extractionResult.error || 'Failed to extract cookies from page',
           authRequired: true,
           authPerformed: false,
-          cookiesExtracted: 0,
+          cookiesExtracted: 0
         }
       }
 
@@ -454,7 +753,7 @@ class EnhancedDownloadManager {
         url,
         userId,
         netscapeCookies: extractionResult.cookies,
-        options,
+        options
       })
 
       return {
@@ -462,9 +761,8 @@ class EnhancedDownloadManager {
         authRequired: true,
         authPerformed: true,
         cookiesExtracted: extractionResult.cookieCount || 0,
-        authMethod: 'stored',
+        authMethod: 'stored'
       }
-
     } catch (error) {
       return {
         success: false,
@@ -473,10 +771,13 @@ class EnhancedDownloadManager {
         size: 0,
         mimeType: '',
         path: '',
-        error: error instanceof Error ? error.message : 'Failed to download with page cookies',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to download with page cookies',
         authRequired: true,
         authPerformed: false,
-        cookiesExtracted: 0,
+        cookiesExtracted: 0
       }
     }
   }
@@ -498,14 +799,18 @@ class EnhancedDownloadManager {
       successfulDownloads: 0,
       failedDownloads: 0,
       authRequiredDownloads: 0,
-      averageDownloadTime: 0,
+      averageDownloadTime: 0
     }
   }
 
   /**
    * Invalidate cookies for a user and domain when authentication fails
    */
-  async invalidateCookies(userId: string, domain: string, sessionId?: string): Promise<void> {
+  async invalidateCookies(
+    userId: string,
+    domain: string,
+    sessionId?: string
+  ): Promise<void> {
     try {
       if (sessionId) {
         // Delete specific session cookies
@@ -514,7 +819,7 @@ class EnhancedDownloadManager {
       } else {
         // Delete all cookies for the user and domain
         // This would require implementing a method to get all sessions for a user
-        // For now, we'll log the attempt
+        // For now, we&apos;ll log the attempt
         logger.info(`Attempted to invalidate all cookies`, { userId, domain })
       }
     } catch (error) {
@@ -529,11 +834,12 @@ class EnhancedDownloadManager {
     error: any,
     url: string,
     userId: string,
-    options: EnhancedDownloadOptions
+    _options: EnhancedDownloadOptions
   ): Promise<EnhancedDownloadResult> {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
     const errorType = this.classifyDownloadError(errorMessage)
-    
+
     // If it's an authentication error, invalidate cookies and potentially retry
     if (errorType === 'auth') {
       const domain = new URL(url).hostname
@@ -554,10 +860,10 @@ class EnhancedDownloadManager {
         authPerformed: false,
         cookiesExtracted: 0,
         platform: 'unknown',
-        authMethod: 'none',
+        authMethod: 'none'
       }
     }
-    
+
     // For other error types, return the error as-is
     return {
       success: false,
@@ -572,46 +878,70 @@ class EnhancedDownloadManager {
       authPerformed: false,
       cookiesExtracted: 0,
       platform: 'unknown',
-      authMethod: 'none',
+      authMethod: 'none'
     }
   }
 
   /**
    * Classify download error type
    */
-  private classifyDownloadError(errorMessage: string): 'auth' | 'network' | 'format' | 'timeout' | 'unknown' {
+  private classifyDownloadError(
+    errorMessage: string
+  ): 'auth' | 'network' | 'format' | 'timeout' | 'unknown' {
     const lowerError = errorMessage.toLowerCase()
-    
+
     // Authentication errors
-    if (lowerError.includes('private') || lowerError.includes('authentication') || 
-        lowerError.includes('unauthorized') || lowerError.includes('forbidden') ||
-        lowerError.includes('login') || lowerError.includes('signin') ||
-        lowerError.includes('access denied') || lowerError.includes('members only') ||
-        lowerError.includes('subscription') || lowerError.includes('premium')) {
+    if (
+      lowerError.includes('private') ||
+      lowerError.includes('authentication') ||
+      lowerError.includes('unauthorized') ||
+      lowerError.includes('forbidden') ||
+      lowerError.includes('login') ||
+      lowerError.includes('signin') ||
+      lowerError.includes('access denied') ||
+      lowerError.includes('members only') ||
+      lowerError.includes('subscription') ||
+      lowerError.includes('premium')
+    ) {
       return 'auth'
     }
-    
+
     // Network errors
-    if (lowerError.includes('network') || lowerError.includes('connection') || 
-        lowerError.includes('timeout') || lowerError.includes('dns') ||
-        lowerError.includes('refused') || lowerError.includes('unreachable') ||
-        lowerError.includes('socket') || lowerError.includes('econnreset')) {
+    if (
+      lowerError.includes('network') ||
+      lowerError.includes('connection') ||
+      lowerError.includes('timeout') ||
+      lowerError.includes('dns') ||
+      lowerError.includes('refused') ||
+      lowerError.includes('unreachable') ||
+      lowerError.includes('socket') ||
+      lowerError.includes('econnreset')
+    ) {
       return 'network'
     }
-    
+
     // Format errors
-    if (lowerError.includes('format') || lowerError.includes('codec') || 
-        lowerError.includes('unsupported') || lowerError.includes('not available') ||
-        lowerError.includes('too large') || lowerError.includes('size limit')) {
+    if (
+      lowerError.includes('format') ||
+      lowerError.includes('codec') ||
+      lowerError.includes('unsupported') ||
+      lowerError.includes('not available') ||
+      lowerError.includes('too large') ||
+      lowerError.includes('size limit')
+    ) {
       return 'format'
     }
-    
+
     // Timeout errors
-    if (lowerError.includes('timeout') || lowerError.includes('timed out') ||
-        lowerError.includes('expired') || lowerError.includes('deadline')) {
+    if (
+      lowerError.includes('timeout') ||
+      lowerError.includes('timed out') ||
+      lowerError.includes('expired') ||
+      lowerError.includes('deadline')
+    ) {
       return 'timeout'
     }
-    
+
     return 'unknown'
   }
 
@@ -623,7 +953,7 @@ class EnhancedDownloadManager {
 
     // Check if yt-dlp is available
     // This would typically check if yt-dlp is installed and accessible
-    // For now, we'll assume it's available
+    // For now, we&apos;ll assume it's available
 
     // Check Redis connection for cookie storage
     if (!cookieService.isReady()) {
@@ -641,7 +971,7 @@ class EnhancedDownloadManager {
 
     return {
       isValid: errors.length === 0,
-      errors,
+      errors
     }
   }
 }

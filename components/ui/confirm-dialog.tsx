@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import {
   Dialog,
@@ -6,10 +6,10 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { AlertTriangle, Trash2, Archive } from "lucide-react"
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { AlertTriangle, Trash2, Archive } from 'lucide-react'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -19,8 +19,8 @@ interface ConfirmDialogProps {
   description: string
   confirmText?: string
   cancelText?: string
-  variant?: "destructive" | "warning" | "default"
-  icon?: "delete" | "archive" | "warning"
+  variant?: 'destructive' | 'warning' | 'default'
+  icon?: 'delete' | 'archive' | 'warning'
 }
 
 export function ConfirmDialog({
@@ -29,10 +29,10 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
-  variant = "default",
-  icon = "warning",
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'default',
+  icon = 'warning'
 }: ConfirmDialogProps) {
   const handleConfirm = () => {
     onConfirm()
@@ -42,19 +42,19 @@ export function ConfirmDialog({
   const IconComponent = {
     delete: Trash2,
     archive: Archive,
-    warning: AlertTriangle,
+    warning: AlertTriangle
   }[icon]
 
   const iconColor = {
-    destructive: "text-red-500",
-    warning: "text-orange-500",
-    default: "text-blue-500",
+    destructive: 'text-red-500',
+    warning: 'text-orange-500',
+    default: 'text-blue-500'
   }[variant]
 
   const iconBg = {
-    destructive: "bg-red-100 dark:bg-red-900/20",
-    warning: "bg-orange-100 dark:bg-orange-900/20",
-    default: "bg-blue-100 dark:bg-blue-900/20",
+    destructive: 'bg-red-100 dark:bg-red-900/20',
+    warning: 'bg-orange-100 dark:bg-orange-900/20',
+    default: 'bg-blue-100 dark:bg-blue-900/20'
   }[variant]
 
   return (
@@ -82,12 +82,12 @@ export function ConfirmDialog({
             {cancelText}
           </Button>
           <Button
-            variant={variant === "destructive" ? "destructive" : "default"}
+            variant={variant === 'destructive' ? 'destructive' : 'default'}
             onClick={handleConfirm}
             className={
-              variant === "warning"
-                ? "bg-orange-500 hover:bg-orange-600 text-white"
-                : ""
+              variant === 'warning'
+                ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                : ''
             }
           >
             {confirmText}
@@ -97,4 +97,3 @@ export function ConfirmDialog({
     </Dialog>
   )
 }
-

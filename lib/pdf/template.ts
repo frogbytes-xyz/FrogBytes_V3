@@ -3,17 +3,17 @@
  * Provides utilities to wrap content LaTeX with full document structure
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
 /**
  * Get the base LaTeX template
  */
 export function getBaseTemplate(): string {
-  const templatePath = path.join(process.cwd(), 'lib', 'pdf', 'template.tex');
-  
+  const templatePath = path.join(process.cwd(), 'lib', 'pdf', 'template.tex')
+
   try {
-    return fs.readFileSync(templatePath, 'utf-8');
+    return fs.readFileSync(templatePath, 'utf-8')
   } catch (error) {
     // Fallback inline template if file not found
     return `\\documentclass[11pt,a4paper]{article}
@@ -38,7 +38,7 @@ export function getBaseTemplate(): string {
 
 % CONTENT_PLACEHOLDER
 
-\\end{document}`;
+\\end{document}`
   }
 }
 
@@ -48,30 +48,27 @@ export function getBaseTemplate(): string {
  * @param title - Optional document title
  * @returns Complete LaTeX document ready for compilation
  */
-export function wrapLatexContent(
-  content: string,
-  title?: string
-): string {
-  const template = getBaseTemplate();
-  
+export function wrapLatexContent(content: string, title?: string): string {
+  const template = getBaseTemplate()
+
   // Add title if provided
-  let contentWithTitle = content;
+  let contentWithTitle = content
   if (title) {
     contentWithTitle = `\\title{${escapeLatex(title)}}
 \\author{FrogBytes Summary}
 \\date{\\today}
 \\maketitle
 
-${content}`;
+${content}`
   }
-  
+
   // Replace placeholder with content
   const fullDocument = template.replace(
     '% CONTENT_PLACEHOLDER',
     contentWithTitle
-  );
-  
-  return fullDocument;
+  )
+
+  return fullDocument
 }
 
 /**
@@ -84,7 +81,7 @@ export function escapeLatex(text: string): string {
     .replace(/\\/g, '\\textbackslash{}')
     .replace(/[&%$#_{}]/g, '\\$&')
     .replace(/~/g, '\\textasciitilde{}')
-    .replace(/\^/g, '\\textasciicircum{}');
+    .replace(/\^/g, '\\textasciicircum{}')
 }
 
 /**
@@ -93,8 +90,9 @@ export function escapeLatex(text: string): string {
  * @returns true if content has \begin{document}
  */
 export function hasDocumentStructure(content: string): boolean {
-  return content.includes('\\begin{document}') || 
-         content.includes('\\documentclass');
+  return (
+    content.includes('\\begin{document}') || content.includes('\\documentclass')
+  )
 }
 
 /**
@@ -104,15 +102,12 @@ export function hasDocumentStructure(content: string): boolean {
  * @param title - Optional title
  * @returns Complete LaTeX document
  */
-export function prepareLatexDocument(
-  content: string,
-  title?: string
-): string {
+export function prepareLatexDocument(content: string, title?: string): string {
   // If already has document structure, return as-is
   if (hasDocumentStructure(content)) {
-    return content;
+    return content
   }
-  
+
   // Otherwise, wrap with template
-  return wrapLatexContent(content, title);
+  return wrapLatexContent(content, title)
 }

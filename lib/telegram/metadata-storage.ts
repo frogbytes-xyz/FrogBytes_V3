@@ -2,7 +2,7 @@ import { logger } from '@/lib/utils/logger'
 
 /**
  * Enhanced Telegram Storage with Metadata Management
- * 
+ *
  * Provides organized file storage with comprehensive metadata tracking.
  * Topics:
  * - Topic 1 (Archive): Complete packages with metadata
@@ -22,7 +22,8 @@ const TELEGRAM_GROUP_ID = process.env.TELEGRAM_GROUP_ID || ''
 const TELEGRAM_ARCHIVE_TOPIC_ID = process.env.TELEGRAM_ARCHIVE_TOPIC_ID || ''
 const TELEGRAM_PDF_TOPIC_ID = process.env.TELEGRAM_PDF_TOPIC_ID || ''
 const TELEGRAM_AUDIO_TOPIC_ID = process.env.TELEGRAM_AUDIO_TOPIC_ID || ''
-const TELEGRAM_TRANSCRIPT_TOPIC_ID = process.env.TELEGRAM_TRANSCRIPT_TOPIC_ID || ''
+const TELEGRAM_TRANSCRIPT_TOPIC_ID =
+  process.env.TELEGRAM_TRANSCRIPT_TOPIC_ID || ''
 
 export interface DocumentMetadata {
   // Core identifiers
@@ -33,7 +34,16 @@ export interface DocumentMetadata {
   // Document info
   title?: string
   documentType?: 'lecture' | 'tutorial' | 'seminar' | 'exam' | 'notes' | 'other'
-  fileCategory?: 'lecture' | 'notes' | 'slides' | 'handout' | 'assignment' | 'exam' | 'tutorial' | 'project' | 'other'
+  fileCategory?:
+    | 'lecture'
+    | 'notes'
+    | 'slides'
+    | 'handout'
+    | 'assignment'
+    | 'exam'
+    | 'tutorial'
+    | 'project'
+    | 'other'
 
   // Educational metadata
   university?: string
@@ -97,9 +107,9 @@ function createBot(): Telegraf | null {
 export async function calculateFileHash(filePath: string): Promise<string> {
   const hash = crypto.createHash('sha256')
   const stream = createReadStream(filePath)
-  
+
   return new Promise((resolve, reject) => {
-    stream.on('data', (data) => hash.update(data))
+    stream.on('data', data => hash.update(data))
     stream.on('end', () => resolve(hash.digest('hex')))
     stream.on('error', reject)
   })
@@ -108,18 +118,22 @@ export async function calculateFileHash(filePath: string): Promise<string> {
 /**
  * Format metadata into a readable caption
  */
-function formatMetadataCaption(metadata: DocumentMetadata, fileType: string): string {
+function formatMetadataCaption(
+  metadata: DocumentMetadata,
+  fileType: string
+): string {
   const lines: string[] = []
-  
+
   // Header based on type
-  const typeLabel = {
-    lecture: 'LECTURE',
-    tutorial: 'TUTORIAL',
-    seminar: 'SEMINAR',
-    exam: 'EXAM',
-    notes: 'NOTES',
-    other: 'DOCUMENT'
-  }[metadata.documentType || 'other'] || 'DOCUMENT'
+  const typeLabel =
+    {
+      lecture: 'LECTURE',
+      tutorial: 'TUTORIAL',
+      seminar: 'SEMINAR',
+      exam: 'EXAM',
+      notes: 'NOTES',
+      other: 'DOCUMENT'
+    }[metadata.documentType || 'other'] || 'DOCUMENT'
 
   lines.push(`[${typeLabel}] ${fileType.toUpperCase()}`)
   lines.push('')
@@ -130,7 +144,9 @@ function formatMetadataCaption(metadata: DocumentMetadata, fileType: string): st
 
   // Course information
   if (metadata.courseCode || metadata.courseName) {
-    const course = [metadata.courseCode, metadata.courseName].filter(Boolean).join(' - ')
+    const course = [metadata.courseCode, metadata.courseName]
+      .filter(Boolean)
+      .join(' - ')
     lines.push(`Course: ${course}`)
   }
 
@@ -140,13 +156,15 @@ function formatMetadataCaption(metadata: DocumentMetadata, fileType: string): st
   // Academic context
   if (metadata.university) lines.push(`University: ${metadata.university}`)
   if (metadata.semester) lines.push(`Semester: ${metadata.semester}`)
-  if (metadata.academicYear) lines.push(`Academic Year: ${metadata.academicYear}`)
+  if (metadata.academicYear)
+    lines.push(`Academic Year: ${metadata.academicYear}`)
   if (metadata.lectureNumber) lines.push(`Lecture ${metadata.lectureNumber}`)
   if (metadata.lectureDate) lines.push(`Date: ${metadata.lectureDate}`)
 
   // Classification
   if (metadata.difficultyLevel) lines.push(`Level: ${metadata.difficultyLevel}`)
-  if (metadata.language && metadata.language !== 'en') lines.push(`Language: ${metadata.language}`)
+  if (metadata.language && metadata.language !== 'en')
+    lines.push(`Language: ${metadata.language}`)
 
   // Tags
   if (metadata.tags && metadata.tags.length > 0) {
@@ -162,7 +180,7 @@ function formatMetadataCaption(metadata: DocumentMetadata, fileType: string): st
   if (metadata.fileHash) {
     lines.push(`Hash: ${metadata.fileHash.substring(0, 16)}...`)
   }
-  
+
   return lines.join('\n')
 }
 
@@ -187,7 +205,7 @@ export async function createEnhancedArchive(
       resolve(true)
     })
 
-    archive.on('error', (err) => {
+    archive.on('error', err => {
       reject(err)
     })
 
@@ -258,18 +276,18 @@ export async function uploadWithMetadata(
   fileType: string
 ): Promise<EnhancedUploadResult> {
   const bot = createBot()
-  
+
   if (!bot) {
     return {
       success: false,
-      error: 'Telegram bot not configured',
+      error: 'Telegram bot not configured'
     }
   }
 
   if (!TELEGRAM_GROUP_ID) {
     return {
       success: false,
-      error: 'Telegram group ID not configured',
+      error: 'Telegram group ID not configured'
     }
   }
 
@@ -278,7 +296,7 @@ export async function uploadWithMetadata(
   if (fileSize > MAX_SIZE) {
     return {
       success: false,
-      error: `File size exceeds 4GB limit (${(fileSize / 1024 / 1024 / 1024).toFixed(2)}GB)`,
+      error: `File size exceeds 4GB limit (${(fileSize / 1024 / 1024 / 1024).toFixed(2)}GB)`
     }
   }
 
@@ -332,14 +350,15 @@ export async function uploadWithMetadata(
     const uploadResult: EnhancedUploadResult = { success: true }
     if (fileId) uploadResult.fileId = fileId
     if (message.message_id) uploadResult.messageId = message.message_id
-    if (message.message_thread_id) uploadResult.messageThreadId = message.message_thread_id
+    if (message.message_thread_id)
+      uploadResult.messageThreadId = message.message_thread_id
     uploadResult.messageLink = messageLink
     return uploadResult
   } catch (error) {
     logger.error('Telegram upload error', error)
     return {
       success: false,
-      error: (error as Error).message || 'Upload failed',
+      error: (error as Error).message || 'Upload failed'
     }
   }
 }
@@ -361,21 +380,28 @@ export async function uploadCompletePackageWithMetadata(
     // Create temporary directory for archive
     const tmpDir = join(process.cwd(), 'tmp', 'archives')
     await fs.mkdir(tmpDir, { recursive: true })
-    
+
     const archivePath = join(tmpDir, `${metadata.uploadId}.zip`)
-    
+
     // Create enhanced archive with metadata
     logger.info('Creating enhanced archive with metadata...')
-    await createEnhancedArchive(audioPath, transcriptionPath, pdfPath, archivePath, metadata)
-    
+    await createEnhancedArchive(
+      audioPath,
+      transcriptionPath,
+      pdfPath,
+      archivePath,
+      metadata
+    )
+
     // Get file stats
     const archiveStats = await fs.stat(archivePath)
     const pdfStats = await fs.stat(pdfPath)
     const audioStats = await fs.stat(audioPath)
     const transcriptStats = await fs.stat(transcriptionPath)
 
-    const totalSize = archiveStats.size + pdfStats.size + audioStats.size + transcriptStats.size
-    
+    const totalSize =
+      archiveStats.size + pdfStats.size + audioStats.size + transcriptStats.size
+
     // Upload archive to Archive topic
     logger.info('Uploading archive to Topic 1 (Archive)...')
     const archiveResult = await uploadWithMetadata(
@@ -386,11 +412,13 @@ export async function uploadCompletePackageWithMetadata(
       metadata,
       'Archive'
     )
-    
+
     if (!archiveResult.success) {
-      throw new Error(`Failed to upload archive to storage: ${archiveResult.error}`)
+      throw new Error(
+        `Failed to upload archive to storage: ${archiveResult.error}`
+      )
     }
-    
+
     // Upload PDF to PDF topic
     logger.info('Uploading PDF to Topic 2 (PDFs)...')
     const pdfResult = await uploadWithMetadata(
@@ -401,7 +429,7 @@ export async function uploadCompletePackageWithMetadata(
       metadata,
       'PDF'
     )
-    
+
     if (!pdfResult.success) {
       logger.warn('PDF upload failed', { error: pdfResult.error })
     }
@@ -418,7 +446,7 @@ export async function uploadCompletePackageWithMetadata(
         metadata,
         'Audio'
       )
-      
+
       if (!audioResult.success) {
         logger.warn('Audio upload failed', { error: audioResult.error })
       }
@@ -436,17 +464,21 @@ export async function uploadCompletePackageWithMetadata(
         metadata,
         'Transcript'
       )
-      
+
       if (!transcriptResult.success) {
-        logger.warn('Transcript upload failed', { error: transcriptResult.error })
+        logger.warn('Transcript upload failed', {
+          error: transcriptResult.error
+        })
       }
     }
-    
+
     // Clean up archive file
-    await fs.unlink(archivePath).catch(err => 
-      logger.warn('Failed to delete temporary archive', { error: err })
-    )
-    
+    await fs
+      .unlink(archivePath)
+      .catch(err =>
+        logger.warn('Failed to delete temporary archive', { error: err })
+      )
+
     const result: CompletePackageResult = { success: true }
     result.totalSize = totalSize
     if (archiveResult) result.archiveResult = archiveResult
@@ -458,7 +490,7 @@ export async function uploadCompletePackageWithMetadata(
     logger.error('Complete package upload error', error)
     return {
       success: false,
-      error: (error as Error).message || 'Package upload failed',
+      error: (error as Error).message || 'Package upload failed'
     }
   }
 }
@@ -468,9 +500,9 @@ export async function uploadCompletePackageWithMetadata(
  */
 export function isEnhancedStorageConfigured(): boolean {
   return !!(
-    TELEGRAM_BOT_TOKEN && 
-    TELEGRAM_GROUP_ID && 
-    TELEGRAM_ARCHIVE_TOPIC_ID && 
+    TELEGRAM_BOT_TOKEN &&
+    TELEGRAM_GROUP_ID &&
+    TELEGRAM_ARCHIVE_TOPIC_ID &&
     TELEGRAM_PDF_TOPIC_ID
   )
 }
@@ -478,9 +510,11 @@ export function isEnhancedStorageConfigured(): boolean {
 /**
  * Get file download link from Telegram
  */
-export async function getTelegramFileLink(fileId: string): Promise<string | null> {
+export async function getTelegramFileLink(
+  fileId: string
+): Promise<string | null> {
   const bot = createBot()
-  
+
   if (!bot) {
     return null
   }

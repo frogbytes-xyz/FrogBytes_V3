@@ -40,119 +40,140 @@ export default function Menubar() {
 
   return (
     <>
-      <LoginPromptDialog isOpen={showLoginPrompt} onClose={() => setShowLoginPrompt(false)} />
+      <LoginPromptDialog
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+      />
       <header className="fixed top-0 left-0 right-0 z-40 pt-4 px-4">
-      <nav className={`container max-w-5xl mx-auto transition-all duration-300 ${
-        isScrolled
-          ? 'bg-background/80 backdrop-blur-xl border border-border/60 shadow-lg'
-          : 'bg-background/40 border border-border/40'
-      } rounded-full px-6`}>
-        <div className="flex items-center justify-between h-14">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/15 transition-all">
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <span className="text-base font-medium tracking-tight text-foreground">FrogBytes</span>
-          </Link>
+        <nav
+          className={`container max-w-5xl mx-auto transition-all duration-300 ${
+            isScrolled
+              ? 'bg-background/80 backdrop-blur-xl border border-border/60 shadow-lg'
+              : 'bg-background/40 border border-border/40'
+          } rounded-full px-6`}
+        >
+          <div className="flex items-center justify-between h-14">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/10 group-hover:bg-white/15 transition-all">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+              </div>
+              <span className="text-base font-medium tracking-tight text-foreground">
+                FrogBytes
+              </span>
+            </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
-            <Button
-              onClick={(e) => handleProtectedClick(e, '/upload')}
-              variant="ghost"
-              size="sm"
-              className={`text-xs h-8 px-3 ${isActive('/upload') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Upload
-            </Button>
-            <Button
-              onClick={(e) => handleProtectedClick(e, '/dashboard')}
-              variant="ghost"
-              size="sm"
-              className={`text-xs h-8 px-3 ${isActive('/dashboard') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Dashboard
-            </Button>
-            <Link href="/library">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-1">
               <Button
+                onClick={e => handleProtectedClick(e, '/upload')}
                 variant="ghost"
                 size="sm"
-                className={`text-xs h-8 px-3 ${isActive('/library') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`text-xs h-8 px-3 ${isActive('/upload') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                Library
+                Upload
               </Button>
-            </Link>
-            <Link href="/feedback">
               <Button
+                onClick={e => handleProtectedClick(e, '/dashboard')}
                 variant="ghost"
                 size="sm"
-                className={`text-xs h-8 px-3 ${isActive('/feedback') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`text-xs h-8 px-3 ${isActive('/dashboard') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                Feedback
+                Dashboard
               </Button>
-            </Link>
-          </div>
-
-          {/* Auth Buttons */}
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {user ? (
-              <div className="hidden md:flex items-center gap-2">
+              <Link href="/library">
                 <Button
-                  onClick={signOut}
                   variant="ghost"
                   size="sm"
-                  className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
+                  className={`text-xs h-8 px-3 ${isActive('/library') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                 >
-                  Sign out
+                  Library
                 </Button>
-              </div>
-            ) : (
-              <div className="hidden md:flex items-center gap-2">
-                <Link href="/login">
+              </Link>
+              <Link href="/feedback">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`text-xs h-8 px-3 ${isActive('/feedback') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Feedback
+                </Button>
+              </Link>
+            </div>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {user ? (
+                <div className="hidden md:flex items-center gap-2">
                   <Button
+                    onClick={signOut}
                     variant="ghost"
                     size="sm"
                     className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
                   >
-                    Sign in
+                    Sign out
                   </Button>
-                </Link>
-                <Link href="/register">
-                  <Button
-                    size="sm"
-                    className="text-xs h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/50"
-                  >
-                    Get started
-                  </Button>
-                </Link>
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="hidden md:flex items-center gap-2">
+                  <Link href="/login">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
+                    >
+                      Sign in
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button
+                      size="sm"
+                      className="text-xs h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/50"
+                    >
+                      Get started
+                    </Button>
+                  </Link>
+                </div>
+              )}
 
-            {/* Mobile Menu Button */}
-            <MobileMenu user={user} onSignOut={signOut} onProtectedClick={(path) => handleProtectedClick({} as React.MouseEvent, path)} />
+              {/* Mobile Menu Button */}
+              <MobileMenu
+                user={user}
+                onSignOut={signOut}
+                onProtectedClick={path =>
+                  handleProtectedClick({} as React.MouseEvent, path)
+                }
+              />
+            </div>
           </div>
-        </div>
-      </nav>
-    </header>
+        </nav>
+      </header>
     </>
   )
 }
 
-function MobileMenu({ user, onSignOut, onProtectedClick }: { user: User | null; onSignOut: () => void; onProtectedClick: (path: string) => void }) {
+function MobileMenu({
+  user,
+  onSignOut,
+  onProtectedClick
+}: {
+  user: User | null
+  onSignOut: () => void
+  onProtectedClick: (path: string) => void
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
@@ -203,7 +224,9 @@ function MobileMenu({ user, onSignOut, onProtectedClick }: { user: User | null; 
             <div className="flex flex-col gap-2">
               <Link href="/" onClick={() => setIsOpen(false)}>
                 <Button
-                  variant={isActive('/') && pathname === '/' ? 'secondary' : 'ghost'}
+                  variant={
+                    isActive('/') && pathname === '/' ? 'secondary' : 'ghost'
+                  }
                   size="sm"
                   className="w-full justify-start"
                 >
@@ -211,7 +234,10 @@ function MobileMenu({ user, onSignOut, onProtectedClick }: { user: User | null; 
                 </Button>
               </Link>
               <Button
-                onClick={() => { onProtectedClick('/upload'); setIsOpen(false); }}
+                onClick={() => {
+                  onProtectedClick('/upload')
+                  setIsOpen(false)
+                }}
                 variant={isActive('/upload') ? 'secondary' : 'ghost'}
                 size="sm"
                 className="w-full justify-start"
@@ -219,7 +245,10 @@ function MobileMenu({ user, onSignOut, onProtectedClick }: { user: User | null; 
                 Upload
               </Button>
               <Button
-                onClick={() => { onProtectedClick('/dashboard'); setIsOpen(false); }}
+                onClick={() => {
+                  onProtectedClick('/dashboard')
+                  setIsOpen(false)
+                }}
                 variant={isActive('/dashboard') ? 'secondary' : 'ghost'}
                 size="sm"
                 className="w-full justify-start"
@@ -274,7 +303,11 @@ function MobileMenu({ user, onSignOut, onProtectedClick }: { user: User | null; 
               ) : (
                 <>
                   <Link href="/login" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
                       Sign in
                     </Button>
                   </Link>

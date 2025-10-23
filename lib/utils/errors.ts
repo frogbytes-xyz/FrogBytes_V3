@@ -55,11 +55,7 @@ export class AuthorizationError extends Error {
   public readonly resource: string
   public readonly action: string
 
-  constructor(
-    message: string,
-    resource: string,
-    action: string
-  ) {
+  constructor(message: string, resource: string, action: string) {
     super(message)
     this.name = 'AuthorizationError'
     this.resource = resource
@@ -71,11 +67,7 @@ export class APIError extends Error {
   public readonly statusCode: number
   public readonly endpoint: string
 
-  constructor(
-    message: string,
-    statusCode: number,
-    endpoint: string
-  ) {
+  constructor(message: string, statusCode: number, endpoint: string) {
     super(message)
     this.name = 'APIError'
     this.statusCode = statusCode
@@ -88,7 +80,12 @@ export class APIError extends Error {
  */
 export function isCustomError(
   error: unknown
-): error is ValidationError | DatabaseError | AuthenticationError | AuthorizationError | APIError {
+): error is
+  | ValidationError
+  | DatabaseError
+  | AuthenticationError
+  | AuthorizationError
+  | APIError {
   return (
     error instanceof ValidationError ||
     error instanceof DatabaseError ||
@@ -132,7 +129,10 @@ export function getSafeErrorMessage(error: unknown): string {
 /**
  * Log error with appropriate level and context
  */
-export function logError(error: unknown, context?: Record<string, unknown>): void {
+export function logError(
+  error: unknown,
+  context?: Record<string, unknown>
+): void {
   const logData = {
     error: {
       name: error instanceof Error ? error.name : 'Unknown',
@@ -144,7 +144,7 @@ export function logError(error: unknown, context?: Record<string, unknown>): voi
   }
 
   // In production, you would send this to your logging service
-  // For now, we'll use console.error in development
+  // For development, we use the logger service
   if (process.env.NODE_ENV === 'development') {
     logger.error('Error logged', logData)
   }

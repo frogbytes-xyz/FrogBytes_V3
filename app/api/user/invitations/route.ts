@@ -1,8 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
-import { createInvitationService, generateInvitationEmailContent } from '@/lib/services/invitation-service'
+import {
+  createInvitationService,
+  generateInvitationEmailContent
+} from '@/lib/services/invitation-service'
 import { getSafeErrorMessage, ValidationError } from '@/lib/utils/errors'
 import { emailSchema } from '@/lib/validations'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/user/invitations
@@ -11,13 +16,13 @@ import { emailSchema } from '@/lib/validations'
 export async function GET(): Promise<NextResponse> {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const invitationService = await createInvitationService()
@@ -48,16 +53,15 @@ export async function GET(): Promise<NextResponse> {
  * Create a new invitation
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -73,34 +77,43 @@ import { logger } from '@/lib/utils/logger'
     }
 
     // Get user profile for inviter name - handle gracefully if table doesn't exist
-    let inviterName = user.email || 'Someone';
-    
+    let inviterName = user.email || 'Someone'
+
     try {
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('full_name, email')
         .eq('id', user.id)
         .single()
-      
+
       if (profile) {
-        inviterName = (profile as any)?.full_name || (profile as any)?.email || user.email || 'Someone';
+        inviterName =
+          (profile as any)?.full_name ||
+          (profile as any)?.email ||
+          user.email ||
+          'Someone'
       }
     } catch (error) {
       // Profile table might not exist, use fallback
-      logger.info('User profile lookup failed, using fallback name');
+      logger.info('User profile lookup failed, using fallback name')
     }
 
     const invitationService = await createInvitationService()
     const invitation = await invitationService.createInvitation(user.id, email)
 
     // Generate invitation URL
-    const invitationUrl = invitationService.generateInvitationUrl(invitation.invitationCode)
+    const invitationUrl = invitationService.generateInvitationUrl(
+      invitation.invitationCode
+    )
 
     // Generate email content (you would send this via your email service)
-    const emailContent = generateInvitationEmailContent(inviterName, invitationUrl)
+    const emailContent = generateInvitationEmailContent(
+      inviterName,
+      invitationUrl
+    )
 
     // TODO: Send email using your preferred email service
-    // For now, we'll just return the invitation details
+    // For now, we&apos;ll just return the invitation details
     logger.info('Invitation email content:', emailContent)
 
     return NextResponse.json({
@@ -110,7 +123,7 @@ import { logger } from '@/lib/utils/logger'
         invitationUrl,
         emailContent: {
           subject: emailContent.subject,
-          // Don't expose full email content in API response for security
+          // Don&apos;t expose full email content in API response for security
           previewText: `${inviterName} invited you to join FrogBytes!`
         }
       }
@@ -119,10 +132,7 @@ import { logger } from '@/lib/utils/logger'
     logger.error('Error creating invitation', error)
 
     if (error instanceof ValidationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     return NextResponse.json(

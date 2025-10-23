@@ -22,10 +22,14 @@ export function useAuth() {
     // Get initial session
     const initializeAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user }
+        } = await supabase.auth.getUser()
         setUser(user)
 
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session }
+        } = await supabase.auth.getSession()
         setSession(session)
       } catch (error) {
         logger.error('Error initializing auth', error)
@@ -37,7 +41,9 @@ export function useAuth() {
     initializeAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)

@@ -2,7 +2,7 @@
  * Document similarity and recommendation algorithms
  */
 
-import { EnhancedSummary } from '@/lib/types/library'
+import type { EnhancedSummary } from '@/lib/types/library'
 
 export interface SimilarityScore {
   documentId: string
@@ -38,10 +38,10 @@ export interface SimilarityWeightings {
 export const defaultWeightings: SimilarityWeightings = {
   university: 0.15,
   subject: 0.25,
-  courseCode: 0.20,
+  courseCode: 0.2,
   tags: 0.15,
-  keywords: 0.10,
-  professor: 0.10,
+  keywords: 0.1,
+  professor: 0.1,
   contentSimilarity: 0.05
 }
 
@@ -64,7 +64,7 @@ export function calculateSimilarity(
   }
 
   const score = Object.entries(factors).reduce((total, [key, value]) => {
-    return total + (value * weightings[key as keyof SimilarityWeightings])
+    return total + value * weightings[key as keyof SimilarityWeightings]
   }, 0)
 
   return {
@@ -110,7 +110,9 @@ export function getRecommendationsForUser(
   }
 
   const userDocumentIds = new Set(userDocuments.map(doc => doc.id))
-  const candidateDocuments = allDocuments.filter(doc => !userDocumentIds.has(doc.id))
+  const candidateDocuments = allDocuments.filter(
+    doc => !userDocumentIds.has(doc.id)
+  )
 
   const similarities = new Map<string, SimilarityScore[]>()
 
@@ -155,12 +157,18 @@ export function getRecommendationsForUser(
 
 // Individual similarity calculation functions
 
-function calculateUniversitySimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateUniversitySimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   if (!doc1.university || !doc2.university) return 0
   return doc1.university.toLowerCase() === doc2.university.toLowerCase() ? 1 : 0
 }
 
-function calculateSubjectSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateSubjectSimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   if (!doc1.subject || !doc2.subject) return 0
 
   const subject1 = doc1.subject.toLowerCase()
@@ -176,7 +184,10 @@ function calculateSubjectSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary
   return 0
 }
 
-function calculateCourseCodeSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateCourseCodeSimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   if (!doc1.course_code || !doc2.course_code) return 0
 
   const code1 = doc1.course_code.toLowerCase().replace(/\s+/g, '')
@@ -195,7 +206,10 @@ function calculateCourseCodeSimilarity(doc1: EnhancedSummary, doc2: EnhancedSumm
   return 0
 }
 
-function calculateTagsSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateTagsSimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   const tags1 = doc1.tags || []
   const tags2 = doc2.tags || []
 
@@ -210,7 +224,10 @@ function calculateTagsSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): 
   return intersection.length / union.size // Jaccard similarity
 }
 
-function calculateKeywordsSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateKeywordsSimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   const keywords1 = doc1.keywords || []
   const keywords2 = doc2.keywords || []
 
@@ -225,15 +242,27 @@ function calculateKeywordsSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummar
   return intersection.length / union.size // Jaccard similarity
 }
 
-function calculateProfessorSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateProfessorSimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   if (!doc1.professor || !doc2.professor) return 0
   return doc1.professor.toLowerCase() === doc2.professor.toLowerCase() ? 1 : 0
 }
 
-function calculateContentSimilarity(doc1: EnhancedSummary, doc2: EnhancedSummary): number {
+function calculateContentSimilarity(
+  doc1: EnhancedSummary,
+  doc2: EnhancedSummary
+): number {
   // Basic content similarity based on title and lecture name
-  const content1 = [doc1.title, doc1.lecture_name].filter(Boolean).join(' ').toLowerCase()
-  const content2 = [doc2.title, doc2.lecture_name].filter(Boolean).join(' ').toLowerCase()
+  const content1 = [doc1.title, doc1.lecture_name]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  const content2 = [doc2.title, doc2.lecture_name]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
 
   if (!content1 || !content2) return 0
 
@@ -296,26 +325,26 @@ export function enhancedSearch(
   }
 
   if (filters.minReputation !== undefined) {
-    filteredDocs = filteredDocs.filter(doc =>
-      doc.reputation_score >= filters.minReputation!
+    filteredDocs = filteredDocs.filter(
+      doc => doc.reputation_score >= filters.minReputation!
     )
   }
 
   if (filters.documentType) {
-    filteredDocs = filteredDocs.filter(doc =>
-      doc.document_type === filters.documentType
+    filteredDocs = filteredDocs.filter(
+      doc => doc.document_type === filters.documentType
     )
   }
 
   if (filters.fileCategory) {
-    filteredDocs = filteredDocs.filter(doc =>
-      doc.file_category === filters.fileCategory
+    filteredDocs = filteredDocs.filter(
+      doc => doc.file_category === filters.fileCategory
     )
   }
 
   if (filters.difficultyLevel) {
-    filteredDocs = filteredDocs.filter(doc =>
-      doc.difficulty_level === filters.difficultyLevel
+    filteredDocs = filteredDocs.filter(
+      doc => doc.difficulty_level === filters.difficultyLevel
     )
   }
 
@@ -340,13 +369,18 @@ export function enhancedSearch(
       .map(item => item.doc)
   } else {
     // Sort by reputation if no search query
-    filteredDocs = filteredDocs.sort((a, b) => b.reputation_score - a.reputation_score)
+    filteredDocs = filteredDocs.sort(
+      (a, b) => b.reputation_score - a.reputation_score
+    )
   }
 
   return filteredDocs
 }
 
-function calculateSearchScore(doc: EnhancedSummary, queryWords: string[]): number {
+function calculateSearchScore(
+  doc: EnhancedSummary,
+  queryWords: string[]
+): number {
   let score = 0
 
   const searchableContent = [
@@ -358,7 +392,10 @@ function calculateSearchScore(doc: EnhancedSummary, queryWords: string[]): numbe
     doc.professor,
     ...(doc.tags || []),
     ...(doc.keywords || [])
-  ].filter(Boolean).join(' ').toLowerCase()
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
 
   // Exact phrase match gets highest score
   const fullQuery = queryWords.join(' ')
@@ -374,7 +411,10 @@ function calculateSearchScore(doc: EnhancedSummary, queryWords: string[]): numbe
   }
 
   // Title and lecture name matches get bonus points
-  const titleContent = [doc.title, doc.lecture_name].filter(Boolean).join(' ').toLowerCase()
+  const titleContent = [doc.title, doc.lecture_name]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
   for (const word of queryWords) {
     if (titleContent.includes(word)) {
       score += 20
@@ -382,9 +422,10 @@ function calculateSearchScore(doc: EnhancedSummary, queryWords: string[]): numbe
   }
 
   // Course code exact match gets high score
-  if (doc.course_code && queryWords.some(word =>
-    doc.course_code!.toLowerCase().includes(word)
-  )) {
+  if (
+    doc.course_code &&
+    queryWords.some(word => doc.course_code!.toLowerCase().includes(word))
+  ) {
     score += 50
   }
 

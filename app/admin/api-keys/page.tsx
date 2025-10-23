@@ -1,18 +1,19 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect, useCallback } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { logger } from '@/lib/utils/logger'
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  TableRow
+} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -20,12 +21,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+  DialogTrigger
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import {
   RefreshCw,
   Play,
@@ -42,113 +49,129 @@ import {
   Activity,
   Database,
   ExternalLink
+} from 'lucide-react'
 
-} from 'lucide-react';
-
-const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '';
+const ADMIN_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || ''
 
 export default function AdminApiKeysDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [status, setStatus] = useState<any>(null);
-  const [keys, setKeys] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [githubTokens, setGithubTokens] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [revalidatorConcurrency, setRevalidatorConcurrency] = useState<number>(5);
-  const [workingStatusFilter, setWorkingStatusFilter] = useState<'all' | 'valid' | 'quota_exceeded'>('all');
-  const [minQuotaFilter, setMinQuotaFilter] = useState<'all' | '1' | '5' | '10'>('all');
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview')
+  const [status, setStatus] = useState<any>(null)
+  const [keys, setKeys] = useState<any[]>([])
+  const [logs, setLogs] = useState<any[]>([])
+  const [githubTokens, setGithubTokens] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [revalidatorConcurrency, setRevalidatorConcurrency] =
+    useState<number>(5)
+  const [workingStatusFilter, setWorkingStatusFilter] = useState<
+    'all' | 'valid' | 'quota_exceeded'
+  >('all')
+  const [minQuotaFilter, setMinQuotaFilter] = useState<
+    'all' | '1' | '5' | '10'
+  >('all')
+  const [autoRefresh, setAutoRefresh] = useState(false)
 
   // Filters
-  const [keyFilter, setKeyFilter] = useState({ status: 'all', source: 'all', isValid: 'all' });
-  const [logFilter, setLogFilter] = useState({ type: 'all', level: 'all' });
+  const [keyFilter, setKeyFilter] = useState({
+    status: 'all',
+    source: 'all',
+    isValid: 'all'
+  })
+  const [logFilter, setLogFilter] = useState({ type: 'all', level: 'all' })
 
   // Dialogs
-  const [showAddTokenDialog, setShowAddTokenDialog] = useState(false);
-  const [newToken, setNewToken] = useState({ name: '', value: '' });
-  const [showTokenValue, setShowTokenValue] = useState<Record<string, boolean>>({});
+  const [showAddTokenDialog, setShowAddTokenDialog] = useState(false)
+  const [newToken, setNewToken] = useState({ name: '', value: '' })
+  const [showTokenValue, setShowTokenValue] = useState<Record<string, boolean>>(
+    {}
+  )
 
   // Fetch all data
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = useCallback(async () => {
+    setLoading(true)
     try {
       await Promise.all([
         fetchStatus(),
         fetchKeys(),
         fetchLogs(),
         fetchGithubTokens()
-      ]);
+      ])
     } catch (error) {
-      logger.error('Error fetching data', error);
+      logger.error('Error fetching data', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }, [])
 
   const fetchStatus = async () => {
     const response = await fetch('/api/admin/dashboard/status', {
       headers: { 'x-api-key': ADMIN_API_KEY }
-    });
-    const data = await response.json();
+    })
+    const data = await response.json()
     if (data.success) {
-      setStatus(data.data);
+      setStatus(data.data)
     }
-  };
+  }
 
-
-  const fetchKeys = async () => {
+  const fetchKeys = useCallback(async () => {
     // If working filters are present, use working-keys endpoint
     if (workingStatusFilter !== 'all' || minQuotaFilter !== 'all') {
-      const qp = new URLSearchParams();
-      if (workingStatusFilter !== 'all') qp.append('status', workingStatusFilter);
-      if (minQuotaFilter !== 'all') qp.append('minQuotaCount', minQuotaFilter);
-      const r = await fetch(`/api/admin/dashboard/working-keys?${qp}`, { headers: { 'x-api-key': ADMIN_API_KEY } });
-      const jd = await r.json();
+      const qp = new URLSearchParams()
+      if (workingStatusFilter !== 'all')
+        qp.append('status', workingStatusFilter)
+      if (minQuotaFilter !== 'all') qp.append('minQuotaCount', minQuotaFilter)
+      const r = await fetch(`/api/admin/dashboard/working-keys?${qp}`, {
+        headers: { 'x-api-key': ADMIN_API_KEY }
+      })
+      const jd = await r.json()
       if (jd.success) {
-        setKeys(jd.data);
-        return;
+        setKeys(jd.data)
+        return
       }
     }
 
-    const params = new URLSearchParams();
-    if (keyFilter.status !== 'all') params.append('status', keyFilter.status);
-    if (keyFilter.source !== 'all') params.append('source', keyFilter.source);
-    if (keyFilter.isValid !== 'all') params.append('isValid', keyFilter.isValid);
+    const params = new URLSearchParams()
+    if (keyFilter.status !== 'all') params.append('status', keyFilter.status)
+    if (keyFilter.source !== 'all') params.append('source', keyFilter.source)
+    if (keyFilter.isValid !== 'all') params.append('isValid', keyFilter.isValid)
 
     const response = await fetch(`/api/admin/dashboard/keys?${params}`, {
       headers: { 'x-api-key': ADMIN_API_KEY }
-    });
-    const data = await response.json();
+    })
+    const data = await response.json()
     if (data.success) {
-      setKeys(data.data);
+      setKeys(data.data)
     }
-  };
+  }, [workingStatusFilter, minQuotaFilter, keyFilter])
 
-  const fetchLogs = async () => {
-    const params = new URLSearchParams({ limit: '100' });
-    if (logFilter.type !== 'all') params.append('logType', logFilter.type);
+  const fetchLogs = useCallback(async () => {
+    const params = new URLSearchParams({ limit: '100' })
+    if (logFilter.type !== 'all') params.append('logType', logFilter.type)
 
     const response = await fetch(`/api/admin/dashboard/logs?${params}`, {
       headers: { 'x-api-key': ADMIN_API_KEY }
-    });
-    const data = await response.json();
+    })
+    const data = await response.json()
     if (data.success) {
-      setLogs(data.data);
+      setLogs(data.data)
     }
-  };
+  }, [logFilter])
 
   const fetchGithubTokens = async () => {
     const response = await fetch('/api/admin/dashboard/github-tokens', {
       headers: { 'x-api-key': ADMIN_API_KEY }
-    });
-    const data = await response.json();
+    })
+    const data = await response.json()
     if (data.success) {
-      setGithubTokens(data.data);
+      setGithubTokens(data.data)
     }
-  };
+  }
 
-  const controlService = async (service: string, action: string, opts?: { limit?: number; concurrency?: number }) => {
-    setLoading(true);
+  const controlService = async (
+    service: string,
+    action: string,
+    opts?: { limit?: number; concurrency?: number }
+  ) => {
+    setLoading(true)
     try {
       const response = await fetch('/api/admin/dashboard/control', {
         method: 'POST',
@@ -156,27 +179,32 @@ export default function AdminApiKeysDashboard() {
           'x-api-key': ADMIN_API_KEY,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ service, action, limit: opts?.limit ?? 50, concurrency: opts?.concurrency })
-      });
-      const data = await response.json();
+        body: JSON.stringify({
+          service,
+          action,
+          limit: opts?.limit ?? 50,
+          concurrency: opts?.concurrency
+        })
+      })
+      const data = await response.json()
       if (data.success) {
-        alert(`${service} ${action}ed successfully`);
-        await fetchData();
+        alert(`${service} ${action}ed successfully`)
+        await fetchData()
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
     } catch (error) {
-      logger.error('Control service error', error);
-      alert('Failed to control service');
+      logger.error('Control service error', error)
+      alert('Failed to control service')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const addGithubToken = async () => {
     if (!newToken.name || !newToken.value) {
-      alert('Please provide both name and token value');
-      return;
+      alert('Please provide both name and token value')
+      return
     }
 
     try {
@@ -190,21 +218,21 @@ export default function AdminApiKeysDashboard() {
           token_name: newToken.name,
           token_value: newToken.value
         })
-      });
-      const data = await response.json();
+      })
+      const data = await response.json()
       if (data.success) {
-        alert('Token added successfully');
-        setShowAddTokenDialog(false);
-        setNewToken({ name: '', value: '' });
-        await fetchGithubTokens();
+        alert('Token added successfully')
+        setShowAddTokenDialog(false)
+        setNewToken({ name: '', value: '' })
+        await fetchGithubTokens()
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
     } catch (error) {
-      logger.error('Add token error', error);
-      alert('Failed to add token');
+      logger.error('Add token error', error)
+      alert('Failed to add token')
     }
-  };
+  }
 
   const toggleTokenActive = async (tokenId: string, isActive: boolean) => {
     try {
@@ -218,37 +246,40 @@ export default function AdminApiKeysDashboard() {
           token_id: tokenId,
           is_active: !isActive
         })
-      });
-      const data = await response.json();
+      })
+      const data = await response.json()
       if (data.success) {
-        await fetchGithubTokens();
+        await fetchGithubTokens()
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
     } catch (error) {
-      logger.error('Toggle token error', error);
+      logger.error('Toggle token error', error)
     }
-  };
+  }
 
   const deleteGithubToken = async (tokenId: string) => {
-    if (!confirm('Are you sure you want to delete this token?')) return;
+    if (!confirm('Are you sure you want to delete this token?')) return
 
     try {
-      const response = await fetch(`/api/admin/dashboard/github-tokens?token_id=${tokenId}`, {
-        method: 'DELETE',
-        headers: { 'x-api-key': ADMIN_API_KEY }
-      });
-      const data = await response.json();
+      const response = await fetch(
+        `/api/admin/dashboard/github-tokens?token_id=${tokenId}`,
+        {
+          method: 'DELETE',
+          headers: { 'x-api-key': ADMIN_API_KEY }
+        }
+      )
+      const data = await response.json()
       if (data.success) {
-        alert('Token deleted successfully');
-        await fetchGithubTokens();
+        alert('Token deleted successfully')
+        await fetchGithubTokens()
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
     } catch (error) {
-      logger.error('Delete token error', error);
+      logger.error('Delete token error', error)
     }
-  };
+  }
 
   const initializeTokensFromEnv = async () => {
     try {
@@ -259,38 +290,38 @@ export default function AdminApiKeysDashboard() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ action: 'initialize' })
-      });
-      const data = await response.json();
+      })
+      const data = await response.json()
       if (data.success) {
-        alert('Tokens initialized from environment variables');
-        await fetchGithubTokens();
+        alert('Tokens initialized from environment variables')
+        await fetchGithubTokens()
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error}`)
       }
     } catch (error) {
-      logger.error('Initialize tokens error', error);
+      logger.error('Initialize tokens error', error)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData()
+  }, [fetchData])
 
   useEffect(() => {
-    fetchKeys();
-  }, [keyFilter]);
+    fetchKeys()
+  }, [fetchKeys])
 
   useEffect(() => {
-    fetchLogs();
-  }, [logFilter]);
+    fetchLogs()
+  }, [fetchLogs])
 
   useEffect(() => {
     if (autoRefresh) {
-      const interval = setInterval(fetchData, 10000); // Refresh every 10 seconds
-      return () => clearInterval(interval);
+      const interval = setInterval(fetchData, 10000) // Refresh every 10 seconds
+      return () => clearInterval(interval)
     }
-    return; // Explicitly return undefined when autoRefresh is false
-  }, [autoRefresh]);
+    return // Explicitly return undefined when autoRefresh is false
+  }, [autoRefresh, fetchData])
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
@@ -298,16 +329,16 @@ export default function AdminApiKeysDashboard() {
       completed: { color: 'bg-green-500', icon: CheckCircle },
       failed: { color: 'bg-red-500', icon: XCircle },
       idle: { color: 'bg-gray-500', icon: Clock }
-    };
-    const config = variants[status] || variants.idle;
-    const Icon = config.icon;
+    }
+    const config = variants[status] || variants.idle
+    const Icon = config.icon
     return (
       <Badge className={`${config.color} text-white gap-1`}>
         <Icon className="w-3 h-3" />
         {status}
       </Badge>
-    );
-  };
+    )
+  }
 
   const getLogLevelBadge = (level: string) => {
     const colors: Record<string, string> = {
@@ -315,9 +346,9 @@ export default function AdminApiKeysDashboard() {
       warn: 'bg-yellow-500 text-white',
       success: 'bg-green-500 text-white',
       info: 'bg-blue-500 text-white'
-    };
-    return <Badge className={colors[level]}>{level}</Badge>;
-  };
+    }
+    return <Badge className={colors[level]}>{level}</Badge>
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -329,7 +360,9 @@ export default function AdminApiKeysDashboard() {
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`}
+            />
             Auto Refresh: {autoRefresh ? 'On' : 'Off'}
           </Button>
           <Button
@@ -338,7 +371,9 @@ export default function AdminApiKeysDashboard() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
+            />
             Refresh
           </Button>
         </div>
@@ -351,7 +386,9 @@ export default function AdminApiKeysDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Valid Keys</p>
-                <p className="text-2xl font-bold">{status.keyPool?.validKeys || 0}</p>
+                <p className="text-2xl font-bold">
+                  {status.keyPool?.validKeys || 0}
+                </p>
               </div>
               <Key className="w-8 h-8 text-green-500" />
             </div>
@@ -359,8 +396,12 @@ export default function AdminApiKeysDashboard() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending Validation</p>
-                <p className="text-2xl font-bold">{status.keyPool?.pendingValidation || 0}</p>
+                <p className="text-sm text-muted-foreground">
+                  Pending Validation
+                </p>
+                <p className="text-2xl font-bold">
+                  {status.keyPool?.pendingValidation || 0}
+                </p>
               </div>
               <Clock className="w-8 h-8 text-yellow-500" />
             </div>
@@ -369,7 +410,10 @@ export default function AdminApiKeysDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">GitHub Tokens</p>
-                <p className="text-2xl font-bold">{status.githubTokens?.active || 0}/{status.githubTokens?.total || 0}</p>
+                <p className="text-2xl font-bold">
+                  {status.githubTokens?.active || 0}/
+                  {status.githubTokens?.total || 0}
+                </p>
               </div>
               <Database className="w-8 h-8 text-blue-500" />
             </div>
@@ -378,7 +422,9 @@ export default function AdminApiKeysDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Scraped</p>
-                <p className="text-2xl font-bold">{status.keyPool?.totalScraped || 0}</p>
+                <p className="text-2xl font-bold">
+                  {status.keyPool?.totalScraped || 0}
+                </p>
               </div>
               <Activity className="w-8 h-8 text-purple-500" />
             </div>
@@ -411,23 +457,32 @@ export default function AdminApiKeysDashboard() {
                     <div className="flex justify-between">
                       <span>Last Run:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(status.services.scraper.started_at).toLocaleString()}
+                        {new Date(
+                          status.services.scraper.started_at
+                        ).toLocaleString()}
                       </span>
                     </div>
                   )}
                   {status.services.scraper.duration_ms && (
                     <div className="flex justify-between">
                       <span>Duration:</span>
-                      <span className="text-sm">{status.services.scraper.duration_ms}ms</span>
+                      <span className="text-sm">
+                        {status.services.scraper.duration_ms}ms
+                      </span>
                     </div>
                   )}
-                  {status.services.scraper.stats && Object.keys(status.services.scraper.stats).length > 0 && (
-                    <div className="text-sm">
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-                        {JSON.stringify(status.services.scraper.stats, null, 2)}
-                      </pre>
-                    </div>
-                  )}
+                  {status.services.scraper.stats &&
+                    Object.keys(status.services.scraper.stats).length > 0 && (
+                      <div className="text-sm">
+                        <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
+                          {JSON.stringify(
+                            status.services.scraper.stats,
+                            null,
+                            2
+                          )}
+                        </pre>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <p className="text-muted-foreground">No status available</p>
@@ -446,23 +501,32 @@ export default function AdminApiKeysDashboard() {
                     <div className="flex justify-between">
                       <span>Last Run:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(status.services.validator.started_at).toLocaleString()}
+                        {new Date(
+                          status.services.validator.started_at
+                        ).toLocaleString()}
                       </span>
                     </div>
                   )}
                   {status.services.validator.duration_ms && (
                     <div className="flex justify-between">
                       <span>Duration:</span>
-                      <span className="text-sm">{status.services.validator.duration_ms}ms</span>
+                      <span className="text-sm">
+                        {status.services.validator.duration_ms}ms
+                      </span>
                     </div>
                   )}
-                  {status.services.validator.stats && Object.keys(status.services.validator.stats).length > 0 && (
-                    <div className="text-sm">
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-                        {JSON.stringify(status.services.validator.stats, null, 2)}
-                      </pre>
-                    </div>
-                  )}
+                  {status.services.validator.stats &&
+                    Object.keys(status.services.validator.stats).length > 0 && (
+                      <div className="text-sm">
+                        <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
+                          {JSON.stringify(
+                            status.services.validator.stats,
+                            null,
+                            2
+                          )}
+                        </pre>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <p className="text-muted-foreground">No status available</p>
@@ -481,23 +545,33 @@ export default function AdminApiKeysDashboard() {
                     <div className="flex justify-between">
                       <span>Last Run:</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(status.services.revalidator.started_at).toLocaleString()}
+                        {new Date(
+                          status.services.revalidator.started_at
+                        ).toLocaleString()}
                       </span>
                     </div>
                   )}
                   {status.services.revalidator.duration_ms && (
                     <div className="flex justify-between">
                       <span>Duration:</span>
-                      <span className="text-sm">{status.services.revalidator.duration_ms}ms</span>
+                      <span className="text-sm">
+                        {status.services.revalidator.duration_ms}ms
+                      </span>
                     </div>
                   )}
-                  {status.services.revalidator.stats && Object.keys(status.services.revalidator.stats).length > 0 && (
-                    <div className="text-sm">
-                      <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
-                        {JSON.stringify(status.services.revalidator.stats, null, 2)}
-                      </pre>
-                    </div>
-                  )}
+                  {status.services.revalidator.stats &&
+                    Object.keys(status.services.revalidator.stats).length >
+                      0 && (
+                      <div className="text-sm">
+                        <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
+                          {JSON.stringify(
+                            status.services.revalidator.stats,
+                            null,
+                            2
+                          )}
+                        </pre>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <p className="text-muted-foreground">No status available</p>
@@ -511,7 +585,10 @@ export default function AdminApiKeysDashboard() {
               <h3 className="text-lg font-semibold mb-3">Recent Executions</h3>
               <div className="space-y-2">
                 {status.recentExecutions.slice(0, 5).map((exec: any) => (
-                  <div key={exec.id} className="flex items-center justify-between p-2 border rounded">
+                  <div
+                    key={exec.id}
+                    className="flex items-center justify-between p-2 border rounded"
+                  >
                     <div className="flex items-center gap-3">
                       <Badge>{exec.service_name}</Badge>
                       {getStatusBadge(exec.status)}
@@ -532,7 +609,10 @@ export default function AdminApiKeysDashboard() {
         {/* Keys Tab */}
         <TabsContent value="keys" className="space-y-4">
           <div className="flex gap-2">
-            <Select value={keyFilter.status} onValueChange={(v) => setKeyFilter({...keyFilter, status: v})}>
+            <Select
+              value={keyFilter.status}
+              onValueChange={v => setKeyFilter({ ...keyFilter, status: v })}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -543,7 +623,10 @@ export default function AdminApiKeysDashboard() {
                 <SelectItem value="processed">Processed</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={keyFilter.source} onValueChange={(v) => setKeyFilter({...keyFilter, source: v})}>
+            <Select
+              value={keyFilter.source}
+              onValueChange={v => setKeyFilter({ ...keyFilter, source: v })}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
@@ -553,7 +636,10 @@ export default function AdminApiKeysDashboard() {
                 <SelectItem value="gist">Gist</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={keyFilter.isValid} onValueChange={(v) => setKeyFilter({...keyFilter, isValid: v})}>
+            <Select
+              value={keyFilter.isValid}
+              onValueChange={v => setKeyFilter({ ...keyFilter, isValid: v })}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Validity" />
               </SelectTrigger>
@@ -564,7 +650,10 @@ export default function AdminApiKeysDashboard() {
               </SelectContent>
             </Select>
             {/* Working Keys Filters */}
-            <Select value={workingStatusFilter} onValueChange={(v) => setWorkingStatusFilter(v as any)}>
+            <Select
+              value={workingStatusFilter}
+              onValueChange={v => setWorkingStatusFilter(v as any)}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Working Status" />
               </SelectTrigger>
@@ -574,7 +663,10 @@ export default function AdminApiKeysDashboard() {
                 <SelectItem value="quota_exceeded">Quota Exceeded</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={minQuotaFilter} onValueChange={(v) => setMinQuotaFilter(v as any)}>
+            <Select
+              value={minQuotaFilter}
+              onValueChange={v => setMinQuotaFilter(v as any)}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Quota Filter" />
               </SelectTrigger>
@@ -603,9 +695,11 @@ export default function AdminApiKeysDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {keys.map((key) => (
+                {keys.map(key => (
                   <TableRow key={key.id}>
-                    <TableCell className="font-mono text-sm">{key.api_key?.substring(0, 16)}...</TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {key.api_key?.substring(0, 16)}...
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{key.source}</Badge>
@@ -623,7 +717,13 @@ export default function AdminApiKeysDashboard() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={key.validation_status === 'processed' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}>
+                      <Badge
+                        className={
+                          key.validation_status === 'processed'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-500 text-white'
+                        }
+                      >
                         {key.validation_status}
                       </Badge>
                     </TableCell>
@@ -640,7 +740,13 @@ export default function AdminApiKeysDashboard() {
                     </TableCell>
                     <TableCell>
                       {key.working_status ? (
-                        <Badge className={key.working_status === 'valid' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-white'}>
+                        <Badge
+                          className={
+                            key.working_status === 'valid'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-yellow-500 text-white'
+                          }
+                        >
                           {key.working_status}
                         </Badge>
                       ) : (
@@ -648,18 +754,32 @@ export default function AdminApiKeysDashboard() {
                       )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {key.last_validated_at ? new Date(key.last_validated_at).toLocaleString() : '—'}
+                      {key.last_validated_at
+                        ? new Date(key.last_validated_at).toLocaleString()
+                        : '—'}
                     </TableCell>
                     <TableCell>
                       {key.total_models_accessible}/{key.total_models_tested}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {(key.history || []).slice(0,3).map((h: any, idx: number) => (
-                          <Badge key={idx} className={h.outcome === 'valid' ? 'bg-green-500 text-white' : h.outcome === 'quota_exceeded' ? 'bg-yellow-500 text-white' : 'bg-gray-400 text-white'} title={`${h.outcome} • ${new Date(h.at).toLocaleString()}`}>
-                            {h.outcome}
-                          </Badge>
-                        ))}
+                        {(key.history || [])
+                          .slice(0, 3)
+                          .map((h: any, idx: number) => (
+                            <Badge
+                              key={idx}
+                              className={
+                                h.outcome === 'valid'
+                                  ? 'bg-green-500 text-white'
+                                  : h.outcome === 'quota_exceeded'
+                                    ? 'bg-yellow-500 text-white'
+                                    : 'bg-gray-400 text-white'
+                              }
+                              title={`${h.outcome} • ${new Date(h.at).toLocaleString()}`}
+                            >
+                              {h.outcome}
+                            </Badge>
+                          ))}
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -675,7 +795,10 @@ export default function AdminApiKeysDashboard() {
         {/* Logs Tab */}
         <TabsContent value="logs" className="space-y-4">
           <div className="flex gap-2">
-            <Select value={logFilter.type} onValueChange={(v) => setLogFilter({...logFilter, type: v})}>
+            <Select
+              value={logFilter.type}
+              onValueChange={v => setLogFilter({ ...logFilter, type: v })}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Log Type" />
               </SelectTrigger>
@@ -689,7 +812,7 @@ export default function AdminApiKeysDashboard() {
 
           <Card className="p-4">
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {logs.map((log) => (
+              {logs.map(log => (
                 <div key={log.id} className="p-2 border rounded text-sm">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -715,7 +838,10 @@ export default function AdminApiKeysDashboard() {
         {/* GitHub Tokens Tab */}
         <TabsContent value="github-tokens" className="space-y-4">
           <div className="flex gap-2">
-            <Dialog open={showAddTokenDialog} onOpenChange={setShowAddTokenDialog}>
+            <Dialog
+              open={showAddTokenDialog}
+              onOpenChange={setShowAddTokenDialog}
+            >
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
@@ -736,7 +862,9 @@ export default function AdminApiKeysDashboard() {
                       id="token-name"
                       placeholder="e.g., GITHUB_TOKEN_6"
                       value={newToken.name}
-                      onChange={(e) => setNewToken({...newToken, name: e.target.value})}
+                      onChange={e =>
+                        setNewToken({ ...newToken, name: e.target.value })
+                      }
                     />
                   </div>
                   <div>
@@ -746,12 +874,17 @@ export default function AdminApiKeysDashboard() {
                       type="password"
                       placeholder="ghp_..."
                       value={newToken.value}
-                      onChange={(e) => setNewToken({...newToken, value: e.target.value})}
+                      onChange={e =>
+                        setNewToken({ ...newToken, value: e.target.value })
+                      }
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowAddTokenDialog(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAddTokenDialog(false)}
+                  >
                     Cancel
                   </Button>
                   <Button onClick={addGithubToken}>Add Token</Button>
@@ -778,23 +911,42 @@ export default function AdminApiKeysDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {githubTokens.map((token) => (
+                {githubTokens.map(token => (
                   <TableRow key={token.id}>
-                    <TableCell className="font-medium">{token.token_name}</TableCell>
+                    <TableCell className="font-medium">
+                      {token.token_name}
+                    </TableCell>
                     <TableCell className="font-mono text-sm">
                       <div className="flex items-center gap-2">
-                        {showTokenValue[token.id] ? token.token_value : '••••••••'}
+                        {showTokenValue[token.id]
+                          ? token.token_value
+                          : '••••••••'}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setShowTokenValue({...showTokenValue, [token.id]: !showTokenValue[token.id]})}
+                          onClick={() =>
+                            setShowTokenValue({
+                              ...showTokenValue,
+                              [token.id]: !showTokenValue[token.id]
+                            })
+                          }
                         >
-                          {showTokenValue[token.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {showTokenValue[token.id] ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={token.is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}>
+                      <Badge
+                        className={
+                          token.is_active
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-500 text-white'
+                        }
+                      >
                         {token.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
@@ -816,9 +968,15 @@ export default function AdminApiKeysDashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => toggleTokenActive(token.id, token.is_active)}
+                          onClick={() =>
+                            toggleTokenActive(token.id, token.is_active)
+                          }
                         >
-                          {token.is_active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          {token.is_active ? (
+                            <Pause className="w-4 h-4" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
                         </Button>
                         <Button
                           variant="destructive"
@@ -897,60 +1055,77 @@ export default function AdminApiKeysDashboard() {
               </div>
             </Card>
 
-        
-        {/* Revalidator Tab */}
-        <TabsContent value="revalidator" className="space-y-4">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Revalidator</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              This revalidation job checks working_gemini_keys periodically (every 5 minutes via cron)
-              and switches keys between Valid and Quota Exceeded status. Keys that become invalid
-              are removed from the pool.
-            </p>
-            <div className="flex gap-2">
-              <Button onClick={() => controlService('revalidator', 'start')} disabled={loading}>
-                <Play className="w-4 h-4 mr-2" /> Run Revalidator Now
-              </Button>
-            </div>
-          </Card>
-        </TabsContent>
+            {/* Revalidator Tab */}
+            <TabsContent value="revalidator" className="space-y-4">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Revalidator</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This revalidation job checks working_gemini_keys periodically
+                  (every 5 minutes via cron) and switches keys between Valid and
+                  Quota Exceeded status. Keys that become invalid are removed
+                  from the pool.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => controlService('revalidator', 'start')}
+                    disabled={loading}
+                  >
+                    <Play className="w-4 h-4 mr-2" /> Run Revalidator Now
+                  </Button>
+                </div>
+              </Card>
+            </TabsContent>
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Revalidator Control</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                Revalidator Control
+              </h3>
               <div className="space-y-4">
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    The revalidator checks working keys every 5 minutes and toggles status between Valid and Quota Exceeded.
+                    The revalidator checks working keys every 5 minutes and
+                    toggles status between Valid and Quota Exceeded.
                   </AlertDescription>
                 </Alert>
                 <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Concurrency</span>
-                  <Select value={String(revalidatorConcurrency)} onValueChange={(v) => setRevalidatorConcurrency(parseInt(v))}>
-                    <SelectTrigger className="w-24 h-8">
-                      <SelectValue placeholder="5" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Concurrency
+                    </span>
+                    <Select
+                      value={String(revalidatorConcurrency)}
+                      onValueChange={v =>
+                        setRevalidatorConcurrency(parseInt(v))
+                      }
+                    >
+                      <SelectTrigger className="w-24 h-8">
+                        <SelectValue placeholder="5" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={() =>
+                      controlService('revalidator', 'start', {
+                        concurrency: revalidatorConcurrency
+                      })
+                    }
+                    disabled={loading}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Run Revalidator Now
+                  </Button>
                 </div>
-                <Button
-                  onClick={() => controlService('revalidator', 'start', { concurrency: revalidatorConcurrency })}
-                  disabled={loading}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Run Revalidator Now
-                </Button>
-              </div>
               </div>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

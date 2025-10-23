@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
 import { createRateLimitService } from '@/lib/services/rate-limit-service'
 import { getSafeErrorMessage } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * GET /api/user/usage
@@ -10,13 +12,13 @@ import { getSafeErrorMessage } from '@/lib/utils/errors'
 export async function GET(): Promise<NextResponse> {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const rateLimitService = await createRateLimitService()
@@ -67,26 +69,29 @@ export async function GET(): Promise<NextResponse> {
  * Record usage for a specific type
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-import { logger } from '@/lib/utils/logger'
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
     const { usageType, count = 1 } = body
 
-    if (!usageType || !['questions_asked', 'quiz_questions_generated', 'copilot_interactions'].includes(usageType)) {
-      return NextResponse.json(
-        { error: 'Invalid usage type' },
-        { status: 400 }
-      )
+    if (
+      !usageType ||
+      ![
+        'questions_asked',
+        'quiz_questions_generated',
+        'copilot_interactions'
+      ].includes(usageType)
+    ) {
+      return NextResponse.json({ error: 'Invalid usage type' }, { status: 400 })
     }
 
     if (typeof count !== 'number' || count < 1 || count > 100) {
@@ -97,7 +102,11 @@ import { logger } from '@/lib/utils/logger'
     }
 
     const rateLimitService = await createRateLimitService()
-    const result = await rateLimitService.incrementUsage(user.id, usageType, count)
+    const result = await rateLimitService.incrementUsage(
+      user.id,
+      usageType,
+      count
+    )
 
     if (!result.allowed) {
       return NextResponse.json(

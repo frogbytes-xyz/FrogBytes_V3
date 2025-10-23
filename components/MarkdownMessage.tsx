@@ -9,7 +9,10 @@ interface MarkdownMessageProps {
   className?: string
 }
 
-export default function MarkdownMessage({ content, className = '' }: MarkdownMessageProps) {
+export default function MarkdownMessage({
+  content,
+  className = ''
+}: MarkdownMessageProps) {
   return (
     <div className={`prose prose-sm dark:prose-invert max-w-none ${className}`}>
       <ReactMarkdown
@@ -18,36 +21,54 @@ export default function MarkdownMessage({ content, className = '' }: MarkdownMes
         components={{
           // Headings
           h1: ({ children, ...props }) => (
-            <h1 className="text-xl font-bold mt-6 mb-4 text-foreground" {...props}>
+            <h1
+              className="text-xl font-bold mt-6 mb-4 text-foreground"
+              {...props}
+            >
               {children}
             </h1>
           ),
           h2: ({ children, ...props }) => (
-            <h2 className="text-lg font-bold mt-5 mb-3 text-foreground" {...props}>
+            <h2
+              className="text-lg font-bold mt-5 mb-3 text-foreground"
+              {...props}
+            >
               {children}
             </h2>
           ),
           h3: ({ children, ...props }) => (
-            <h3 className="text-base font-semibold mt-4 mb-2 text-foreground" {...props}>
+            <h3
+              className="text-base font-semibold mt-4 mb-2 text-foreground"
+              {...props}
+            >
               {children}
             </h3>
           ),
 
           // Paragraphs
           p: ({ children, ...props }) => (
-            <p className="mb-4 last:mb-0 leading-relaxed text-foreground" {...props}>
+            <p
+              className="mb-4 last:mb-0 leading-relaxed text-foreground"
+              {...props}
+            >
               {children}
             </p>
           ),
 
           // Lists
           ul: ({ children, ...props }) => (
-            <ul className="mb-4 ml-6 list-disc space-y-2 text-foreground" {...props}>
+            <ul
+              className="mb-4 ml-6 list-disc space-y-2 text-foreground"
+              {...props}
+            >
               {children}
             </ul>
           ),
           ol: ({ children, ...props }) => (
-            <ol className="mb-4 ml-6 list-decimal space-y-2 text-foreground" {...props}>
+            <ol
+              className="mb-4 ml-6 list-decimal space-y-2 text-foreground"
+              {...props}
+            >
               {children}
             </ol>
           ),
@@ -110,7 +131,10 @@ export default function MarkdownMessage({ content, className = '' }: MarkdownMes
           // Tables
           table: ({ children, ...props }) => (
             <div className="mb-4 overflow-x-auto">
-              <table className="min-w-full border-collapse border border-border" {...props}>
+              <table
+                className="min-w-full border-collapse border border-border"
+                {...props}
+              >
                 {children}
               </table>
             </div>
@@ -121,7 +145,10 @@ export default function MarkdownMessage({ content, className = '' }: MarkdownMes
             </thead>
           ),
           th: ({ children, ...props }) => (
-            <th className="border border-border px-4 py-2 text-left font-semibold" {...props}>
+            <th
+              className="border border-border px-4 py-2 text-left font-semibold"
+              {...props}
+            >
               {children}
             </th>
           ),
@@ -132,9 +159,7 @@ export default function MarkdownMessage({ content, className = '' }: MarkdownMes
           ),
 
           // Horizontal rule
-          hr: (props) => (
-            <hr className="my-6 border-border" {...props} />
-          ),
+          hr: props => <hr className="my-6 border-border" {...props} />,
 
           // Strong and emphasis
           strong: ({ children, ...props }) => (
@@ -146,7 +171,7 @@ export default function MarkdownMessage({ content, className = '' }: MarkdownMes
             <em className="italic" {...props}>
               {children}
             </em>
-          ),
+          )
         }}
       >
         {content}

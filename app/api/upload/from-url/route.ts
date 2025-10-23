@@ -4,26 +4,27 @@ import { isValidVideoUrl } from '@/lib/video-download/validators'
 import { uploadToTelegram, isTelegramConfigured } from '@/lib/telegram/storage'
 import {
   saveUploadMetadata,
-  updateTelegramBackupId,
+  updateTelegramBackupId
 } from '@/services/documents'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import type { UploadResponse, ErrorResponse } from '../route'
+import { logger } from '@/lib/utils/logger'
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500MB
 
 /**
  * POST /api/upload/from-url
- * 
+ *
  * Protected endpoint for downloading videos from URLs.
  * Downloads video using yt-dlp and processes it like a file upload.
- * 
+ *
  * Accepts JSON with:
  * - url: Video URL (YouTube, Vimeo, etc.)
- * 
+ *
  * @returns Upload confirmation with file metadata (same format as /api/upload)
  */
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     // Get authenticated user
     const user = await getAuthUser(request)
@@ -33,7 +34,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Unauthorized',
-          details: ['Authentication required'],
+          details: ['Authentication required']
         },
         { status: 401 }
       )
@@ -50,7 +51,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Validation failed',
-          details: ['No URL provided'],
+          details: ['No URL provided']
         },
         { status: 400 }
       )
@@ -63,14 +64,18 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Validation failed',
-          details: [validation.error || 'Invalid video URL'],
+          details: [validation.error || 'Invalid video URL']
         },
         { status: 400 }
       )
     }
 
     // Download video
-    const downloadOptions: { maxFileSize: number; cookies?: string; cookieText?: string } = {
+    const downloadOptions: {
+      maxFileSize: number
+      cookies?: string
+      cookieText?: string
+    } = {
       maxFileSize: MAX_FILE_SIZE
     }
     if (cookies) {
@@ -87,7 +92,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Download failed',
-          details: [downloadResult.error || 'Failed to download video'],
+          details: [downloadResult.error || 'Failed to download video']
         },
         { status: 500 }
       )
@@ -108,7 +113,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Upload failed',
-          details: ['Failed to save file metadata'],
+          details: ['Failed to save file metadata']
         },
         { status: 500 }
       )
@@ -122,20 +127,23 @@ import { logger } from '@/lib/utils/logger'
         downloadResult.size,
         downloadResult.metadata?.sourceUrl // Include source URL in caption
       )
-        .then(async (result) => {
+        .then(async result => {
           if (result.success && result.fileId) {
             const updateResult = await updateTelegramBackupId(
               downloadResult.fileId,
               result.fileId
             )
             if (!updateResult.success) {
-              logger.error('Failed to update Telegram file ID', updateResult.error)
+              logger.error(
+                'Failed to update Telegram file ID',
+                updateResult.error
+              )
             }
           } else {
             logger.warn('Telegram backup failed', { error: result.error })
           }
         })
-        .catch((error) => {
+        .catch(error => {
           logger.error('Telegram upload error', error)
         })
     }
@@ -150,8 +158,8 @@ import { logger } from '@/lib/utils/logger'
           filename: downloadResult.filename,
           size: downloadResult.size,
           mimeType: downloadResult.mimeType,
-          path: downloadResult.path,
-        },
+          path: downloadResult.path
+        }
       },
       { status: 201 }
     )
@@ -161,10 +169,9 @@ import { logger } from '@/lib/utils/logger'
       {
         success: false,
         error: 'Internal server error',
-        details: ['An unexpected error occurred during download'],
+        details: ['An unexpected error occurred during download']
       },
       { status: 500 }
     )
   }
 }
-

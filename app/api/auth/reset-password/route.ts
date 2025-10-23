@@ -1,9 +1,11 @@
 import { createClient } from '@/services/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { logger } from '@/lib/utils/logger'
 
 const resetPasswordSchema = z.object({
-  email: z.string().email('Invalid email format'),
+  email: z.string().email('Invalid email format')
 })
 
 export type ResetPasswordRequest = z.infer<typeof resetPasswordSchema>
@@ -14,10 +16,9 @@ export interface ResetPasswordResponse {
 }
 
 export async function POST(request: NextRequest) {
-import { logger } from '@/lib/utils/logger'
   try {
     const body = await request.json()
-    
+
     // Validate request body
     const validationResult = resetPasswordSchema.safeParse(body)
     if (!validationResult.success) {
@@ -25,7 +26,7 @@ import { logger } from '@/lib/utils/logger'
         {
           success: false,
           error: 'Validation failed',
-          details: validationResult.error.errors.map(err => err.message),
+          details: validationResult.error.errors.map(err => err.message)
         },
         { status: 400 }
       )
@@ -36,16 +37,17 @@ import { logger } from '@/lib/utils/logger'
 
     // Send password reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback?next=/reset-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback?next=/reset-password`
     })
 
     if (error) {
       logger.error('Password reset error', error)
-      // Don't reveal if email exists or not for security
+      // Don&apos;t reveal if email exists or not for security
       return NextResponse.json(
         {
           success: true,
-          message: 'If an account exists with this email, you will receive password reset instructions.',
+          message:
+            'If an account exists with this email, you will receive password reset instructions.'
         },
         { status: 200 }
       )
@@ -54,7 +56,7 @@ import { logger } from '@/lib/utils/logger'
     return NextResponse.json(
       {
         success: true,
-        message: 'Password reset instructions sent to your email.',
+        message: 'Password reset instructions sent to your email.'
       },
       { status: 200 }
     )
@@ -63,7 +65,7 @@ import { logger } from '@/lib/utils/logger'
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to process password reset request',
+        error: 'Failed to process password reset request'
       },
       { status: 500 }
     )

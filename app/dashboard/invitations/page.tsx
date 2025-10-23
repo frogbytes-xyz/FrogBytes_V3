@@ -10,7 +10,10 @@ export default async function InvitationsPage(): Promise<JSX.Element> {
   const supabase = await createClient()
 
   // Check authentication
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser()
 
   if (error || !user) {
     redirect('/auth/signin')
@@ -21,9 +24,12 @@ export default async function InvitationsPage(): Promise<JSX.Element> {
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold tracking-tight">Invitation Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Invitation Management
+          </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Invite friends to FrogBytes and unlock unlimited access when 3 friends successfully join.
+            Invite friends to FrogBytes and unlock unlimited access when 3
+            friends successfully join.
           </p>
         </div>
 

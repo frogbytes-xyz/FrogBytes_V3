@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/services/supabase/server'
-import { createRateLimitService, type UsageType, type UserUsageStatus as UsageStatus } from '@/lib/services/rate-limit-service'
+import {
+  createRateLimitService,
+  type UsageType,
+  type UserUsageStatus as UsageStatus
+} from '@/lib/services/rate-limit-service'
 import { getSafeErrorMessage } from '@/lib/utils/errors'
+import { logger } from '@/lib/utils/logger'
 
 export interface RateLimitOptions {
-import { logger } from '@/lib/utils/logger'
   usageType: UsageType
   increment?: number
   skipIncrement?: boolean
@@ -46,20 +51,25 @@ export async function withRateLimit(
   userId?: string
   usageStatus?: UsageStatus
 }> {
-  const { usageType, increment = 1, skipIncrement = false, requireAuth = true } = options
+  const {
+    usageType,
+    increment = 1,
+    skipIncrement = false,
+    requireAuth = true
+  } = options
 
   try {
     // Get authenticated user
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (requireAuth && (authError || !user)) {
       return {
         allowed: false,
-        response: NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        ),
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
         recordUsage: async () => {}
       }
     }
@@ -155,15 +165,15 @@ export function withRateLimitWrapper(
       }
 
       try {
-  // Execute the original handler
-  const result = await handler(_request, ...args)
+        // Execute the original handler
+        const result = await handler(_request, ...args)
 
         // Record usage after successful operation
         await rateLimitResult.recordUsage()
 
         return result
       } catch (error) {
-        // Don't record usage if the operation failed
+        // Don&apos;t record usage if the operation failed
         throw error
       }
     }
@@ -185,15 +195,15 @@ export async function withMultipleRateLimits(
 }> {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return {
         allowed: false,
-        response: NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        ),
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
         recordUsage: async () => {}
       }
     }
@@ -218,7 +228,8 @@ export async function withMultipleRateLimits(
         allowed: false,
         response: NextResponse.json(
           {
-            error: failedCheck.reason || `Rate limit exceeded for ${failedType}`,
+            error:
+              failedCheck.reason || `Rate limit exceeded for ${failedType}`,
             rateLimited: true,
             usageType: failedType,
             usageStatus: failedCheck.usage
@@ -299,7 +310,10 @@ export function addRateLimitHeaders(
 
   headers.set('X-RateLimit-Limit', limit.toString())
   headers.set('X-RateLimit-Remaining', remaining.toString())
-  headers.set('X-RateLimit-Reset', new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+  headers.set(
+    'X-RateLimit-Reset',
+    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+  )
 
   return new NextResponse(response.body, {
     status: response.status,

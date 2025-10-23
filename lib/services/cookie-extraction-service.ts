@@ -5,8 +5,9 @@ import { logger } from '@/lib/utils/logger'
  * Extracts cookies from Puppeteer and formats them for yt-dlp
  */
 
-import { Page } from 'puppeteer'
-import { cookieEncryptionService, NetscapeCookie } from './cookie-encryption-service'
+import type { Page } from 'puppeteer'
+import type { NetscapeCookie } from './cookie-encryption-service'
+import { cookieEncryptionService } from './cookie-encryption-service'
 import { cookieService } from './cookie-service'
 
 export interface PuppeteerCookie {
@@ -15,9 +16,9 @@ export interface PuppeteerCookie {
   domain: string
   path: string
   expires: number
-  httpOnly: boolean
+  httpOnly?: boolean
   secure: boolean
-  sameSite: 'Strict' | 'Lax' | 'None'
+  sameSite?: 'Strict' | 'Lax' | 'None'
 }
 
 export interface CookieExtractionResult {
@@ -55,37 +56,41 @@ class CookieExtractionService {
     try {
       // Get all cookies from the page
       const puppeteerCookies = await page.cookies()
-      
+
       if (puppeteerCookies.length === 0) {
         return {
           success: false,
-          error: 'No cookies found on the page',
+          error: 'No cookies found on the page'
         }
       }
 
       // Filter cookies based on options
       const filteredCookies = this.filterCookies(puppeteerCookies, options)
-      
+
       if (filteredCookies.length === 0) {
         return {
           success: false,
-          error: 'No cookies match the specified filters',
+          error: 'No cookies match the specified filters'
         }
       }
 
       // Convert to Netscape format
       const netscapeCookies = this.convertToNetscapeFormat(filteredCookies)
-      const netscapeString = cookieEncryptionService.convertToNetscapeFormat(netscapeCookies)
+      const netscapeString =
+        cookieEncryptionService.formatNetscapeCookies(netscapeCookies)
 
       return {
         success: true,
         cookies: netscapeString,
-        cookieCount: filteredCookies.length,
+        cookieCount: filteredCookies.length
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error during cookie extraction',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unknown error during cookie extraction'
       }
     }
   }
@@ -102,30 +107,40 @@ class CookieExtractionService {
     try {
       // Extract cookies
       const extractionResult = await this.extractCookies(page, options)
-      
+
       if (!extractionResult.success || !extractionResult.cookies) {
         return extractionResult
       }
 
       // Store cookies securely
-      const storeResult = await cookieService.set(userId, 'extracted', extractionResult.cookies, sessionId)
-      
+      const storeResult = await cookieService.set(
+        userId,
+        'extracted',
+        extractionResult.cookies,
+        sessionId
+      )
+
       if (!storeResult.success) {
         return {
           success: false,
-          error: `Failed to store cookies: ${storeResult.error}`,
+          error: `Failed to store cookies: ${storeResult.error}`
         }
       }
 
       return {
         success: true,
         cookies: extractionResult.cookies,
-        cookieCount: extractionResult.cookieCount,
+        ...(extractionResult.cookieCount
+          ? { cookieCount: extractionResult.cookieCount }
+          : {})
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error during cookie extraction and storage',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unknown error during cookie extraction and storage'
       }
     }
   }
@@ -140,7 +155,7 @@ class CookieExtractionService {
   ): Promise<CookieExtractionResult> {
     return this.extractCookies(page, {
       ...options,
-      domainFilter: domain,
+      domainFilter: domain
     })
   }
 
@@ -162,12 +177,12 @@ class CookieExtractionService {
       'authentication',
       'authorization',
       'sso',
-      'oauth',
+      'oauth'
     ]
 
     return this.extractCookies(page, {
       ...options,
-      nameFilter: new RegExp(`(${authPatterns.join('|')})`, 'i'),
+      nameFilter: new RegExp(`(${authPatterns.join('|')})`, 'i')
     })
   }
 
@@ -183,13 +198,14 @@ class CookieExtractionService {
     // Filter by domain
     if (options.domainFilter) {
       if (typeof options.domainFilter === 'string') {
-        filteredCookies = filteredCookies.filter(cookie => 
-          cookie.domain === options.domainFilter || 
-          cookie.domain.endsWith(`.${options.domainFilter}`)
+        filteredCookies = filteredCookies.filter(
+          cookie =>
+            cookie.domain === options.domainFilter ||
+            cookie.domain.endsWith(`.${options.domainFilter}`)
         )
       } else {
-        filteredCookies = filteredCookies.filter(cookie => 
-          options.domainFilter!.test(cookie.domain)
+        filteredCookies = filteredCookies.filter(cookie =>
+          (options.domainFilter as RegExp).test(cookie.domain)
         )
       }
     }
@@ -197,12 +213,14 @@ class CookieExtractionService {
     // Filter by name pattern
     if (options.nameFilter) {
       if (typeof options.nameFilter === 'string') {
-        filteredCookies = filteredCookies.filter(cookie => 
-          cookie.name.toLowerCase().includes(options.nameFilter!.toLowerCase())
+        filteredCookies = filteredCookies.filter(cookie =>
+          cookie.name
+            .toLowerCase()
+            .includes((options.nameFilter as string).toLowerCase())
         )
       } else {
-        filteredCookies = filteredCookies.filter(cookie => 
-          options.nameFilter!.test(cookie.name)
+        filteredCookies = filteredCookies.filter(cookie =>
+          (options.nameFilter as RegExp).test(cookie.name)
         )
       }
     }
@@ -237,20 +255,24 @@ class CookieExtractionService {
   /**
    * Convert Puppeteer cookies to Netscape format
    */
-  private convertToNetscapeFormat(cookies: PuppeteerCookie[]): NetscapeCookie[] {
+  private convertToNetscapeFormat(
+    cookies: PuppeteerCookie[]
+  ): NetscapeCookie[] {
     return cookies.map(cookie => {
       // Handle domain format (remove leading dot if present)
-      const domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain
-      
+      const domain = cookie.domain.startsWith('.')
+        ? cookie.domain.substring(1)
+        : cookie.domain
+
       // Determine if cookie is accessible by subdomains
       const flag = cookie.domain.startsWith('.')
-      
+
       // Handle path
       const path = cookie.path || '/'
-      
+
       // Handle expiration
       const expiration = cookie.expires === -1 ? 0 : Math.floor(cookie.expires)
-      
+
       return {
         domain,
         flag,
@@ -258,7 +280,7 @@ class CookieExtractionService {
         secure: cookie.secure,
         expiration,
         name: cookie.name,
-        value: cookie.value,
+        value: cookie.value
       }
     })
   }
@@ -281,19 +303,21 @@ class CookieExtractionService {
       if (!result.cookies) {
         issues.push('No cookies returned despite successful extraction')
       }
-      
+
       if (result.cookieCount === 0) {
         issues.push('No cookies were extracted')
       }
 
       if (result.cookies && result.cookies.length < 100) {
-        issues.push('Very few cookies extracted - may indicate incomplete authentication')
+        issues.push(
+          'Very few cookies extracted - may indicate incomplete authentication'
+        )
       }
     }
 
     return {
       isValid: issues.length === 0,
-      issues,
+      issues
     }
   }
 
@@ -310,15 +334,23 @@ class CookieExtractionService {
   }> {
     try {
       const cookies = await page.cookies()
-      
+
       const secureCookies = cookies.filter(c => c.secure).length
       const sessionCookies = cookies.filter(c => c.expires === -1).length
       const persistentCookies = cookies.filter(c => c.expires > 0).length
-      
+
       const domains = [...new Set(cookies.map(c => c.domain))]
-      
-      const authPatterns = ['session', 'auth', 'token', 'jwt', 'login', 'user', 'access']
-      const authCookies = cookies.filter(c => 
+
+      const authPatterns = [
+        'session',
+        'auth',
+        'token',
+        'jwt',
+        'login',
+        'user',
+        'access'
+      ]
+      const authCookies = cookies.filter(c =>
         authPatterns.some(pattern => c.name.toLowerCase().includes(pattern))
       ).length
 
@@ -328,10 +360,12 @@ class CookieExtractionService {
         sessionCookies,
         persistentCookies,
         domains,
-        authCookies,
+        authCookies
       }
     } catch (error) {
-      throw new Error(`Failed to get cookie statistics: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to get cookie statistics: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -344,11 +378,11 @@ class CookieExtractionService {
   ): Promise<{ success: boolean; filePath?: string; error?: string }> {
     try {
       const extractionResult = await this.extractCookies(page, options)
-      
+
       if (!extractionResult.success || !extractionResult.cookies) {
         return {
           success: false,
-          error: extractionResult.error || 'Failed to extract cookies',
+          error: extractionResult.error || 'Failed to extract cookies'
         }
       }
 
@@ -356,21 +390,24 @@ class CookieExtractionService {
       const fs = await import('fs/promises')
       const path = await import('path')
       const os = await import('os')
-      
+
       const tempDir = os.tmpdir()
       const fileName = `cookies_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.txt`
       const filePath = path.join(tempDir, fileName)
-      
+
       await fs.writeFile(filePath, extractionResult.cookies, 'utf8')
-      
+
       return {
         success: true,
-        filePath,
+        filePath
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error creating temp file',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Unknown error creating temp file'
       }
     }
   }
@@ -384,7 +421,7 @@ class CookieExtractionService {
       await fs.unlink(filePath)
       return true
     } catch (error) {
-      logger.warn(`Failed to cleanup temp cookie file ${filePath}:`, error)
+      logger.warn(`Failed to cleanup temp cookie file ${filePath}:`, { error })
       return false
     }
   }

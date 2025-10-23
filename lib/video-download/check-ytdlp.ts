@@ -19,14 +19,14 @@ export interface YtDlpCheck {
 export async function checkYtDlp(): Promise<YtDlpCheck> {
   try {
     const { stdout, stderr } = await execAsync('yt-dlp --version')
-    
+
     if (stderr && !stdout) {
       return {
         isInstalled: false,
         error: stderr.trim()
       }
     }
-    
+
     return {
       isInstalled: true,
       version: stdout.trim()
@@ -34,7 +34,10 @@ export async function checkYtDlp(): Promise<YtDlpCheck> {
   } catch (error) {
     return {
       isInstalled: false,
-      error: error instanceof Error ? error.message : 'yt-dlp not found in system PATH'
+      error:
+        error instanceof Error
+          ? error.message
+          : 'yt-dlp not found in system PATH'
     }
   }
 }
@@ -45,10 +48,11 @@ export async function checkYtDlp(): Promise<YtDlpCheck> {
 export async function verifyYtDlpFunctional(): Promise<boolean> {
   try {
     // Test with --simulate flag (doesn't download, just checks)
-    await execAsync('yt-dlp --simulate --no-warnings "https://www.youtube.com/watch?v=jNQXAC9IVRw"')
+    await execAsync(
+      'yt-dlp --simulate --no-warnings "https://www.youtube.com/watch?v=jNQXAC9IVRw"'
+    )
     return true
   } catch {
     return false
   }
 }
-

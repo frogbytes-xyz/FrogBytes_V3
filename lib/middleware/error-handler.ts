@@ -1,21 +1,21 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { logger } from '@/lib/utils/logger'
 
 /**
  * Error types for classification
  */
-export type ErrorType = 
-  | 'validation' 
-  | 'authentication' 
+export type ErrorType =
+  | 'validation'
+  | 'authentication'
   | 'credentials'
-  | 'authorization' 
-  | 'not_found' 
-  | 'rate_limit' 
-  | 'timeout' 
-  | 'network' 
-  | 'database' 
-  | 'external_service' 
-  | 'internal' 
+  | 'authorization'
+  | 'not_found'
+  | 'rate_limit'
+  | 'timeout'
+  | 'network'
+  | 'database'
+  | 'external_service'
+  | 'internal'
   | 'unknown'
 
 /**
@@ -43,11 +43,15 @@ export function classifyError(error: unknown): {
   // Handle different error types
   if (error instanceof Error) {
     const message = error.message.toLowerCase()
-    
+
     // Credentials errors (check before authentication)
-    if (message.includes('invalid credentials') || message.includes('wrong password') ||
-        message.includes('incorrect username') || message.includes('login failed') ||
-        message.includes('authentication failed')) {
+    if (
+      message.includes('invalid credentials') ||
+      message.includes('wrong password') ||
+      message.includes('incorrect username') ||
+      message.includes('login failed') ||
+      message.includes('authentication failed')
+    ) {
       return {
         type: 'credentials',
         message: 'Invalid credentials',
@@ -55,10 +59,14 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Authentication errors (check before validation to avoid conflicts)
-    if (message.includes('unauthorized') || message.includes('authentication') ||
-        message.includes('token') || message.includes('jwt')) {
+    if (
+      message.includes('unauthorized') ||
+      message.includes('authentication') ||
+      message.includes('token') ||
+      message.includes('jwt')
+    ) {
       return {
         type: 'authentication',
         message: 'Authentication required',
@@ -66,10 +74,14 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Validation errors
-    if (message.includes('validation') || message.includes('invalid') || 
-        message.includes('required') || message.includes('format')) {
+    if (
+      message.includes('validation') ||
+      message.includes('invalid') ||
+      message.includes('required') ||
+      message.includes('format')
+    ) {
       return {
         type: 'validation',
         message: 'Invalid request data',
@@ -77,11 +89,16 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Authorization errors
-    if (message.includes('forbidden') || message.includes('permission') ||
-        message.includes('access denied') || message.includes('insufficient') ||
-        message.includes('not allowed') || message.includes('denied')) {
+    if (
+      message.includes('forbidden') ||
+      message.includes('permission') ||
+      message.includes('access denied') ||
+      message.includes('insufficient') ||
+      message.includes('not allowed') ||
+      message.includes('denied')
+    ) {
       return {
         type: 'authorization',
         message: 'Insufficient permissions',
@@ -89,10 +106,13 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Not found errors
-    if (message.includes('not found') || message.includes('does not exist') ||
-        message.includes('missing')) {
+    if (
+      message.includes('not found') ||
+      message.includes('does not exist') ||
+      message.includes('missing')
+    ) {
       return {
         type: 'not_found',
         message: 'Resource not found',
@@ -100,10 +120,13 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Rate limit errors
-    if (message.includes('rate limit') || message.includes('too many requests') ||
-        message.includes('quota exceeded')) {
+    if (
+      message.includes('rate limit') ||
+      message.includes('too many requests') ||
+      message.includes('quota exceeded')
+    ) {
       return {
         type: 'rate_limit',
         message: 'Rate limit exceeded',
@@ -111,11 +134,16 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Network errors (check before timeout to catch network timeouts)
-    if (message.includes('network') || message.includes('connection') ||
-        message.includes('dns') || message.includes('econnreset') ||
-        message.includes('network timeout') || message.includes('connection timeout')) {
+    if (
+      message.includes('network') ||
+      message.includes('connection') ||
+      message.includes('dns') ||
+      message.includes('econnreset') ||
+      message.includes('network timeout') ||
+      message.includes('connection timeout')
+    ) {
       return {
         type: 'network',
         message: 'Network error',
@@ -123,10 +151,13 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Timeout errors
-    if (message.includes('timeout') || message.includes('timed out') ||
-        message.includes('deadline')) {
+    if (
+      message.includes('timeout') ||
+      message.includes('timed out') ||
+      message.includes('deadline')
+    ) {
       return {
         type: 'timeout',
         message: 'Request timeout',
@@ -134,10 +165,14 @@ export function classifyError(error: unknown): {
         details: [error.message]
       }
     }
-    
+
     // Database errors
-    if (message.includes('database') || message.includes('sql') ||
-        message.includes('constraint') || message.includes('foreign key')) {
+    if (
+      message.includes('database') ||
+      message.includes('sql') ||
+      message.includes('constraint') ||
+      message.includes('foreign key')
+    ) {
       return {
         type: 'database',
         message: 'Database error',
@@ -145,10 +180,14 @@ export function classifyError(error: unknown): {
         details: ['A database error occurred']
       }
     }
-    
+
     // External service errors
-    if (message.includes('api') || message.includes('service') ||
-        message.includes('external') || message.includes('third party')) {
+    if (
+      message.includes('api') ||
+      message.includes('service') ||
+      message.includes('external') ||
+      message.includes('third party')
+    ) {
       return {
         type: 'external_service',
         message: 'External service error',
@@ -157,7 +196,7 @@ export function classifyError(error: unknown): {
       }
     }
   }
-  
+
   // Default to internal server error
   return {
     type: 'internal',
@@ -176,17 +215,17 @@ export function createErrorResponse(
   retryAfter?: number
 ): NextResponse<ErrorResponse> {
   const classification = classifyError(error)
-  
+
   const errorResponse: ErrorResponse = {
     success: false,
     error: classification.message,
     errorType: classification.type,
-    details: classification.details,
+    ...(classification.details ? { details: classification.details } : {}),
     timestamp: new Date().toISOString(),
-    requestId,
-    retryAfter
+    ...(requestId ? { requestId } : {}),
+    ...(retryAfter ? { retryAfter } : {})
   }
-  
+
   // Log error for monitoring
   logger.error('Global error handler', {
     error: error instanceof Error ? error.message : 'Unknown error',
@@ -196,7 +235,7 @@ export function createErrorResponse(
     requestId,
     timestamp: errorResponse.timestamp
   })
-  
+
   return NextResponse.json(errorResponse, {
     status: classification.statusCode,
     headers: {
@@ -218,7 +257,7 @@ export function withErrorHandler<T extends any[]>(
     } catch (error) {
       // Generate request ID for tracking
       const requestId = crypto.randomUUID()
-      
+
       return createErrorResponse(error, requestId)
     }
   }
@@ -240,20 +279,20 @@ export function setupGlobalErrorHandlers() {
         timestamp: new Date().toISOString()
       })
     })
-    
+
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       logger.error('Uncaught Exception', {
         message: error.message,
         stack: error.stack,
         timestamp: new Date().toISOString()
       })
-      
+
       // Exit gracefully
       process.exit(1)
     })
   } else {
-    // In Edge Runtime, we can't set up global handlers
+    // In Edge Runtime, we can&apos;t set up global handlers
     // The error handling will be done at the individual route level
     logger.warn('Global error handlers not available in Edge Runtime')
   }

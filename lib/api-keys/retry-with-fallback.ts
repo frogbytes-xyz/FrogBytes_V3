@@ -59,7 +59,7 @@ function classifyError(error: Error | string): {
     lowerError.includes('429')
 
   const isInvalidKeyError =
-    lowerError.includes('invalid') && lowerError.includes('key') ||
+    (lowerError.includes('invalid') && lowerError.includes('key')) ||
     lowerError.includes('api key') ||
     lowerError.includes('unauthorized') ||
     lowerError.includes('401') ||
@@ -129,13 +129,20 @@ export async function retryWithKeyRotation<T>(
       throw error
     }
 
-    // Skip if we've already tried this key
+    // Skip if we&apos;ve already tried this key
     if (usedKeys.has(apiKey)) {
-      logger.warn(`Key already tried, fetching another... (attempt ${attempt + 1}/${maxRetries + 1})`)
+      logger.warn(
+        `Key already tried, fetching another... (attempt ${attempt + 1}/${maxRetries + 1})`
+      )
 
-      // If we've exhausted unique keys, wait before retry
+      // If we&apos;ve exhausted unique keys, wait before retry
       if (usedKeys.size >= 3) {
-        const delay = calculateBackoff(attempt, initialDelayMs, maxDelayMs, exponentialBase)
+        const delay = calculateBackoff(
+          attempt,
+          initialDelayMs,
+          maxDelayMs,
+          exponentialBase
+        )
         await sleep(delay)
       }
 
@@ -145,7 +152,9 @@ export async function retryWithKeyRotation<T>(
     usedKeys.add(apiKey)
 
     try {
-      logger.info(`Attempting API call with key ${apiKey.substring(0, 12)}... (attempt ${attempt + 1}/${maxRetries + 1})`)
+      logger.info(
+        `Attempting API call with key ${apiKey.substring(0, 12)}... (attempt ${attempt + 1}/${maxRetries + 1})`
+      )
 
       const result = await apiCall(apiKey)
 
@@ -165,23 +174,31 @@ export async function retryWithKeyRotation<T>(
 
       const classification = classifyError(errorMessage)
 
-      logger.warn(`API call failed (attempt ${attempt + 1}/${maxRetries + 1}): ${errorMessage}`)
+      logger.warn(
+        `API call failed (attempt ${attempt + 1}/${maxRetries + 1}): ${errorMessage}`
+      )
 
       // Mark key based on error type
       if (classification.isQuotaError) {
-        logger.warn(`Quota exceeded for key ${apiKey.substring(0, 12)}..., marking and rotating`)
+        logger.warn(
+          `Quota exceeded for key ${apiKey.substring(0, 12)}..., marking and rotating`
+        )
         await markKeyQuotaExceeded(apiKey)
       } else if (classification.isInvalidKeyError) {
-        logger.warn(`Invalid key ${apiKey.substring(0, 12)}..., marking and removing from pool`)
+        logger.warn(
+          `Invalid key ${apiKey.substring(0, 12)}..., marking and removing from pool`
+        )
         await markKeyInvalid(apiKey, errorMessage)
       } else {
-        // Unknown error - log but don't mark key as bad
+        // Unknown error - log but don&apos;t mark key as bad
         logger.error(`Unknown error type: ${errorMessage}`)
       }
 
       // If this was the last attempt, throw
       if (attempt === maxRetries) {
-        const finalError = new Error(`API call failed after ${maxRetries + 1} attempts: ${errorMessage}`)
+        const finalError = new Error(
+          `API call failed after ${maxRetries + 1} attempts: ${errorMessage}`
+        )
         const retryError = finalError as RetryError
         retryError.attempts = attempt + 1
         retryError.lastError = lastError || finalError
@@ -190,7 +207,12 @@ export async function retryWithKeyRotation<T>(
       }
 
       // Calculate backoff delay
-      const delay = calculateBackoff(attempt, initialDelayMs, maxDelayMs, exponentialBase)
+      const delay = calculateBackoff(
+        attempt,
+        initialDelayMs,
+        maxDelayMs,
+        exponentialBase
+      )
 
       // Call retry callback if provided
       if (onRetry) {
@@ -247,10 +269,17 @@ export async function retryStreamWithKeyRotation<T extends Response>(
     }
 
     if (usedKeys.has(apiKey)) {
-      logger.warn(`Key already tried, fetching another... (attempt ${attempt + 1}/${maxRetries + 1})`)
+      logger.warn(
+        `Key already tried, fetching another... (attempt ${attempt + 1}/${maxRetries + 1})`
+      )
 
       if (usedKeys.size >= 3) {
-        const delay = calculateBackoff(attempt, initialDelayMs, maxDelayMs, exponentialBase)
+        const delay = calculateBackoff(
+          attempt,
+          initialDelayMs,
+          maxDelayMs,
+          exponentialBase
+        )
         await sleep(delay)
       }
 
@@ -260,14 +289,18 @@ export async function retryStreamWithKeyRotation<T extends Response>(
     usedKeys.add(apiKey)
 
     try {
-      logger.info(`Attempting streaming API call with key ${apiKey.substring(0, 12)}... (attempt ${attempt + 1}/${maxRetries + 1})`)
+      logger.info(
+        `Attempting streaming API call with key ${apiKey.substring(0, 12)}... (attempt ${attempt + 1}/${maxRetries + 1})`
+      )
 
       const response = await apiCall(apiKey)
 
       // Check if response is OK before marking success
       if (!response.ok) {
         const errorText = await response.text()
-        const error: any = new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const error: any = new Error(
+          `HTTP ${response.status}: ${response.statusText}`
+        )
         error.responseText = errorText
         throw error
       }
@@ -287,7 +320,9 @@ export async function retryStreamWithKeyRotation<T extends Response>(
 
       const classification = classifyError(errorMessage)
 
-      logger.warn(`Streaming API call failed (attempt ${attempt + 1}/${maxRetries + 1}): ${errorMessage}`)
+      logger.warn(
+        `Streaming API call failed (attempt ${attempt + 1}/${maxRetries + 1}): ${errorMessage}`
+      )
 
       if (classification.isQuotaError) {
         await markKeyQuotaExceeded(apiKey)
@@ -296,7 +331,9 @@ export async function retryStreamWithKeyRotation<T extends Response>(
       }
 
       if (attempt === maxRetries) {
-        const finalError = new Error(`Streaming API call failed after ${maxRetries + 1} attempts: ${errorMessage}`)
+        const finalError = new Error(
+          `Streaming API call failed after ${maxRetries + 1} attempts: ${errorMessage}`
+        )
         const retryError = finalError as RetryError
         retryError.attempts = attempt + 1
         retryError.lastError = lastError || finalError
@@ -304,7 +341,12 @@ export async function retryStreamWithKeyRotation<T extends Response>(
         throw retryError
       }
 
-      const delay = calculateBackoff(attempt, initialDelayMs, maxDelayMs, exponentialBase)
+      const delay = calculateBackoff(
+        attempt,
+        initialDelayMs,
+        maxDelayMs,
+        exponentialBase
+      )
 
       if (onRetry) {
         onRetry(attempt + 1, error, apiKey)

@@ -5,23 +5,19 @@ import { logger } from '@/lib/utils/logger'
  * Handles browser launching, authentication flows, and cookie extraction
  */
 
-import { Browser, Page } from 'puppeteer'
-import puppeteerExtra from 'puppeteer-extra'
+import type { Browser, Page } from 'puppeteer'
+// Import puppeteer and puppeteer-extra dynamically at runtime to avoid static
+// analysis problems during Next.js build. We&apos;ll import them inside functions
+// that only run server-side.
 import { videoDownloadConfig } from '../config/video-download'
 import { cookieEncryptionService } from './cookie-encryption-service'
 
 // Conditionally add stealth plugin to avoid detection
 // Handle potential compatibility issues gracefully
 let stealthPluginInitialized = false
-try {
-  const StealthPlugin = require('puppeteer-extra-plugin-stealth')
-  puppeteerExtra.use(StealthPlugin())
-  stealthPluginInitialized = true
-  logger.info('[PUPPETEER] Stealth plugin initialized successfully')
-} catch (error) {
-  logger.warn('[PUPPETEER] Failed to initialize stealth plugin', { error: error instanceof Error ? error.message : 'Unknown error' })
-  logger.warn('[PUPPETEER] Continuing without stealth plugin - some sites may detect automation')
-}
+// We delay stealth plugin initialization until runtime where `puppeteer-extra`
+// is available. Initialization will be attempted the first time a browser is
+// launched.
 
 export interface AuthSession {
   sessionId: string
@@ -60,13 +56,13 @@ class PuppeteerService {
         '--disable-gpu',
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
-        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       ],
       ignoreDefaultArgs: ['--disable-extensions'],
       defaultViewport: {
         width: 1280,
-        height: 720,
-      },
+        height: 720
+      }
     }
 
     // Add executable path if specified
@@ -80,27 +76,59 @@ class PuppeteerService {
     }
 
     try {
+      // Dynamic import of puppeteer-extra and optional stealth plugin
+      // Use any to avoid TypeScript runtime type mismatches for dynamic import
+      const puppeteerExtra: any =
+        (await import('puppeteer-extra')).default ||
+        (await import('puppeteer-extra'))
+
+      // Try to initialize stealth plugin once
+      if (!stealthPluginInitialized) {
+        try {
+          const StealthPlugin =
+            (await import('puppeteer-extra-plugin-stealth')).default ||
+            (await import('puppeteer-extra-plugin-stealth'))
+          if (StealthPlugin) {
+            puppeteerExtra.use(StealthPlugin())
+            stealthPluginInitialized = true
+            logger.info('[PUPPETEER] Stealth plugin initialized successfully')
+          }
+        } catch (err) {
+          logger.warn('[PUPPETEER] Failed to initialize stealth plugin', {
+            error: err instanceof Error ? err.message : 'Unknown error'
+          })
+          logger.warn(
+            '[PUPPETEER] Continuing without stealth plugin - some sites may detect automation'
+          )
+        }
+      }
+
       const browser = await puppeteerExtra.launch(launchOptions)
       return browser
     } catch (error) {
-      throw new Error(`Failed to launch browser: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to launch browser: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
   /**
    * Create a new authentication session
    */
-  async createAuthSession(userId: string, authUrl: string): Promise<AuthSession> {
+  async createAuthSession(
+    userId: string,
+    authUrl: string
+  ): Promise<AuthSession> {
     const sessionId = cookieEncryptionService.generateSecureToken()
     const now = Date.now()
-    
+
     const session: AuthSession = {
       sessionId,
       userId,
       status: 'pending',
       authUrl,
       createdAt: now,
-      expiresAt: now + videoDownloadConfig.authSessionTimeout,
+      expiresAt: now + videoDownloadConfig.authSessionTimeout
     }
 
     this.activeSessions.set(sessionId, session)
@@ -111,8 +139,10 @@ class PuppeteerService {
       const page = await browser.newPage()
 
       // Set up page configuration
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-      
+      await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      )
+
       // Navigate to auth URL
       await page.goto(authUrl, { waitUntil: 'networkidle2', timeout: 30000 })
 
@@ -127,21 +157,26 @@ class PuppeteerService {
     } catch (error) {
       session.status = 'failed'
       this.activeSessions.set(sessionId, session)
-      throw new Error(`Failed to create auth session: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to create auth session: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
   /**
    * Wait for user authentication to complete
    */
-  async waitForAuthentication(sessionId: string, timeoutMs: number = videoDownloadConfig.authSessionTimeout): Promise<AuthResult> {
+  async waitForAuthentication(
+    sessionId: string,
+    timeoutMs: number = videoDownloadConfig.authSessionTimeout
+  ): Promise<AuthResult> {
     const session = this.activeSessions.get(sessionId)
-    
+
     if (!session) {
       return {
         success: false,
         error: 'Session not found',
-        sessionId,
+        sessionId
       }
     }
 
@@ -149,7 +184,7 @@ class PuppeteerService {
       return {
         success: false,
         error: 'Browser page not available',
-        sessionId,
+        sessionId
       }
     }
 
@@ -161,12 +196,12 @@ class PuppeteerService {
 
       // Extract cookies
       const cookies = await this.extractCookies(session.page)
-      
+
       if (!cookies) {
         return {
           success: false,
           error: 'Failed to extract cookies',
-          sessionId,
+          sessionId
         }
       }
 
@@ -177,16 +212,16 @@ class PuppeteerService {
       return {
         success: true,
         cookies,
-        sessionId,
+        sessionId
       }
     } catch (error) {
       session.status = 'failed'
       this.activeSessions.set(sessionId, session)
-      
+
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Authentication failed',
-        sessionId,
+        sessionId
       }
     }
   }
@@ -196,7 +231,10 @@ class PuppeteerService {
    * This is a simplified implementation - you may need to customize this
    * based on the specific authentication flow you're handling
    */
-  private async detectAuthenticationComplete(page: Page, timeoutMs: number): Promise<void> {
+  private async detectAuthenticationComplete(
+    page: Page,
+    timeoutMs: number
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Authentication timeout'))
@@ -206,9 +244,13 @@ class PuppeteerService {
       const checkAuth = async () => {
         try {
           const url = page.url()
-          
+
           // Check if we're still on a login page
-          if (url.includes('/login') || url.includes('/signin') || url.includes('/auth')) {
+          if (
+            url.includes('/login') ||
+            url.includes('/signin') ||
+            url.includes('/auth')
+          ) {
             // Still on auth page, continue waiting
             setTimeout(checkAuth, 1000)
             return
@@ -220,7 +262,7 @@ class PuppeteerService {
             '.user-menu',
             '.profile-menu',
             '[data-testid="user-menu"]',
-            '.authenticated',
+            '.authenticated'
           ]
 
           for (const selector of successSelectors) {
@@ -238,11 +280,12 @@ class PuppeteerService {
 
           // Check for cookies that indicate authentication
           const cookies = await page.cookies()
-          const authCookies = cookies.filter(cookie => 
-            cookie.name.toLowerCase().includes('session') ||
-            cookie.name.toLowerCase().includes('auth') ||
-            cookie.name.toLowerCase().includes('token') ||
-            cookie.name.toLowerCase().includes('jwt')
+          const authCookies = cookies.filter(
+            cookie =>
+              cookie.name.toLowerCase().includes('session') ||
+              cookie.name.toLowerCase().includes('auth') ||
+              cookie.name.toLowerCase().includes('token') ||
+              cookie.name.toLowerCase().includes('jwt')
           )
 
           if (authCookies.length > 0) {
@@ -270,14 +313,16 @@ class PuppeteerService {
   private async extractCookies(page: Page): Promise<string | null> {
     try {
       const cookies = await page.cookies()
-      
+
       if (cookies.length === 0) {
         return null
       }
 
       // Convert cookies to Netscape format
       const netscapeCookies = cookies.map(cookie => {
-        const domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain
+        const domain = cookie.domain.startsWith('.')
+          ? cookie.domain.substring(1)
+          : cookie.domain
         const flag = cookie.domain.startsWith('.') ? 'TRUE' : 'FALSE'
         const path = cookie.path || '/'
         const secure = cookie.secure ? 'TRUE' : 'FALSE'
@@ -285,13 +330,21 @@ class PuppeteerService {
         const name = cookie.name
         const value = cookie.value
 
-        return [domain, flag, path, secure, expiration.toString(), name, value].join('\t')
+        return [
+          domain,
+          flag,
+          path,
+          secure,
+          expiration.toString(),
+          name,
+          value
+        ].join('\t')
       })
 
       const header = [
         '# Netscape HTTP Cookie File',
         '# This is a generated file! Do not edit.',
-        '',
+        ''
       ]
 
       return [...header, ...netscapeCookies].join('\n')
@@ -306,7 +359,7 @@ class PuppeteerService {
    */
   async closeAuthSession(sessionId: string): Promise<void> {
     const session = this.activeSessions.get(sessionId)
-    
+
     if (!session) {
       return
     }
@@ -347,7 +400,9 @@ class PuppeteerService {
     }
 
     if (expiredSessions.length > 0) {
-      logger.info(`Cleaned up ${expiredSessions.length} expired authentication sessions`)
+      logger.info(
+        `Cleaned up ${expiredSessions.length} expired authentication sessions`
+      )
     }
   }
 

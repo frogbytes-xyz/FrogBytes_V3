@@ -6,7 +6,12 @@ import { spawn } from 'child_process'
 import { randomUUID } from 'crypto'
 import { mkdir, stat, unlink, writeFile } from 'fs/promises'
 import { join } from 'path'
-import type { DownloadResult, VideoMetadata, DownloadProgress, DownloadOptions } from './types'
+import type {
+  DownloadResult,
+  VideoMetadata,
+  DownloadProgress,
+  DownloadOptions
+} from './types'
 import { isValidVideoUrl } from './validators'
 
 const UPLOAD_BASE_DIR = '/tmp/uploads'
@@ -36,20 +41,24 @@ export async function downloadVideo(
   const fileId = randomUUID()
   const uploadDir = join(UPLOAD_BASE_DIR, userId)
   let cookieFilePath: string | undefined
-  
+
   try {
     // Ensure upload directory exists
     await mkdir(uploadDir, { recursive: true })
-    
+
     // Handle manual cookie text by creating a temp file
     if (options.cookieText) {
       cookieFilePath = join(uploadDir, `${fileId}-cookies.txt`)
       await writeFile(cookieFilePath, options.cookieText, 'utf-8')
     }
-    
+
     // First, get video metadata without downloading
-    const metadata = await getVideoMetadata(url, options.cookies, cookieFilePath)
-    
+    const metadata = await getVideoMetadata(
+      url,
+      options.cookies,
+      cookieFilePath
+    )
+
     if (!metadata) {
       // Clean up cookie file if it exists
       if (cookieFilePath) {
@@ -62,7 +71,8 @@ export async function downloadVideo(
         size: 0,
         mimeType: '',
         path: '',
-        error: 'Failed to retrieve video information. The video may be private or require authentication.',
+        error:
+          'Failed to retrieve video information. The video may be private or require authentication.',
         errorType: 'auth'
       }
     }
@@ -76,7 +86,7 @@ export async function downloadVideo(
       options.cookies,
       cookieFilePath ?? undefined
     )
-    
+
     // Clean up cookie file after download attempt
     if (cookieFilePath) {
       await unlink(cookieFilePath).catch(() => {})
@@ -99,7 +109,7 @@ export async function downloadVideo(
 
     // Get file stats
     const stats = await stat(downloadedPath)
-    
+
     // Check file size if maxFileSize is specified
     if (options.maxFileSize && stats.size > options.maxFileSize) {
       // Clean up downloaded file
@@ -119,9 +129,9 @@ export async function downloadVideo(
     // Determine MIME type from extension
     const extension = downloadedPath.split('.').pop()?.toLowerCase() || 'mp4'
     const mimeType = getMimeType(extension)
-    
+
     // Generate filename from metadata or use generic name
-    const filename = metadata.title 
+    const filename = metadata.title
       ? sanitizeFilename(metadata.title) + '.' + extension
       : `video-${fileId}.${extension}`
 
@@ -138,7 +148,9 @@ export async function downloadVideo(
       }
     }
   } catch (error) {
-    const errorType = classifyDownloadError(error instanceof Error ? error.message : 'Unknown error')
+    const errorType = classifyDownloadError(
+      error instanceof Error ? error.message : 'Unknown error'
+    )
     return {
       success: false,
       fileId: '',
@@ -146,7 +158,10 @@ export async function downloadVideo(
       size: 0,
       mimeType: '',
       path: '',
-      error: error instanceof Error ? error.message : 'An unexpected error occurred during download',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred during download',
       errorType
     }
   }
@@ -155,13 +170,13 @@ export async function downloadVideo(
 /**
  * Get video metadata using yt-dlp
  */
-async function getVideoMetadata(url: string, cookies?: string, cookieFile?: string): Promise<VideoMetadata | null> {
-  return new Promise((resolve) => {
-    const args = [
-      '--dump-json',
-      '--no-warnings',
-      '--no-playlist'
-    ]
+async function getVideoMetadata(
+  url: string,
+  cookies?: string,
+  cookieFile?: string
+): Promise<VideoMetadata | null> {
+  return new Promise(resolve => {
+    const args = ['--dump-json', '--no-warnings', '--no-playlist']
 
     // Add cookie support if provided
     if (cookieFile) {
@@ -173,16 +188,16 @@ async function getVideoMetadata(url: string, cookies?: string, cookieFile?: stri
     }
 
     args.push(url)
-    
+
     const ytdlp = spawn('yt-dlp', args)
 
     let jsonData = ''
-    
+
     ytdlp.stdout.on('data', (data: Buffer) => {
       jsonData += data.toString()
     })
 
-    ytdlp.on('close', (code) => {
+    ytdlp.on('close', code => {
       if (code !== 0 || !jsonData) {
         resolve(null)
         return
@@ -229,11 +244,17 @@ async function downloadWithProgress(
   onProgress?: (progress: DownloadProgress) => void,
   cookies?: string,
   cookieFile?: string
-): Promise<{ path: string | null; error?: string; errorType?: 'auth' | 'network' | 'format' | 'timeout' | 'unknown' }> {
-  return new Promise((resolve) => {
+): Promise<{
+  path: string | null
+  error?: string
+  errorType?: 'auth' | 'network' | 'format' | 'timeout' | 'unknown'
+}> {
+  return new Promise(resolve => {
     const args = [
-      '--format', 'best[ext=mp4]/best',
-      '--output', outputTemplate,
+      '--format',
+      'best[ext=mp4]/best',
+      '--output',
+      outputTemplate,
       '--no-playlist',
       '--no-warnings',
       '--newline',
@@ -258,10 +279,12 @@ async function downloadWithProgress(
 
     ytdlp.stdout.on('data', (data: Buffer) => {
       const output = data.toString()
-      
+
       // Parse progress from yt-dlp output
       const progressMatch = output.match(/\[download\]\s+(\d+\.?\d*)%/)
-      const sizeMatch = output.match(/\[download\]\s+(\d+\.?\d*)(Ki|Mi|Gi)?B of\s+(\d+\.?\d*)(Ki|Mi|Gi)?B/)
+      const sizeMatch = output.match(
+        /\[download\]\s+(\d+\.?\d*)(Ki|Mi|Gi)?B of\s+(\d+\.?\d*)(Ki|Mi|Gi)?B/
+      )
       const speedMatch = output.match(/at\s+(\S+\/s)/)
       const etaMatch = output.match(/ETA\s+(\S+)/)
 
@@ -296,7 +319,9 @@ async function downloadWithProgress(
       }
 
       // Also check for "already downloaded" message
-      const alreadyMatch = output.match(/\[download\] (.+) has already been downloaded/)
+      const alreadyMatch = output.match(
+        /\[download\] (.+) has already been downloaded/
+      )
       if (alreadyMatch?.[1]) {
         finalPath = alreadyMatch[1].trim()
       }
@@ -306,7 +331,7 @@ async function downloadWithProgress(
       errorOutput += data.toString()
     })
 
-    ytdlp.on('close', (code) => {
+    ytdlp.on('close', code => {
       if (code !== 0) {
         const errorType = classifyDownloadError(errorOutput)
         resolve({
@@ -325,9 +350,11 @@ async function downloadWithProgress(
 
       // Otherwise, try to find the downloaded file
       const dir = outputTemplate.substring(0, outputTemplate.lastIndexOf('/'))
-      const filePattern = outputTemplate.substring(outputTemplate.lastIndexOf('/') + 1)
+      const filePattern = outputTemplate.substring(
+        outputTemplate.lastIndexOf('/') + 1
+      )
       const fileId = filePattern.split('.')[0]
-      
+
       // Common video extensions
       const extensions = ['mp4', 'webm', 'mkv', 'avi', 'mov', 'flv']
       for (const ext of extensions) {
@@ -341,7 +368,7 @@ async function downloadWithProgress(
       setTimeout(() => resolve({ path: null }), 1000)
     })
 
-    ytdlp.on('error', (error) => {
+    ytdlp.on('error', error => {
       const errorType = classifyDownloadError(error.message)
       resolve({
         path: null,
@@ -358,52 +385,76 @@ async function downloadWithProgress(
 function parseSize(value: string, unit?: string): number {
   const num = parseFloat(value)
   if (!unit) return num
-  
+
   const multipliers: Record<string, number> = {
-    'Ki': 1024,
-    'Mi': 1024 * 1024,
-    'Gi': 1024 * 1024 * 1024
+    Ki: 1024,
+    Mi: 1024 * 1024,
+    Gi: 1024 * 1024 * 1024
   }
-  
+
   return num * (multipliers[unit] ?? 1)
 }
 
 /**
  * Classify download error type based on error message
  */
-function classifyDownloadError(errorMessage: string): 'auth' | 'network' | 'format' | 'timeout' | 'unknown' {
+function classifyDownloadError(
+  errorMessage: string
+): 'auth' | 'network' | 'format' | 'timeout' | 'unknown' {
   const lowerError = errorMessage.toLowerCase()
-  
+
   // Authentication errors
-  if (lowerError.includes('private') || lowerError.includes('authentication') || 
-      lowerError.includes('unauthorized') || lowerError.includes('forbidden') ||
-      lowerError.includes('login') || lowerError.includes('signin') ||
-      lowerError.includes('access denied') || lowerError.includes('members only') ||
-      lowerError.includes('subscription') || lowerError.includes('premium')) {
+  if (
+    lowerError.includes('private') ||
+    lowerError.includes('authentication') ||
+    lowerError.includes('unauthorized') ||
+    lowerError.includes('forbidden') ||
+    lowerError.includes('login') ||
+    lowerError.includes('signin') ||
+    lowerError.includes('access denied') ||
+    lowerError.includes('members only') ||
+    lowerError.includes('subscription') ||
+    lowerError.includes('premium')
+  ) {
     return 'auth'
   }
-  
+
   // Network errors
-  if (lowerError.includes('network') || lowerError.includes('connection') || 
-      lowerError.includes('timeout') || lowerError.includes('dns') ||
-      lowerError.includes('refused') || lowerError.includes('unreachable') ||
-      lowerError.includes('socket') || lowerError.includes('econnreset')) {
+  if (
+    lowerError.includes('network') ||
+    lowerError.includes('connection') ||
+    lowerError.includes('timeout') ||
+    lowerError.includes('dns') ||
+    lowerError.includes('refused') ||
+    lowerError.includes('unreachable') ||
+    lowerError.includes('socket') ||
+    lowerError.includes('econnreset')
+  ) {
     return 'network'
   }
-  
+
   // Format errors
-  if (lowerError.includes('format') || lowerError.includes('codec') || 
-      lowerError.includes('unsupported') || lowerError.includes('not available') ||
-      lowerError.includes('too large') || lowerError.includes('size limit')) {
+  if (
+    lowerError.includes('format') ||
+    lowerError.includes('codec') ||
+    lowerError.includes('unsupported') ||
+    lowerError.includes('not available') ||
+    lowerError.includes('too large') ||
+    lowerError.includes('size limit')
+  ) {
     return 'format'
   }
-  
+
   // Timeout errors
-  if (lowerError.includes('timeout') || lowerError.includes('timed out') ||
-      lowerError.includes('expired') || lowerError.includes('deadline')) {
+  if (
+    lowerError.includes('timeout') ||
+    lowerError.includes('timed out') ||
+    lowerError.includes('expired') ||
+    lowerError.includes('deadline')
+  ) {
     return 'timeout'
   }
-  
+
   return 'unknown'
 }
 
@@ -422,7 +473,7 @@ function getMimeType(extension: string): string {
     mp3: 'audio/mpeg',
     wav: 'audio/wav'
   }
-  
+
   return mimeTypes[extension] ?? 'video/mp4'
 }
 
@@ -435,4 +486,3 @@ function sanitizeFilename(filename: string): string {
     .replace(/\s+/g, '-')
     .substring(0, 100)
 }
-
