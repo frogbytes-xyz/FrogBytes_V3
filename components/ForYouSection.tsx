@@ -7,6 +7,7 @@ import { createClient } from '@/services/supabase/client'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import PDFThumbnail from '@/components/PDFThumbnail'
 import { getRecommendationsForUser } from '@/lib/recommendations/similarity'
 import type {
@@ -124,6 +125,13 @@ export default function ForYouSection({
           fullError: userDocsError
         })
         throw userDocsError
+      }
+
+      // If user has no uploads, skip recommendation loading
+      if (typedUserDocs.length === 0) {
+        setRecommendations([])
+        setLoading(false)
+        return
       }
 
       // Get all public documents for comparison
@@ -384,169 +392,154 @@ export default function ForYouSection({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {recommendations.map(summary => (
-          <div
+          <Card
             key={summary.id}
-            className="rounded-2xl border border-border/30 bg-gradient-to-b from-muted/5 to-background overflow-hidden group hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+            className="hover:shadow-lg transition-all overflow-hidden group"
           >
             {/* PDF Thumbnail Preview */}
             {summary.pdf_url && (
               <Link
                 href={`/learn/${summary.id}`}
-                className="block relative overflow-hidden bg-gradient-to-br from-muted/20 to-muted/5 flex items-center justify-center"
+                className="block relative overflow-hidden bg-gradient-to-br from-accent to-muted flex items-center justify-center"
                 style={{ height: '300px' }}
               >
                 <PDFThumbnail
                   pdfUrl={summary.pdf_url}
                   width={450}
                   height={300}
-                  className="cursor-pointer transition-transform group-hover:scale-105 duration-500"
+                  className="cursor-pointer transition-transform group-hover:scale-105"
+                  pageCountPosition="right-3"
                 />
-                <div className="absolute top-3 right-3 flex items-center gap-2 z-30">
-                  {'recommendationScore' in summary && (
+                {'recommendationScore' in summary && (
+                  <div className="absolute top-3 left-3 z-30">
                     <Badge
                       variant="secondary"
-                      className="text-xs px-2 py-0.5 shadow-lg backdrop-blur-sm bg-background/80"
+                      className="text-xs shadow-lg backdrop-blur-sm bg-background/90"
                     >
                       {Math.round((summary as any).recommendationScore * 100)}%
                       match
                     </Badge>
-                  )}
-                  {summary.reputation_score !== 0 && (
-                    <Badge
-                      variant="tag-rounded"
-                      className="shadow-lg backdrop-blur-sm bg-background/80"
-                    >
-                      {summary.reputation_score > 0 ? '+' : ''}
-                      {summary.reputation_score}
-                    </Badge>
-                  )}
-                </div>
+                  </div>
+                )}
               </Link>
             )}
 
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-lg font-normal leading-tight line-clamp-2 text-foreground">
-                    {summary.lecture_name || 'Untitled'}
-                  </h3>
-                  {!summary.pdf_url && (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {'recommendationScore' in summary && (
-                        <Badge variant="secondary" className="text-xs px-2">
-                          {Math.round(
-                            (summary as any).recommendationScore * 100
-                          )}
-                          %
-                        </Badge>
-                      )}
-                      {summary.reputation_score !== 0 && (
-                        <Badge variant="tag-rounded">
-                          {summary.reputation_score > 0 ? '+' : ''}
-                          {summary.reputation_score}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <p className="text-sm text-muted-foreground font-mono">
-                  {summary.university || 'University not specified'}
-                </p>
-                {summary.subject && (
-                  <p className="text-xs text-muted-foreground">
-                    {summary.subject}
-                  </p>
+            <CardHeader className={!summary.pdf_url ? 'pt-6' : ''}>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <CardTitle className="text-lg font-medium leading-tight line-clamp-2">
+                  {summary.lecture_name || 'Untitled'}
+                </CardTitle>
+                {!summary.pdf_url && 'recommendationScore' in summary && (
+                  <Badge variant="secondary" className="text-xs flex-shrink-0">
+                    {Math.round((summary as any).recommendationScore * 100)}%
+                  </Badge>
                 )}
               </div>
-
-              {summary.tags && summary.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {summary.tags.slice(0, 3).map((tag, idx) => (
-                    <Badge key={idx} variant="tag" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                  {summary.tags.length > 3 && (
-                    <Badge variant="tag" className="text-xs">
-                      +{summary.tags.length - 3}
-                    </Badge>
+              {(summary.university || summary.subject) && (
+                <div className="space-y-1 text-sm text-muted-foreground">
+                  {summary.university && (
+                    <p className="font-mono text-xs">{summary.university}</p>
                   )}
+                  {summary.subject && <p>{summary.subject}</p>}
                 </div>
               )}
+            </CardHeader>
 
-              <div className="pt-4 border-t border-border/30 flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  {onVote && (
-                    <>
-                      <button
-                        onClick={() => onVote(summary.id, 1)}
-                        className={`h-9 w-9 rounded-lg flex items-center justify-center transition-all ${
-                          summary.user_vote === 1
-                            ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-950 scale-110'
-                            : 'text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/50'
-                        }`}
-                        title="Upvote"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                      </button>
-                      <span className="text-sm font-mono min-w-[3ch] text-center text-foreground">
-                        {Number(summary.reputation_score) || 0}
-                      </span>
-                      <button
-                        onClick={() => onVote(summary.id, -1)}
-                        className={`h-9 w-9 rounded-lg flex items-center justify-center transition-all ${
-                          summary.user_vote === -1
-                            ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-950 scale-110'
-                            : 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50'
-                        }`}
-                        title="Downvote"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                    </>
-                  )}
+            <CardContent>
+              <div className="space-y-3">
+                {/* Tags */}
+                {summary.tags && summary.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {summary.tags.slice(0, 4).map((tag, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {summary.tags.length > 4 && (
+                      <Badge variant="secondary" className="text-xs">
+                        +{summary.tags.length - 4}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* Date and Author */}
+                <div className="text-xs text-muted-foreground">
+                  <p>By {summary.user?.full_name || 'Anonymous'}</p>
+                  <p>{new Date(summary.created_at).toLocaleDateString()}</p>
                 </div>
 
-                <Button
-                  asChild
-                  size="default"
-                  variant="outline"
-                  className="h-9"
-                >
-                  <Link href={`/learn/${summary.id}`}>Learn</Link>
-                </Button>
-              </div>
+                {/* Action Buttons */}
+                <div className="pt-3 border-t flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1">
+                    {onVote && (
+                      <>
+                        <button
+                          onClick={() => onVote(summary.id, 1)}
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
+                            summary.user_vote === 1
+                              ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-950'
+                              : 'text-muted-foreground hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/50'
+                          }`}
+                          title="Upvote"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 15l7-7 7 7"
+                            />
+                          </svg>
+                        </button>
+                        <span className="text-sm font-mono font-medium px-2 min-w-[2.5rem] text-center">
+                          {summary.reputation_score > 0 ? '+' : ''}
+                          {summary.reputation_score}
+                        </span>
+                        <button
+                          onClick={() => onVote(summary.id, -1)}
+                          className={`h-8 w-8 rounded-lg flex items-center justify-center transition-all ${
+                            summary.user_vote === -1
+                              ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-950'
+                              : 'text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50'
+                          }`}
+                          title="Downvote"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
 
-              <div className="pt-3 border-t border-border/30 text-xs text-muted-foreground">
-                <p>By {summary.user?.full_name || 'Anonymous'}</p>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="default"
+                    className="flex-1"
+                  >
+                    <Link href={`/learn/${summary.id}`}>Study</Link>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

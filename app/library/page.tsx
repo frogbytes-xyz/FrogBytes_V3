@@ -43,6 +43,7 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [userLoaded, setUserLoaded] = useState(false)
 
   // Voting hook with anti-spam protection
   const {
@@ -78,11 +79,12 @@ export default function LibraryPage() {
   const [universities, setUniversities] = useState<string[]>([])
   const [subjects, setSubjects] = useState<string[]>([])
 
-  const loadUser = useCallback(async () => {
+  const loadUser = useCallback(async (): Promise<void> => {
     const {
       data: { user }
     } = await supabase.auth.getUser()
     setCurrentUser(user)
+    setUserLoaded(true)
   }, [supabase])
 
   const loadSummaries = useCallback(async () => {
@@ -215,19 +217,24 @@ export default function LibraryPage() {
   }, [supabase])
 
   useEffect(() => {
-    async function init() {
-      await loadUser()
-      await loadSummaries()
-      await loadFilterOptions()
-    }
-
-    init()
+    loadUser()
 
     // Cleanup pending votes on unmount
     return () => {
       clearPendingVotes()
     }
-  }, [sortBy, clearPendingVotes, loadUser, loadSummaries, loadFilterOptions])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    // Only load summaries after user data is loaded
+    // This prevents double-loading on initial mount
+    if (userLoaded) {
+      loadSummaries()
+      loadFilterOptions()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, userLoaded])
 
   const handleVote = useCallback(
     (summaryId: string, vote: 1 | -1) => {
