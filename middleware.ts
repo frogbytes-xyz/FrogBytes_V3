@@ -103,9 +103,12 @@ export const config = {
     /*
      * Match all API routes except:
      * - /api/auth/* (login, register, callback, etc.)
-     * - /api/cron/*
-     * - /api/admin/*
+     * - /api/cron/* (cron jobs with their own auth)
+     *
+     * IMPORTANT: Admin routes are now included in auth check.
+     * The middleware verifies user authentication, and the requireAdmin()
+     * wrapper in admin route handlers verifies admin role.
      */
-    '/api/:path((?!auth/|cron/|admin/).*)'
+    '/api/:path((?!auth/|cron/).*)'
   ]
 }

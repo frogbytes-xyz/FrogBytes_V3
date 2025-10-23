@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { logger } from '@/lib/utils/logger'
+import { AdminGuard } from '@/components/auth/AdminGuard'
 import {
   Table,
   TableBody,
@@ -351,7 +352,8 @@ export default function AdminApiKeysDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AdminGuard>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">API Key Management Dashboard</h1>
         <div className="flex gap-2">
@@ -1127,5 +1129,6 @@ export default function AdminApiKeysDashboard() {
         </TabsContent>
       </Tabs>
     </div>
+    </AdminGuard>
   )
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { AdminGuard } from '@/components/auth/AdminGuard'
 import {
   LineChart,
   Line,
@@ -409,7 +410,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <main className="min-h-screen">
+    <AdminGuard>
+      <main className="min-h-screen">
       {/* Header */}
       <header className="border-b sticky top-0 z-10 bg-background">
         <div className="container max-w-7xl mx-auto px-4 h-[70px] flex items-center justify-between">
@@ -1578,5 +1580,6 @@ export default function AdminDashboard() {
         </div>
       </div>
     </main>
+    </AdminGuard>
   )
 }

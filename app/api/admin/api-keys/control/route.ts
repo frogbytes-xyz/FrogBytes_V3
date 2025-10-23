@@ -3,28 +3,31 @@ import { NextResponse } from 'next/server'
 import { logger } from '@/lib/utils/logger'
 import { getBackgroundScraper } from '@/lib/api-keys/background-scraper'
 import { getContinuousValidator } from '@/lib/api-keys/continuous-validator'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
 
 /**
  * POST /api/admin/api-keys/control
  *
  * Control background services (start/stop/restart)
- * Body: { action: 'start_scraper' | 'stop_scraper' | 'start_validator' | 'stop_validator' | 'restart_all' }
+ *
+ * Request Body:
+ * - action: 'start_scraper' | 'stop_scraper' | 'start_validator' | 'stop_validator' | 'restart_all'
+ *
+ * Returns:
+ * - 200: Service control action executed
+ * - 400: Invalid action
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: NextRequest, user) => {
   try {
-    // Check authentication - allow if ADMIN_API_KEY is set and matches, or if not set at all
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-
-    if (adminKey && authHeader !== adminKey) {
-      logger.warn('[Control API] Unauthorized access attempt')
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
     const { action } = body
 
@@ -124,9 +127,17 @@ export async function POST(request: NextRequest) {
         )
     }
 
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(request, user, 'control_service', 'api_keys', undefined, {
+        action,
+        result
+      })
+    )
+
     return NextResponse.json(result)
   } catch (error) {
-    logger.error('Error controlling services', error)
+    logger.error('Error controlling services', { error })
     return NextResponse.json(
       {
         success: false,
@@ -135,4 +146,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
