@@ -14,13 +14,10 @@ import { logger } from '@/lib/utils/logger'
 
 import { getAuthUser } from '@/lib/auth/helpers'
 import { isValidVideoUrl } from '@/lib/video-download/validators'
-import { uploadToTelegram, isTelegramConfigured } from '@/lib/telegram/storage'
+// Telegram upload is now handled after summary completion via complete package endpoint
 import { withErrorHandler } from '@/lib/middleware/error-handler'
 import '@/lib/middleware/setup-error-handlers' // Initialize error handling for Node.js runtime
-import {
-  saveUploadMetadata,
-  updateTelegramBackupId
-} from '@/services/documents'
+import { saveUploadMetadata } from '@/services/documents'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
@@ -248,34 +245,8 @@ async function triggerDownloadWithCookies(
       return
     }
 
-    // Upload to Telegram as backup (non-blocking)
-    if (isTelegramConfigured()) {
-      uploadToTelegram(
-        downloadResult.path,
-        downloadResult.filename,
-        downloadResult.size,
-        downloadResult.metadata?.sourceUrl
-      )
-        .then(async result => {
-          if (result.success && result.fileId) {
-            const updateResult = await updateTelegramBackupId(
-              downloadResult.fileId,
-              result.fileId
-            )
-            if (!updateResult.success) {
-              logger.error(
-                'Failed to update Telegram file ID',
-                updateResult.error
-              )
-            }
-          } else {
-            logger.warn('Telegram backup failed', { error: result.error })
-          }
-        })
-        .catch(error => {
-          logger.error('Telegram upload error', error)
-        })
-    }
+    // Note: Telegram backup is now handled after summary completion
+    // via the complete package upload endpoint for better efficiency
 
     // Mark job as completed
     jobStore.set(jobId, {
@@ -411,34 +382,8 @@ async function triggerNormalDownload(
       return
     }
 
-    // Upload to Telegram as backup (non-blocking)
-    if (isTelegramConfigured()) {
-      uploadToTelegram(
-        downloadResult.path,
-        downloadResult.filename,
-        downloadResult.size,
-        downloadResult.metadata?.sourceUrl
-      )
-        .then(async result => {
-          if (result.success && result.fileId) {
-            const updateResult = await updateTelegramBackupId(
-              downloadResult.fileId,
-              result.fileId
-            )
-            if (!updateResult.success) {
-              logger.error(
-                'Failed to update Telegram file ID',
-                updateResult.error
-              )
-            }
-          } else {
-            logger.warn('Telegram backup failed', { error: result.error })
-          }
-        })
-        .catch(error => {
-          logger.error('Telegram upload error', error)
-        })
-    }
+    // Note: Telegram backup is now handled after summary completion
+    // via the complete package upload endpoint for better efficiency
 
     // Mark job as completed
     jobStore.set(jobId, {

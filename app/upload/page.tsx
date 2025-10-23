@@ -141,6 +141,51 @@ export default function UploadPage() {
     }
   }
 
+  /**
+   * Poll for transcription completion
+   */
+  const pollTranscriptionStatus = async (
+    jobId: string,
+    uploadId: string
+  ): Promise<string> => {
+    const maxAttempts = 60 // 5 minutes with 5-second intervals
+    let attempts = 0
+
+    while (attempts < maxAttempts) {
+      try {
+        const statusResponse = await fetch(
+          `/api/transcribe/status?uploadId=${uploadId}`
+        )
+
+        if (!statusResponse.ok) {
+          throw new Error('Failed to check transcription status')
+        }
+
+        const statusData = await statusResponse.json()
+
+        if (statusData.status === 'completed') {
+          logger.info('Transcription completed:', statusData.transcription.id)
+          setTranscriptionId(statusData.transcription.id)
+          setProcessingStep('summarizing')
+          return statusData.transcription.id
+        } else if (statusData.status === 'failed') {
+          throw new Error(statusData.error || 'Transcription failed')
+        } else if (statusData.status === 'not_found') {
+          throw new Error('Transcription job not found')
+        }
+
+        // Still processing, wait and try again
+        await new Promise(resolve => setTimeout(resolve, 5000)) // 5 seconds
+        attempts++
+      } catch (error) {
+        logger.error('Polling error:', error)
+        throw error
+      }
+    }
+
+    throw new Error('Transcription timeout - job took too long to complete')
+  }
+
   const startProcessing = async (fileId?: string) => {
     const currentUploadId = fileId || uploadId
     if (!currentUploadId) {
@@ -172,16 +217,38 @@ export default function UploadPage() {
       }
 
       const transcribeData = await transcribeResponse.json()
-      logger.info('Transcription complete:', transcribeData.transcription.id)
-      setTranscriptionId(transcribeData.transcription.id)
-      setProcessingStep('summarizing')
 
-      // Step 2: Generate summary
+      if (transcribeResponse.status === 202) {
+        // Job queued - need to poll for completion
+        logger.info(
+          'Transcription job queued:',
+          transcribeData.transcription.id
+        )
+        setTranscriptionId(transcribeData.transcription.id) // This is the job ID
+        setProcessingStep('transcribing')
+
+        // Poll for completion
+        await pollTranscriptionStatus(
+          transcribeData.transcription.id,
+          currentUploadId
+        )
+      } else {
+        // Immediate completion (fallback)
+        logger.info('Transcription complete:', transcribeData.transcription.id)
+        setTranscriptionId(transcribeData.transcription.id)
+        setProcessingStep('summarizing')
+      }
+
+      // Step 2: Generate summary (only if we have a valid transcription ID)
+      if (!transcriptionId) {
+        throw new Error('No transcription ID available for summary generation')
+      }
+
       const summarizeResponse = await fetch('/api/summarize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transcriptionId: transcribeData.transcription.id,
+          transcriptionId: transcriptionId,
           summaryType: summaryType
         })
       })
@@ -299,6 +366,55 @@ export default function UploadPage() {
         pdf_url: publicUrl,
         file_size: pdfBlob.size
       })
+
+      // Upload complete package to Telegram (non-blocking)
+      fetch('/api/upload/complete-package', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          summaryId: summarizeData.summary.id,
+          uploadId: currentUploadId
+        })
+      })
+        .then(async response => {
+          if (response.ok) {
+            const result = await response.json()
+            logger.info(
+              'Complete package uploaded to Telegram',
+              result.telegramResult
+            )
+
+            // Show success notification
+            if (
+              result.telegramResult?.archiveUploaded &&
+              result.telegramResult?.pdfUploaded
+            ) {
+              // Both archive and PDF uploaded successfully
+              console.log(
+                '✅ Complete package uploaded to Telegram successfully'
+              )
+            } else if (result.telegramResult?.archiveUploaded) {
+              // Only archive uploaded
+              console.log(
+                '✅ Archive uploaded to Telegram (PDF upload pending)'
+              )
+            } else {
+              console.log('⚠️ Partial Telegram upload completed')
+            }
+          } else {
+            const error = await response.json()
+            logger.warn('Telegram complete package upload failed', error)
+            console.log(
+              '❌ Telegram backup failed - files remain stored locally'
+            )
+          }
+        })
+        .catch(error => {
+          logger.error('Telegram upload error', error)
+          console.log('❌ Telegram backup failed - files remain stored locally')
+        })
 
       setProcessingStep('complete')
 

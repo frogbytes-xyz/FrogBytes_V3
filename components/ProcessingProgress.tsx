@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 interface ProcessingStage {
   id: string
@@ -57,6 +57,7 @@ export default function ProcessingProgress({
   const [stageProgress, setStageProgress] = useState(0)
   const [estimatedTime, setEstimatedTime] = useState<string | null>(null)
   const [stageStartTime, setStageStartTime] = useState<number>(Date.now())
+  const prevStageRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (currentStage === 'error' || currentStage === 'complete') {
@@ -68,8 +69,11 @@ export default function ProcessingProgress({
     const currentStageIndex = STAGES.findIndex(s => s.id === currentStage)
     if (currentStageIndex === -1) return
 
-    // Reset stage start time when stage changes
-    setStageStartTime(Date.now())
+    // Reset stage start time when stage changes (only if stage actually changed)
+    if (prevStageRef.current !== currentStage) {
+      setStageStartTime(Date.now())
+      prevStageRef.current = currentStage
+    }
 
     // Calculate base progress (completed stages)
     const completedWeight = STAGES.slice(0, currentStageIndex).reduce(
@@ -143,7 +147,7 @@ export default function ProcessingProgress({
     }, 200) // Update every 200ms for smoother progress
 
     return () => clearInterval(stageInterval)
-  }, [currentStage, progress, stageProgress, stageStartTime])
+  }, [currentStage, progress, stageProgress])
 
   const getCurrentStageIndex = () => {
     return STAGES.findIndex(s => s.id === currentStage)

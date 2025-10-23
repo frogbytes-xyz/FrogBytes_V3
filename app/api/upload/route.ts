@@ -1,9 +1,8 @@
 import { getAuthUser } from '@/lib/auth/helpers'
-import { uploadToTelegram, isTelegramConfigured } from '@/lib/telegram/storage'
+// Telegram upload is now handled after summary completion via complete package endpoint
 import {
   uploadDocumentToFilesystem,
-  saveUploadMetadata,
-  updateTelegramBackupId
+  saveUploadMetadata
 } from '@/services/documents'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
@@ -151,31 +150,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upload to Telegram as backup (non-blocking)
-    if (isTelegramConfigured()) {
-      uploadToTelegram(filePath, file.name, file.size)
-        .then(async result => {
-          if (result.success && result.fileId) {
-            // Update database with Telegram file ID
-            const updateResult = await updateTelegramBackupId(
-              fileId,
-              result.fileId
-            )
-            if (!updateResult.success) {
-              logger.error(
-                'Failed to update Telegram file ID',
-                updateResult.error,
-                { fileId }
-              )
-            }
-          } else {
-            logger.warn('Telegram backup failed', { error: result.error })
-          }
-        })
-        .catch(error => {
-          logger.error('Telegram upload error', error)
-        })
-    }
+    // Note: Telegram backup is now handled after summary completion
+    // via the complete package upload endpoint for better efficiency
 
     // Return success response
     return NextResponse.json<UploadResponse>(
