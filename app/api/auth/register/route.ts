@@ -135,11 +135,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if email confirmation is required
+    const requiresEmailConfirmation =
+      !data.session && !data.user.email_confirmed_at
+
     // Success response
     return NextResponse.json<RegisterResponse>(
       {
         success: true,
-        message: 'User registered successfully',
+        message: requiresEmailConfirmation
+          ? 'User registered successfully. Please check your email to confirm your account before signing in.'
+          : 'User registered successfully',
         user: {
           id: data.user.id,
           email: data.user.email!

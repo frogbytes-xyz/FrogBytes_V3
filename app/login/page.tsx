@@ -26,7 +26,13 @@ function LoginPageContent() {
 
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
-      setSuccess('Account created successfully! Please sign in.')
+      if (searchParams.get('confirm') === 'true') {
+        setSuccess(
+          'Account created successfully! Please check your email to confirm your account, then sign in.'
+        )
+      } else {
+        setSuccess('Account created successfully! Please sign in.')
+      }
     }
   }, [searchParams])
 
