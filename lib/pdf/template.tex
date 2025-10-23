@@ -1,21 +1,141 @@
 % FrogBytes LaTeX Template
-% This template wraps summary content with necessary packages and formatting
+% This template wraps summary content with comprehensive packages for all academic disciplines
 
 \documentclass[11pt,a4paper]{article}
 
-% Essential packages
+% =============================================================================
+% ESSENTIAL PACKAGES
+% =============================================================================
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[margin=1in]{geometry}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{float}
 \usepackage{enumitem}
+\usepackage{titlesec}
+
+% =============================================================================
+% MATHEMATICS PACKAGES
+% =============================================================================
+\usepackage{amsmath}           % Advanced math typesetting
+\usepackage{amssymb}           % Mathematical symbols
+\usepackage{amsthm}            % Theorem environments
+\usepackage{mathtools}         % Enhanced math tools
+\usepackage{bm}                % Bold math symbols
+\usepackage{bbm}               % Blackboard bold symbols
+\usepackage{mathrsfs}          % Script fonts
+\usepackage{stmaryrd}          % Additional math symbols
+\usepackage{esint}             % Extended integral symbols
+\usepackage{wasysym}           % Additional symbols
+\usepackage{textcomp}          % Text companion symbols
+
+% =============================================================================
+% COMPUTER SCIENCE PACKAGES
+% =============================================================================
+\usepackage{algorithm}         % Algorithm environment
+\usepackage{algorithmic}       % Algorithmic constructs
+\usepackage{listings}          % Code listings
+\usepackage{minted}            % Syntax highlighting (if available)
+\usepackage{verbatim}          % Verbatim text
+\usepackage{alltt}             % Alltt environment
+\usepackage{fancyvrb}          % Fancy verbatim
+
+% =============================================================================
+% GRAPHICS AND FIGURES
+% =============================================================================
+\usepackage{graphicx}          % Graphics inclusion
+\usepackage{tikz}              % TikZ graphics
+\usepackage{pgfplots}          % PGF plots
+\usepackage{circuitikz}        % Circuit diagrams
+\usepackage{chemfig}           % Chemical structures
+\usepackage{smartdiagram}      % Smart diagrams
+\usepackage{forest}            % Forest trees
+\usepackage{bytefield}         % Byte field diagrams
+
+% =============================================================================
+% TABLES AND DATA
+% =============================================================================
+\usepackage{array}             % Enhanced array environment
+\usepackage{tabularx}          % Extended tabular
+\usepackage{longtable}         % Multi-page tables
+\usepackage{booktabs}          % Professional table rules
+\usepackage{multirow}          % Multi-row cells
+\usepackage{multicol}          % Multiple columns
+\usepackage{colortbl}          % Colored tables
+\usepackage{diagbox}           % Diagonal table cells
+
+% =============================================================================
+% PHYSICS AND ENGINEERING
+% =============================================================================
+\usepackage{siunitx}           % SI units
+\usepackage{physics}           % Physics notation
+\usepackage{braket}            % Bra-ket notation
+\usepackage{slashed}           % Slashed symbols
+\usepackage{slashed}           % Feynman diagrams
+\usepackage{simpler-wick}      % Wick contractions
+
+% =============================================================================
+% CHEMISTRY
+% =============================================================================
+\usepackage{chemformula}       % Chemical formulas
+\usepackage{chemmacros}        % Chemistry macros
+\usepackage{chemgreek}         % Greek letters in chemistry
+
+% =============================================================================
+% LINGUISTICS AND LANGUAGES
+% =============================================================================
+\usepackage{tipa}              % IPA phonetic symbols
+\usepackage{glossaries}        % Glossaries and acronyms
+\usepackage{glossaries-extra}  % Extended glossaries
+
+% =============================================================================
+% BIOLOGY AND LIFE SCIENCES
+% =============================================================================
+\usepackage{biochem}           % Biochemistry notation
+\usepackage{genetics}          % Genetics notation
+
+% =============================================================================
+% ECONOMICS AND SOCIAL SCIENCES
+% =============================================================================
+\usepackage{booktabs}          % Professional tables
+\usepackage{diagbox}           % Diagonal table cells
+\usepackage{arydshln}          % Dashed lines in arrays
+
+% =============================================================================
+% MUSIC AND ARTS
+% =============================================================================
+\usepackage{musixtex}          % Music notation
+\usepackage{harmony}           % Harmony notation
+
+% =============================================================================
+% LOGIC AND PHILOSOPHY
+% =============================================================================
+\usepackage{logicproof}        % Logic proofs
+\usepackage{prooftrees}        % Proof trees
+
+% =============================================================================
+% DOCUMENT STRUCTURE
+% =============================================================================
+\usepackage{tocloft}           % Table of contents customization
+\usepackage{fancyhdr}          % Headers and footers
+\usepackage{lastpage}          % Last page reference
+\usepackage{afterpage}         % After page commands
+\usepackage{atbegshi}          % At begin shipout
+
+% =============================================================================
+% CROSS-REFERENCES AND CITATIONS
+% =============================================================================
+\usepackage{cleveref}          % Clever references
+\usepackage{nameref}           % Named references
+\usepackage{varioref}          % Variable references
+\usepackage{prettyref}         % Pretty references
+
+% =============================================================================
+% PACKAGE CONFIGURATIONS
+% =============================================================================
 
 % Hyperlink setup
 \hypersetup{
@@ -32,13 +152,52 @@
     basicstyle=\ttfamily\small,
     breaklines=true,
     frame=single,
-    backgroundcolor=\color{gray!10}
+    backgroundcolor=\color{gray!10},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    numbersep=5pt,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    tabsize=2,
+    captionpos=b,
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\bfseries,
+    commentstyle=\itshape,
+    stringstyle=\itshape,
+    identifierstyle=\ttfamily
 }
 
+% SI units configuration
+\sisetup{
+    output-decimal-marker={.},
+    group-separator={,},
+    per-mode=symbol,
+    fraction-function=\frac
+}
+
+% Theorem environments
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{remark}{Remark}[section]
+
 % Title formatting
-\usepackage{titlesec}
 \titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
 \titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% Page setup
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{FrogBytes Summary}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
 
 % Document begins
 \begin{document}

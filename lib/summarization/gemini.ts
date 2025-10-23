@@ -14,12 +14,19 @@ import {
   markKeyQuotaExceeded,
   markKeyInvalid
 } from '@/lib/api-keys/key-pool-service'
+import {
+  SUMMARY_PROMPTS,
+  generatePersonalizedPrompt,
+  type UserPreferences
+} from './prompts'
+import { deduplicateLatexContent, analyzeContent } from './deduplication'
 
 export type SummaryType = 'compact' | 'detailed' | 'expanded'
 
 export interface SummarizationRequest {
   text: string
   summaryType: SummaryType
+  userPreferences?: UserPreferences
 }
 
 export interface SummarizationResult {
@@ -35,29 +42,7 @@ const GEMINI_API_URL =
 const MAX_TOKENS_PER_CHUNK = 30000
 const CHARS_PER_TOKEN = 4 // Rough estimate
 
-const SUMMARY_PROMPTS: Record<SummaryType, string> = {
-  compact: `Summarize the following lecture transcript into a compact, concise LaTeX document (about 50% of original length).
-Focus on the most essential concepts and key points only.
-Format the output as LaTeX content (do not include \\documentclass, \\begin{document}, or \\end{document}).
-Use LaTeX sections (\\section), subsections (\\subsection), and itemize/enumerate lists.
-Include important equations using LaTeX math mode.
-Make it suitable for quick review.`,
-
-  detailed: `Summarize the following lecture transcript into a detailed LaTeX document (about 80% of original length).
-Include all major concepts, explanations, and examples.
-Format the output as LaTeX content (do not include \\documentclass, \\begin{document}, or \\end{document}).
-Use LaTeX sections (\\section), subsections (\\subsection), itemize/enumerate lists, and descriptions.
-Include all equations and formulas using LaTeX math mode.
-Preserve important details and context.`,
-
-  expanded: `Summarize and expand the following lecture transcript into a comprehensive LaTeX document (about 120% of original length).
-Include all concepts with enhanced explanations and additional context.
-Format the output as LaTeX content (do not include \\documentclass, \\begin{document}, or \\end{document}).
-Use LaTeX sections (\\section), subsections (\\subsection), subsubsections (\\subsubsection), itemize/enumerate lists, and descriptions.
-Include all equations with detailed explanations using LaTeX math mode.
-Add clarifying notes and connections between topics.
-Make it suitable for comprehensive study.`
-}
+// Use streamlined prompts from separate module
 
 /**
  * Chunk text into smaller pieces that fit within token limits
@@ -102,6 +87,7 @@ async function summarizeChunk(
   chunkIndex: number,
   totalChunks: number,
   apiKey?: string, // Optional: use specific key
+  userPreferences?: UserPreferences,
   retryCount: number = 0
 ): Promise<string> {
   const MAX_RETRIES = 3
@@ -117,7 +103,12 @@ async function summarizeChunk(
     )
   }
 
-  const prompt = SUMMARY_PROMPTS[summaryType]
+  const prompt = userPreferences
+    ? generatePersonalizedPrompt(summaryType, userPreferences).replace(
+        '{text}',
+        chunk
+      )
+    : SUMMARY_PROMPTS[summaryType].replace('{text}', chunk)
   const chunkContext =
     totalChunks > 1
       ? `\n\nThis is chunk ${chunkIndex + 1} of ${totalChunks}.`
@@ -134,14 +125,14 @@ async function summarizeChunk(
           {
             parts: [
               {
-                text: `${prompt}${chunkContext}\n\nTranscript:\n${chunk}`
+                text: `${prompt}${chunkContext}`
               }
             ]
           }
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 8000
+          maxOutputTokens: 16000
         }
       })
     })
@@ -194,6 +185,7 @@ async function summarizeChunk(
         chunkIndex,
         totalChunks,
         undefined,
+        userPreferences,
         retryCount + 1
       )
     }
@@ -237,7 +229,14 @@ export async function summarizeWithGemini(
       const keyIndex =
         availableKeys.length > 0 ? index % availableKeys.length : 0
       const key = availableKeys[keyIndex]
-      return summarizeChunk(chunk, summaryType, index, chunks.length, key)
+      return summarizeChunk(
+        chunk,
+        summaryType,
+        index,
+        chunks.length,
+        key,
+        request.userPreferences
+      )
     })
   )
 
@@ -247,8 +246,10 @@ export async function summarizeWithGemini(
   // If multiple chunks, do a final pass to combine them cohesively
   if (chunks.length > 1) {
     const combinePrompt = `Combine the following LaTeX sections into a cohesive, well-structured document.
-Remove any redundancy and ensure smooth transitions between sections.
+Preserve ALL content from each section - do NOT remove any information.
+Ensure smooth transitions between sections.
 Maintain the LaTeX formatting (no \\documentclass or \\begin{document}).
+Only reorganize for better flow, but keep every detail intact.
 
 Sections to combine:\n\n${combinedLatex}`
 
@@ -259,6 +260,7 @@ Sections to combine:\n\n${combinedLatex}`
       0,
       1,
       undefined,
+      request.userPreferences,
       0
     )
   }
@@ -272,6 +274,20 @@ Sections to combine:\n\n${combinedLatex}`
     .replace(/\\begin{document}/g, '')
     .replace(/\\end{document}/g, '')
     .trim()
+
+  // Apply AI-powered deduplication to remove redundant content
+  logger.info('[Summarization] Applying AI-powered content deduplication...')
+  const analysis = analyzeContent(combinedLatex)
+  logger.info('[Summarization] Content analysis:', analysis)
+
+  combinedLatex = await deduplicateLatexContent(combinedLatex, {
+    useAI: true,
+    aggressiveMode: false,
+    preserveStructure: true
+  })
+
+  const finalAnalysis = analyzeContent(combinedLatex)
+  logger.info('[Summarization] Final content analysis:', finalAnalysis)
 
   return {
     latexContent: combinedLatex,

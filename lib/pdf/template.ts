@@ -17,22 +17,68 @@ export function getBaseTemplate(): string {
   } catch (error) {
     // Fallback inline template if file not found
     return `\\documentclass[11pt,a4paper]{article}
+% Essential packages
 \\usepackage[utf8]{inputenc}
 \\usepackage[T1]{fontenc}
 \\usepackage{lmodern}
 \\usepackage[margin=1in]{geometry}
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-\\usepackage{graphicx}
 \\usepackage{hyperref}
 \\usepackage{xcolor}
+\\usepackage{listings}
+\\usepackage{float}
+\\usepackage{enumitem}
+\\usepackage{titlesec}
 
+% Mathematics packages
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{amsthm}
+\\usepackage{mathtools}
+\\usepackage{bm}
+\\usepackage{bbm}
+
+% Computer science packages
+\\usepackage{algorithm}
+\\usepackage{algorithmic}
+
+% Graphics packages
+\\usepackage{graphicx}
+\\usepackage{tikz}
+\\usepackage{pgfplots}
+
+% Physics and engineering
+\\usepackage{siunitx}
+\\usepackage{physics}
+
+% Chemistry
+\\usepackage{chemformula}
+
+% Tables
+\\usepackage{array}
+\\usepackage{tabularx}
+\\usepackage{booktabs}
+
+% Cross-references
+\\usepackage{cleveref}
+
+% Hyperlink setup
 \\hypersetup{
     colorlinks=true,
     linkcolor=blue,
     filecolor=magenta,
     urlcolor=cyan,
 }
+
+% Theorem environments
+\\theoremstyle{definition}
+\\newtheorem{definition}{Definition}[section]
+\\newtheorem{theorem}{Theorem}[section]
+\\newtheorem{lemma}{Lemma}[section]
+\\newtheorem{example}{Example}[section]
+
+% Title formatting
+\\titleformat{\\section}{\\Large\\bfseries}{\\thesection}{1em}{}
+\\titleformat{\\subsection}{\\large\\bfseries}{\\thesubsection}{1em}{}
 
 \\begin{document}
 
