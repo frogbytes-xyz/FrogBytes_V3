@@ -111,7 +111,7 @@ export default function RegisterPage() {
 
       // Check if email confirmation is required
       if (data.message && data.message.includes('check your email')) {
-        router.push('/login?registered=true&confirm=true')
+        router.push('/auth/verify?email=' + encodeURIComponent(email))
       } else {
         router.push('/login?registered=true')
       }

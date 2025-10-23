@@ -34,6 +34,12 @@ function LoginPageContent() {
         setSuccess('Account created successfully! Please sign in.')
       }
     }
+
+    if (searchParams.get('confirmed') === 'true') {
+      setSuccess(
+        'Email confirmed successfully! You can now sign in to your account.'
+      )
+    }
   }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
