@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
         data: {
           full_name,
           university: university || null
-        }
+        },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/confirm`
       }
     })
 
