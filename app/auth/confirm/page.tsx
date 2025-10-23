@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/services/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -15,12 +15,11 @@ import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react'
 import Menubar from '@/components/layout/Menubar'
 
 /**
- * Email Confirmation Page
+ * Email Confirmation Page Content
  *
- * This page handles the email confirmation flow for new user registrations.
- * Users are redirected here after clicking the confirmation link in their email.
+ * This component handles the email confirmation logic and UI.
  */
-export default function ConfirmPage() {
+function ConfirmPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<
@@ -234,5 +233,28 @@ export default function ConfirmPage() {
         </div>
       </main>
     </>
+  )
+}
+
+/**
+ * Email Confirmation Page
+ *
+ * This page handles the email confirmation flow for new user registrations.
+ * Users are redirected here after clicking the confirmation link in their email.
+ */
+export default function ConfirmPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ConfirmPageContent />
+    </Suspense>
   )
 }
