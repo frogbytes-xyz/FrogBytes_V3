@@ -13,7 +13,6 @@ import {
   CardTitle
 } from '@/components/ui/card'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 
 function LoginPageContent() {
   const router = useRouter()
@@ -174,7 +173,6 @@ function LoginPageContent() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

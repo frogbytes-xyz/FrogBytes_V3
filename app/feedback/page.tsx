@@ -5,7 +5,6 @@ import { logger } from '@/lib/utils/logger'
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/services/supabase/client'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -1349,8 +1348,6 @@ export default function FeedbackPage() {
           </div>
         )}
       </div>
-
-      <Footer />
     </main>
   )
 }
