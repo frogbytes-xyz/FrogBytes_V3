@@ -101,6 +101,8 @@ Thumbs.db
 # ============================================
 .taskmaster/
 .github/
+# Allow GitHub Actions workflow files (we want to track CI workflows)
+!.github/workflows/
 .claude/
 
 # ============================================
