@@ -2,8 +2,31 @@ import { createClient } from '@/services/supabase/server'
 import { logger } from '@/lib/utils/logger'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
 
-export async function GET(_request: NextRequest) {
+/**
+ * GET /api/admin/activity
+ *
+ * Retrieve recent platform activity (admin only)
+ *
+ * Returns combined feed of recent:
+ * - Transcriptions
+ * - Summaries
+ * - User signups
+ *
+ * Returns:
+ * - 200: Array of recent activities sorted by date
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
+ */
+export const GET = requireAdmin(async (request: NextRequest, user) => {
   try {
     const supabase = await createClient()
 
@@ -71,12 +94,24 @@ export async function GET(_request: NextRequest) {
     )
     const recentActivities = activities.slice(0, 20)
 
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(
+        request,
+        user,
+        'view_activity',
+        'activity_feed',
+        undefined,
+        { activity_count: recentActivities.length }
+      )
+    )
+
     return NextResponse.json({
       success: true,
       activities: recentActivities
     })
   } catch (error) {
-    logger.error('Error fetching activity', error)
+    logger.error('Error fetching activity', { error })
     return NextResponse.json(
       {
         success: false,
@@ -86,4 +121,4 @@ export async function GET(_request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

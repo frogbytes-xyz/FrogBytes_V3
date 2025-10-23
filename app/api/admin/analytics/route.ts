@@ -1,13 +1,19 @@
 import { logger } from '@/lib/utils/logger'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
 
 /**
  * Enhanced Analytics API Endpoint
  * GET - Comprehensive platform analytics with detailed metrics
+ *
+ * Security: Requires admin role
  */
-
-import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 interface AnalyticsData {
   timestamp: string
@@ -94,11 +100,6 @@ interface AnalyticsData {
     }>
     churnRate: number
   }
-}
-
-function verifyAdminAuth(request: NextRequest): boolean {
-  const apiKey = request.headers.get('x-api-key')
-  return apiKey === process.env.ADMIN_API_KEY
 }
 
 async function getUserAnalytics(supabase: any) {
@@ -285,12 +286,29 @@ async function getContentAnalytics(supabase: any) {
   }
 }
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/admin/analytics
+ *
+ * Retrieve comprehensive platform analytics
+ *
+ * Returns detailed metrics including:
+ * - User statistics (total, active, retention, growth)
+ * - Content metrics (uploads, processing stats)
+ * - Storage usage
+ * - Performance metrics
+ * - Engagement data
+ * - Revenue statistics
+ *
+ * Returns:
+ * - 200: Detailed analytics data object
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
+ */
+export const GET = requireAdmin(async (request: NextRequest, user) => {
   try {
-    if (!verifyAdminAuth(request)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, supabaseKey)
@@ -336,15 +354,27 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(
+        request,
+        user,
+        'view_analytics',
+        'platform_analytics'
+      )
+    )
+
     return NextResponse.json({
       success: true,
       data: analyticsData
     })
-  } catch (error: any) {
-    logger.error('Analytics API error', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Analytics API error', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})

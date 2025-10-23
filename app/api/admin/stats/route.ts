@@ -2,8 +2,31 @@ import { createClient } from '@/services/supabase/server'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/utils/logger'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
 
-export async function GET(_request: NextRequest) {
+/**
+ * GET /api/admin/stats
+ *
+ * Retrieve platform statistics (admin only)
+ *
+ * Returns comprehensive statistics including:
+ * - User counts (total, active, new)
+ * - File counts (uploads, transcriptions, summaries, PDFs)
+ * - Storage usage metrics
+ *
+ * Returns:
+ * - 200: Platform statistics object
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
+ */
+export const GET = requireAdmin(async (request: NextRequest, user) => {
   try {
     const supabase = await createClient()
 
@@ -62,27 +85,39 @@ export async function GET(_request: NextRequest) {
       pdf_files_mb: 0
     }
 
+    const stats = {
+      users: {
+        total: totalUsers || 0,
+        active_last_24h: activeUsers24h || 0,
+        active_last_7d: activeUsers7d || 0,
+        new_today: newUsersToday || 0
+      },
+      files: {
+        total_uploads: totalTranscriptions || 0,
+        total_transcriptions: totalTranscriptions || 0,
+        total_summaries: totalSummaries || 0,
+        total_pdfs: totalPdfs || 0,
+        uploads_today: summariesToday || 0
+      },
+      storage: storageStats
+    }
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(
+        request,
+        user,
+        'view_stats',
+        'platform_statistics'
+      )
+    )
+
     return NextResponse.json({
       success: true,
-      stats: {
-        users: {
-          total: totalUsers || 0,
-          active_last_24h: activeUsers24h || 0,
-          active_last_7d: activeUsers7d || 0,
-          new_today: newUsersToday || 0
-        },
-        files: {
-          total_uploads: totalTranscriptions || 0,
-          total_transcriptions: totalTranscriptions || 0,
-          total_summaries: totalSummaries || 0,
-          total_pdfs: totalPdfs || 0,
-          uploads_today: summariesToday || 0
-        },
-        storage: storageStats
-      }
+      stats
     })
   } catch (error) {
-    logger.error('Error fetching platform stats', error)
+    logger.error('Error fetching platform stats', { error })
     return NextResponse.json(
       {
         success: false,
@@ -107,4 +142,4 @@ export async function GET(_request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
