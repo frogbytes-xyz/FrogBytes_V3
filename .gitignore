@@ -139,7 +139,8 @@ supabase/.temp/
 # ============================================
 # Git Hooks
 # ============================================
-.husky/
+# Track .husky/ directory (hooks are stored and versioned)
+# .husky/
 
 # ============================================
 # Screenshots & Images (development)
