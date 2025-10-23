@@ -63,8 +63,12 @@ dev-debug.log
 # ============================================
 # Deployment
 # ============================================
-.vercel
 .netlify/
+
+# Vercel outputs
+.vercel
+.vercel/output/
+.vercel_build_output/
 
 # ============================================
 # Editor Directories and Files
@@ -135,7 +139,7 @@ supabase/.temp/
 # ============================================
 # Git Hooks
 # ============================================
-.husky/_
+.husky/
 
 # ============================================
 # Screenshots & Images (development)
