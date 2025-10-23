@@ -85,6 +85,26 @@ export default function AdminApiKeysDashboard() {
     {}
   )
 
+  const fetchStatus = async () => {
+    const response = await fetch('/api/admin/dashboard/status', {
+      headers: { 'x-api-key': ADMIN_API_KEY }
+    })
+    const data = await response.json()
+    if (data.success) {
+      setStatus(data.data)
+    }
+  }
+
+  const fetchGithubTokens = async () => {
+    const response = await fetch('/api/admin/dashboard/github-tokens', {
+      headers: { 'x-api-key': ADMIN_API_KEY }
+    })
+    const data = await response.json()
+    if (data.success) {
+      setGithubTokens(data.data)
+    }
+  }
+
   // Fetch all data
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -100,17 +120,7 @@ export default function AdminApiKeysDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
-
-  const fetchStatus = async () => {
-    const response = await fetch('/api/admin/dashboard/status', {
-      headers: { 'x-api-key': ADMIN_API_KEY }
-    })
-    const data = await response.json()
-    if (data.success) {
-      setStatus(data.data)
-    }
-  }
+  }, [fetchKeys, fetchLogs])
 
   const fetchKeys = useCallback(async () => {
     // If working filters are present, use working-keys endpoint
@@ -155,16 +165,6 @@ export default function AdminApiKeysDashboard() {
       setLogs(data.data)
     }
   }, [logFilter])
-
-  const fetchGithubTokens = async () => {
-    const response = await fetch('/api/admin/dashboard/github-tokens', {
-      headers: { 'x-api-key': ADMIN_API_KEY }
-    })
-    const data = await response.json()
-    if (data.success) {
-      setGithubTokens(data.data)
-    }
-  }
 
   const controlService = async (
     service: string,

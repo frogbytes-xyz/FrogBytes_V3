@@ -157,25 +157,28 @@ export default function FileUpload({
     return null
   }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    setError(null)
-    setSuccess(false)
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
+      setError(null)
+      setSuccess(false)
 
-    if (e.dataTransfer.files?.[0]) {
-      const droppedFile = e.dataTransfer.files[0]
-      const validationError = validateFile(droppedFile)
+      if (e.dataTransfer.files?.[0]) {
+        const droppedFile = e.dataTransfer.files[0]
+        const validationError = validateFile(droppedFile)
 
-      if (validationError) {
-        setError(validationError)
-        return
+        if (validationError) {
+          setError(validationError)
+          return
+        }
+
+        setFile(droppedFile)
       }
-
-      setFile(droppedFile)
-    }
-  }, [])
+    },
+    [validateFile]
+  )
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null)
@@ -307,7 +310,7 @@ export default function FileUpload({
       onUploadError?.(errorMessage)
       setUploading(false)
     }
-  }, [url, user, onUploadComplete, onUploadError])
+  }, [url, user, onUploadComplete, onUploadError, pollJobStatus])
 
   /**
    * Handle MiniBrowser authentication completion

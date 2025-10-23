@@ -511,7 +511,8 @@ export default function MiniBrowserFrontend({
     sessionId,
     stopScreenshotPolling,
     onAuthenticationComplete,
-    onAuthenticationError
+    onAuthenticationError,
+    stopAutoCloseTimer
   ])
 
   /**
@@ -626,7 +627,16 @@ export default function MiniBrowserFrontend({
     }
 
     void initialize()
-  }, []) // Run only once on mount to prevent infinite loops
+  }, [
+    url,
+    userId,
+    sessionId,
+    authStatus,
+    startRemoteBrowser,
+    captureBrowserInfo,
+    startScreenshotPolling,
+    showSuccess
+  ])
 
   /**
    * Update timeout countdown

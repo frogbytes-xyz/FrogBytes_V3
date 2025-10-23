@@ -52,25 +52,28 @@ export default function HeroFileUpload() {
     return null
   }
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    setError(null)
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragActive(false)
+      setError(null)
 
-    if (e.dataTransfer.files?.[0]) {
-      const droppedFile = e.dataTransfer.files[0]
-      const validationError = validateFile(droppedFile)
+      if (e.dataTransfer.files?.[0]) {
+        const droppedFile = e.dataTransfer.files[0]
+        const validationError = validateFile(droppedFile)
 
-      if (validationError) {
-        setError(validationError)
-        return
+        if (validationError) {
+          setError(validationError)
+          return
+        }
+
+        setFile(droppedFile)
+        handleFileReady(droppedFile)
       }
-
-      setFile(droppedFile)
-      handleFileReady(droppedFile)
-    }
-  }, [])
+    },
+    [validateFile, handleFileReady]
+  )
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null)

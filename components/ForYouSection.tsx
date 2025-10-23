@@ -92,15 +92,7 @@ export default function ForYouSection({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (currentUser) {
-      loadRecommendations()
-    } else {
-      setLoading(false)
-    }
-  }, [currentUser])
-
-  const loadRecommendations = async () => {
+  const loadRecommendations = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -253,7 +245,15 @@ export default function ForYouSection({
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentUser, supabase])
+
+  useEffect(() => {
+    if (currentUser) {
+      loadRecommendations()
+    } else {
+      setLoading(false)
+    }
+  }, [currentUser, loadRecommendations])
 
   const transformToEnhancedSummary = (doc: DbSummaryRow): EnhancedSummary => {
     const result: EnhancedSummary = {

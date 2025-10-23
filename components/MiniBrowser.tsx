@@ -468,7 +468,7 @@ export default function MiniBrowser({
     }
 
     void initialize()
-  }, [url, userId]) // Only depend on url and userId, not the entire startRemoteBrowser function
+  }, [url, userId, sessionId, startRemoteBrowser, captureBrowserInfo])
 
   /**
    * Update timeout countdown

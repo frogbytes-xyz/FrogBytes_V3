@@ -54,6 +54,97 @@ export default function CollectionDetailPage({
   const [collectionId, setCollectionId] = useState<string>('')
   const supabase = createClient()
 
+  const loadCollectionData = useCallback(
+    async (id: string, isGuest: boolean = false) => {
+      if (!id) return
+
+      try {
+        // First, get the collection details
+        const collectionResponse = await fetch(
+          `/api/collections/manage?id=${encodeURIComponent(id)}`
+        )
+        if (!collectionResponse.ok) {
+          if (collectionResponse.status === 404) {
+            setError('Collection not found')
+            return
+          }
+          // For guests, try to load public collection data differently if the auth endpoint fails
+          if (isGuest) {
+            // Try to fetch public collection data via alternative means
+            const { data: publicCollection, error: publicError } =
+              await supabase
+                .from('collections')
+                .select('*')
+                .eq('id', id)
+                .eq('is_public', true)
+                .single()
+
+            if (publicError || !publicCollection) {
+              setError('Collection not found or not public')
+              return
+            }
+
+            setCollection(publicCollection)
+            // Load summaries from collection_items
+            const { data: items } = await supabase
+              .from('collection_items')
+              .select('summary_id')
+              .eq('collection_id', id)
+
+            if (items && items.length > 0) {
+              const summaryIds = items.map((item: any) => item.summary_id)
+              const { data: publicSummaries } = await supabase
+                .from('summaries')
+                .select('*')
+                .in('id', summaryIds)
+                .eq('is_public', true)
+
+              setSummaries(publicSummaries || [])
+            }
+            return
+          }
+          throw new Error('Failed to load collection')
+        }
+
+        const collectionData = await collectionResponse.json()
+        setCollection(collectionData.collection)
+
+        // Then get the collection items
+        const itemsResponse = await fetch(
+          `/api/collections/manage/items?id=${encodeURIComponent(id)}`
+        )
+        if (itemsResponse.ok) {
+          const itemsData = await itemsResponse.json()
+          setSummaries(itemsData.summaries || [])
+        } else if (!isGuest) {
+          // If items endpoint fails for auth users, still show the collection (it might be empty)
+          setSummaries([])
+        } else {
+          // For guests, try direct DB query
+          const { data: items } = await supabase
+            .from('collection_items')
+            .select('summary_id')
+            .eq('collection_id', id)
+
+          if (items && items.length > 0) {
+            const summaryIds = items.map((item: any) => item.summary_id)
+            const { data: publicSummaries } = await supabase
+              .from('summaries')
+              .select('*')
+              .in('id', summaryIds)
+              .eq('is_public', true)
+
+            setSummaries(publicSummaries || [])
+          }
+        }
+      } catch (err) {
+        logger.error('Error loading collection', err)
+        setError('Failed to load collection')
+      }
+    },
+    [supabase]
+  )
+
   const checkAuth = useCallback(
     async (passedId?: string) => {
       try {
@@ -89,7 +180,7 @@ export default function CollectionDetailPage({
         setLoading(false)
       }
     },
-    [collectionId, supabase]
+    [collectionId, supabase, loadCollectionData]
   )
 
   useEffect(() => {
@@ -100,93 +191,6 @@ export default function CollectionDetailPage({
     }
     initPage()
   }, [params, checkAuth])
-
-  async function loadCollectionData(id: string, isGuest: boolean = false) {
-    if (!id) return
-
-    try {
-      // First, get the collection details
-      const collectionResponse = await fetch(
-        `/api/collections/manage?id=${encodeURIComponent(id)}`
-      )
-      if (!collectionResponse.ok) {
-        if (collectionResponse.status === 404) {
-          setError('Collection not found')
-          return
-        }
-        // For guests, try to load public collection data differently if the auth endpoint fails
-        if (isGuest) {
-          // Try to fetch public collection data via alternative means
-          const { data: publicCollection, error: publicError } = await supabase
-            .from('collections')
-            .select('*')
-            .eq('id', id)
-            .eq('is_public', true)
-            .single()
-
-          if (publicError || !publicCollection) {
-            setError('Collection not found or not public')
-            return
-          }
-
-          setCollection(publicCollection)
-          // Load summaries from collection_items
-          const { data: items } = await supabase
-            .from('collection_items')
-            .select('summary_id')
-            .eq('collection_id', id)
-
-          if (items && items.length > 0) {
-            const summaryIds = items.map((item: any) => item.summary_id)
-            const { data: publicSummaries } = await supabase
-              .from('summaries')
-              .select('*')
-              .in('id', summaryIds)
-              .eq('is_public', true)
-
-            setSummaries(publicSummaries || [])
-          }
-          return
-        }
-        throw new Error('Failed to load collection')
-      }
-
-      const collectionData = await collectionResponse.json()
-      setCollection(collectionData.collection)
-
-      // Then get the collection items
-      const itemsResponse = await fetch(
-        `/api/collections/manage/items?id=${encodeURIComponent(id)}`
-      )
-      if (itemsResponse.ok) {
-        const itemsData = await itemsResponse.json()
-        setSummaries(itemsData.summaries || [])
-      } else if (!isGuest) {
-        // If items endpoint fails for auth users, still show the collection (it might be empty)
-        setSummaries([])
-      } else {
-        // For guests, try direct DB query
-        const { data: items } = await supabase
-          .from('collection_items')
-          .select('summary_id')
-          .eq('collection_id', id)
-
-        if (items && items.length > 0) {
-          const summaryIds = items.map((item: any) => item.summary_id)
-          const { data: publicSummaries } = await supabase
-            .from('summaries')
-            .select('*')
-            .in('id', summaryIds)
-            .eq('is_public', true)
-
-          setSummaries(publicSummaries || [])
-        }
-      }
-    } catch (err) {
-      logger.error('Error loading collection', err)
-      setError('Failed to load collection')
-    }
-  }
 
   async function togglePublishStatus(
     summaryId: string,

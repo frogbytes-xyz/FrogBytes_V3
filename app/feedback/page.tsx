@@ -156,16 +156,7 @@ export default function FeedbackPage() {
   })
   const [newReply, setNewReply] = useState('')
 
-  const checkAuth = useCallback(async () => {
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
-    setUser(user)
-    await checkTables()
-    setLoading(false)
-  }, [supabase])
-
-  async function checkTables() {
+  const checkTables = useCallback(async () => {
     try {
       const { error } = await supabase.from('feedback').select('count').limit(1)
 
@@ -174,7 +165,16 @@ export default function FeedbackPage() {
       logger.error('Tables do not exist', error)
       setTablesExist(false)
     }
-  }
+  }, [supabase])
+
+  const checkAuth = useCallback(async () => {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+    setUser(user)
+    await checkTables()
+    setLoading(false)
+  }, [supabase, checkTables])
 
   const loadLabels = useCallback(async () => {
     try {
@@ -191,7 +191,7 @@ export default function FeedbackPage() {
     }
   }, [supabase])
 
-  async function loadFeedbacks() {
+  const loadFeedbacks = useCallback(async () => {
     try {
       setIsSearching(true)
       let query = supabase.from('feedback').select('*')
@@ -375,7 +375,7 @@ export default function FeedbackPage() {
     } finally {
       setIsSearching(false)
     }
-  }
+  }, [supabase, filter, statusFilter, searchQuery, sortBy, user, labelFilter])
 
   useEffect(() => {
     checkAuth()

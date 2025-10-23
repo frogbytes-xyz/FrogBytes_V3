@@ -85,7 +85,7 @@ export default function LibraryPage() {
     setCurrentUser(user)
   }, [supabase])
 
-  const loadSummaries = async () => {
+  const loadSummaries = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -185,9 +185,9 @@ export default function LibraryPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, sortBy, currentUser])
 
-  const loadFilterOptions = async () => {
+  const loadFilterOptions = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('summaries')
@@ -212,7 +212,7 @@ export default function LibraryPage() {
       setUniversities([])
       setSubjects([])
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     async function init() {
