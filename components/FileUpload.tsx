@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -88,7 +88,10 @@ export default function FileUpload({
   const hasAutoUploaded = useRef(false)
   const urlInputRef = useRef<HTMLInputElement>(null)
 
-  const supportedFormats = ['.mp3', '.wav', '.mp4', '.m4a', '.mov', '.mpeg']
+  const supportedFormats = useMemo(
+    () => ['.mp3', '.wav', '.mp4', '.m4a', '.mov', '.mpeg'],
+    []
+  )
 
   /**
    * Auto-paste URL from clipboard
@@ -129,33 +132,36 @@ export default function FileUpload({
     }
   }, [])
 
-  const validateFile = (file: File): string | null => {
-    const maxSize = 500 * 1024 * 1024 // 500MB
-    const supportedTypes = [
-      'audio/mpeg',
-      'audio/wav',
-      'audio/wave',
-      'audio/x-wav',
-      'audio/mp4',
-      'video/mp4',
-      'video/mpeg',
-      'video/quicktime'
-    ]
+  const validateFile = useCallback(
+    (file: File): string | null => {
+      const maxSize = 500 * 1024 * 1024 // 500MB
+      const supportedTypes = [
+        'audio/mpeg',
+        'audio/wav',
+        'audio/wave',
+        'audio/x-wav',
+        'audio/mp4',
+        'video/mp4',
+        'video/mpeg',
+        'video/quicktime'
+      ]
 
-    if (file.size === 0) {
-      return 'File is empty'
-    }
+      if (file.size === 0) {
+        return 'File is empty'
+      }
 
-    if (file.size > maxSize) {
-      return `File size exceeds maximum of ${maxSize / 1024 / 1024}MB`
-    }
+      if (file.size > maxSize) {
+        return `File size exceeds maximum of ${maxSize / 1024 / 1024}MB`
+      }
 
-    if (!supportedTypes.includes(file.type)) {
-      return `Unsupported file type: ${file.type}. Supported formats: ${supportedFormats.join(', ')}`
-    }
+      if (!supportedTypes.includes(file.type)) {
+        return `Unsupported file type: ${file.type}. Supported formats: ${supportedFormats.join(', ')}`
+      }
 
-    return null
-  }
+      return null
+    },
+    [supportedFormats]
+  )
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
