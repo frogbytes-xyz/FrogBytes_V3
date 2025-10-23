@@ -105,23 +105,6 @@ export default function AdminApiKeysDashboard() {
     }
   }
 
-  // Fetch all data
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      await Promise.all([
-        fetchStatus(),
-        fetchKeys(),
-        fetchLogs(),
-        fetchGithubTokens()
-      ])
-    } catch (error) {
-      logger.error('Error fetching data', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [fetchKeys, fetchLogs])
-
   const fetchKeys = useCallback(async () => {
     // If working filters are present, use working-keys endpoint
     if (workingStatusFilter !== 'all' || minQuotaFilter !== 'all') {
@@ -165,6 +148,23 @@ export default function AdminApiKeysDashboard() {
       setLogs(data.data)
     }
   }, [logFilter])
+
+  // Fetch all data
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      await Promise.all([
+        fetchStatus(),
+        fetchKeys(),
+        fetchLogs(),
+        fetchGithubTokens()
+      ])
+    } catch (error) {
+      logger.error('Error fetching data', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchKeys, fetchLogs])
 
   const controlService = async (
     service: string,

@@ -72,7 +72,8 @@ export default function HeroFileUpload() {
         handleFileReady(droppedFile)
       }
     },
-    [validateFile, handleFileReady]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [validateFile]
   )
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -2,7 +2,7 @@
 
 import { logger } from '@/lib/utils/logger'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/services/supabase/client'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'

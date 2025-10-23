@@ -310,7 +310,8 @@ export default function FileUpload({
       onUploadError?.(errorMessage)
       setUploading(false)
     }
-  }, [url, user, onUploadComplete, onUploadError, pollJobStatus])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, user, onUploadComplete, onUploadError])
 
   /**
    * Handle MiniBrowser authentication completion
