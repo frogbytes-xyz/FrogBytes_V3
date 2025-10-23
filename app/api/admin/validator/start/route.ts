@@ -2,23 +2,27 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { getContinuousValidator } from '@/lib/api-keys/continuous-validator'
 import { logger } from '@/lib/utils/logger'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
 
 /**
  * POST /api/admin/validator/start
- * Start the continuous validator
+ *
+ * Start the continuous validator service
+ *
+ * Returns:
+ * - 200: Validator started successfully
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-    if (!authHeader || authHeader !== adminKey) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const validator = getContinuousValidator()
 
     // Start validator with options (will run in background)
@@ -27,83 +31,107 @@ export async function POST(request: NextRequest) {
         batchSize: 10,
         intervalMinutes: 30 // 30 minute intervals
       })
-      .catch((error: any) => {
-        logger.error('[API] Validator error', error)
+      .catch((error: unknown) => {
+        logger.error('[API] Validator error', { error })
       })
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(request, user, 'start_validator', 'background_service')
+    )
 
     return NextResponse.json({
       success: true,
       message: 'Continuous validator started'
     })
-  } catch (error: any) {
-    logger.error('[API] Error starting validator', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('[API] Error starting validator', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})
 
 /**
  * DELETE /api/admin/validator/start
- * Stop the continuous validator
+ *
+ * Stop the continuous validator service
+ *
+ * Returns:
+ * - 200: Validator stopped successfully
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-    if (!authHeader || authHeader !== adminKey) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const validator = getContinuousValidator()
     validator.stop()
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(request, user, 'stop_validator', 'background_service')
+    )
 
     return NextResponse.json({
       success: true,
       message: 'Continuous validator stopped'
     })
-  } catch (error: any) {
-    logger.error('[API] Error stopping validator', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('[API] Error stopping validator', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})
 
 /**
  * GET /api/admin/validator/start
- * Get validator status
+ *
+ * Get continuous validator status
+ *
+ * Returns:
+ * - 200: Validator status and statistics
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function GET(request: NextRequest) {
+export const GET = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-    if (!authHeader || authHeader !== adminKey) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const validator = getContinuousValidator()
     const stats = validator.getStatus()
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(
+        request,
+        user,
+        'view_validator_status',
+        'background_service'
+      )
+    )
 
     return NextResponse.json({
       success: true,
       stats
     })
-  } catch (error: any) {
-    logger.error('[API] Error getting validator status', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('[API] Error getting validator status', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})

@@ -1,20 +1,24 @@
 import { logger } from '@/lib/utils/logger'
-
-/**
- * Advanced Bulk Scraping & Validation API
- * Long-running endpoint for comprehensive key discovery and validation
- *
- * POST /api/admin/bulk-scrape
- *
- * This endpoint can run for extended periods (up to 5 minutes per invocation)
- * to maximize key discovery and validation
- */
-
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { bulkScrapeWithValidation } from '@/lib/api-keys/scraper'
 import { addApiKey } from '@/lib/api-keys/manager'
 import { createClient } from '@supabase/supabase-js'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
+
+/**
+ * Advanced Bulk Scraping & Validation API
+ * Long-running endpoint for comprehensive key discovery and validation
+ *
+ * This endpoint can run for extended periods (up to 5 minutes per invocation)
+ * to maximize key discovery and validation
+ *
+ * Security: Requires admin role
+ */
 
 export const maxDuration = 300 // 5 minutes max execution time
 export const dynamic = 'force-dynamic'
@@ -26,19 +30,27 @@ interface BulkScrapeRequest {
   autoAdd?: boolean // Automatically add valid keys to database
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * POST /api/admin/bulk-scrape
+ *
+ * Execute bulk scraping and validation operation
+ *
+ * Request Body:
+ * - targetKeys: Target number of keys to scrape (default: 200)
+ * - maxDuration: Max duration in milliseconds (default: 240000)
+ * - concurrentValidation: Concurrent validation requests (default: 5)
+ * - autoAdd: Auto-add valid keys to database (default: true)
+ *
+ * Returns:
+ * - 200: Bulk scrape completed with statistics
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
+ */
+export const POST = requireAdmin(async (request: NextRequest, user) => {
   try {
-    // Require admin authentication
-    const apiKey = request.headers.get('x-api-key')
-    const adminKey = process.env.ADMIN_API_KEY
-
-    if (!adminKey || apiKey !== adminKey) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin API key required' },
-        { status: 401 }
-      )
-    }
-
     const body: BulkScrapeRequest = await request.json()
     const {
       targetKeys = 200,
@@ -132,6 +144,16 @@ export async function POST(request: NextRequest) {
       100
     ).toFixed(2)
 
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(request, user, 'bulk_scrape', 'api_keys', undefined, {
+        totalScraped: result.statistics.totalScraped,
+        validKeys: result.statistics.validKeys,
+        added: addedKeys.length,
+        durationMs: result.duration
+      })
+    )
+
     return NextResponse.json({
       success: true,
       summary: {
@@ -155,33 +177,37 @@ export async function POST(request: NextRequest) {
       },
       timestamp: new Date().toISOString()
     })
-  } catch (error: any) {
-    logger.error('[BULK SCRAPE API] Error', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal server error'
+    logger.error('[BULK SCRAPE API] Error', { error })
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Internal server error',
+        error: errorMessage,
         timestamp: new Date().toISOString()
       },
       { status: 500 }
     )
   }
-}
+})
 
-// GET endpoint to check status and recent results
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/admin/bulk-scrape
+ *
+ * Get bulk scrape statistics and recent results
+ *
+ * Returns:
+ * - 200: Statistics from database
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
+ */
+export const GET = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const apiKey = request.headers.get('x-api-key')
-    const adminKey = process.env.ADMIN_API_KEY
-
-    if (!adminKey || apiKey !== adminKey) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin API key required' },
-        { status: 401 }
-      )
-    }
-
     // Get statistics from database
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -214,18 +240,32 @@ export async function GET(request: NextRequest) {
         }).length || 0
     }
 
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(
+        request,
+        user,
+        'view_bulk_scrape_stats',
+        'api_keys',
+        undefined,
+        stats
+      )
+    )
+
     return NextResponse.json({
       success: true,
       statistics: stats,
       timestamp: new Date().toISOString()
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    logger.error('Error getting bulk scrape stats', { error })
     return NextResponse.json(
       {
         success: false,
-        error: error.message
+        error: errorMessage
       },
       { status: 500 }
     )
   }
-}
+})

@@ -2,23 +2,27 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { getBackgroundScraper } from '@/lib/api-keys/background-scraper'
 import { logger } from '@/lib/utils/logger'
+import {
+  requireAdmin,
+  logAdminAction,
+  createAuditLogEntry
+} from '@/lib/auth/admin-auth'
 
 /**
  * POST /api/admin/scraper/start
- * Start the background scraper
+ *
+ * Start the background scraper service
+ *
+ * Returns:
+ * - 200: Scraper started successfully
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-    if (!authHeader || authHeader !== adminKey) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const scraper = getBackgroundScraper()
 
     // Start scraper with options (will run in background)
@@ -27,83 +31,107 @@ export async function POST(request: NextRequest) {
         limit: 100,
         intervalMinutes: 60 // 1 hour intervals
       })
-      .catch((error: any) => {
-        logger.error('[API] Scraper error', error)
+      .catch((error: unknown) => {
+        logger.error('[API] Scraper error', { error })
       })
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(request, user, 'start_scraper', 'background_service')
+    )
 
     return NextResponse.json({
       success: true,
       message: 'Background scraper started'
     })
-  } catch (error: any) {
-    logger.error('[API] Error starting scraper', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('[API] Error starting scraper', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})
 
 /**
  * DELETE /api/admin/scraper/start
- * Stop the background scraper
+ *
+ * Stop the background scraper service
+ *
+ * Returns:
+ * - 200: Scraper stopped successfully
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-    if (!authHeader || authHeader !== adminKey) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const scraper = getBackgroundScraper()
     scraper.stop()
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(request, user, 'stop_scraper', 'background_service')
+    )
 
     return NextResponse.json({
       success: true,
       message: 'Background scraper stopped'
     })
-  } catch (error: any) {
-    logger.error('[API] Error stopping scraper', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('[API] Error stopping scraper', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})
 
 /**
  * GET /api/admin/scraper/start
- * Get scraper status
+ *
+ * Get background scraper status
+ *
+ * Returns:
+ * - 200: Scraper status and statistics
+ * - 401: User not authenticated
+ * - 403: User lacks admin privileges
+ * - 500: Server error
+ *
+ * Security: Requires admin role
  */
-export async function GET(request: NextRequest) {
+export const GET = requireAdmin(async (request: NextRequest, user) => {
   try {
-    const authHeader = request.headers.get('x-api-key')
-    const adminKey =
-      process.env.ADMIN_API_KEY || process.env.NEXT_PUBLIC_ADMIN_API_KEY
-    if (!authHeader || authHeader !== adminKey) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const scraper = getBackgroundScraper()
     const stats = scraper.getStatus()
+
+    // Log admin action
+    await logAdminAction(
+      createAuditLogEntry(
+        request,
+        user,
+        'view_scraper_status',
+        'background_service'
+      )
+    )
 
     return NextResponse.json({
       success: true,
       stats
     })
-  } catch (error: any) {
-    logger.error('[API] Error getting scraper status', error)
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+    logger.error('[API] Error getting scraper status', { error })
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
-}
+})
