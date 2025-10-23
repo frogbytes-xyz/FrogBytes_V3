@@ -56,6 +56,7 @@ export default function ProcessingProgress({
   const [progress, setProgress] = useState(0)
   const [stageProgress, setStageProgress] = useState(0)
   const [estimatedTime, setEstimatedTime] = useState<string | null>(null)
+  const [stageStartTime, setStageStartTime] = useState<number>(Date.now())
 
   useEffect(() => {
     if (currentStage === 'error' || currentStage === 'complete') {
@@ -67,42 +68,82 @@ export default function ProcessingProgress({
     const currentStageIndex = STAGES.findIndex(s => s.id === currentStage)
     if (currentStageIndex === -1) return
 
+    // Reset stage start time when stage changes
+    setStageStartTime(Date.now())
+
     // Calculate base progress (completed stages)
     const completedWeight = STAGES.slice(0, currentStageIndex).reduce(
       (sum, stage) => sum + stage.weight,
       0
     )
 
-    // Animate stage progress
+    // Get realistic stage duration estimates based on stage type
+    const getStageDuration = (stageId: string): number => {
+      switch (stageId) {
+        case 'uploading':
+          return 10000 // 10 seconds
+        case 'transcribing':
+          return 60000 // 60 seconds (varies by file length)
+        case 'summarizing':
+          return 30000 // 30 seconds
+        case 'compiling':
+          return 15000 // 15 seconds
+        default:
+          return 20000 // 20 seconds default
+      }
+    }
+
     const currentStageData = STAGES[currentStageIndex]
     if (!currentStageData) return
+
     const currentStageWeight = currentStageData.weight
+    const stageDuration = getStageDuration(currentStageData.id)
+
     let localStageProgress = 0
+    // let lastUpdateTime = Date.now() // Currently unused
+
     const stageInterval = setInterval(() => {
-      localStageProgress += 2
-      if (localStageProgress >= 100) {
-        localStageProgress = 95 // Stop at 95% until actual completion
-        clearInterval(stageInterval)
+      const now = Date.now()
+      const elapsed = now - stageStartTime
+      // const timeSinceLastUpdate = now - lastUpdateTime // Currently unused
+
+      // Calculate realistic progress based on time elapsed
+      const timeBasedProgress = Math.min((elapsed / stageDuration) * 100, 95)
+
+      // Add small random increments to avoid getting stuck
+      const randomIncrement = Math.random() * 0.5
+      localStageProgress = Math.min(timeBasedProgress + randomIncrement, 95)
+
+      // Ensure progress never goes backward
+      if (localStageProgress <= stageProgress) {
+        localStageProgress = stageProgress + 0.1
       }
+
       setStageProgress(localStageProgress)
+      // lastUpdateTime = now // Currently unused
 
       // Update overall progress
       const currentProgress =
         completedWeight + (currentStageWeight * localStageProgress) / 100
       setProgress(Math.min(currentProgress, 98))
 
-      // Update estimated time
+      // Update estimated time based on realistic calculations
       const remainingProgress = 100 - currentProgress
-      const secondsRemaining = Math.ceil(remainingProgress * 2) // ~2 seconds per percent
-      if (secondsRemaining > 60) {
-        setEstimatedTime(`~${Math.ceil(secondsRemaining / 60)} min remaining`)
+      const estimatedSecondsRemaining = Math.ceil(remainingProgress * 1.5) // More realistic timing
+
+      if (estimatedSecondsRemaining > 60) {
+        setEstimatedTime(
+          `~${Math.ceil(estimatedSecondsRemaining / 60)} min remaining`
+        )
+      } else if (estimatedSecondsRemaining > 10) {
+        setEstimatedTime(`~${estimatedSecondsRemaining} sec remaining`)
       } else {
-        setEstimatedTime(`~${secondsRemaining} sec remaining`)
+        setEstimatedTime('Almost done...')
       }
-    }, 100)
+    }, 200) // Update every 200ms for smoother progress
 
     return () => clearInterval(stageInterval)
-  }, [currentStage, progress])
+  }, [currentStage, progress, stageProgress, stageStartTime])
 
   const getCurrentStageIndex = () => {
     return STAGES.findIndex(s => s.id === currentStage)

@@ -2,7 +2,7 @@ import { createClient } from '@/services/supabase/server'
 import { getAuthUser } from '@/lib/auth/helpers'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { processTranscriptionJob } from '@/lib/transcription/worker'
+import { transcriptionQueue } from '@/lib/transcription/queue'
 import { logger } from '@/lib/utils/logger'
 
 export interface TranscribeResponse {
@@ -130,89 +130,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Start transcription job (synchronous for simplicity)
-    // In production, this should be async/queued
-    const result = await processTranscriptionJob({
-      uploadId: upload.id,
-      filePath: upload.file_path,
-      fileName: upload.filename,
-      userId: user.id
-    })
-
-    if (!result.success) {
-      logger.error('[TranscribeAPI] Transcription worker failed', {
-        error: result.error
+    // Start transcription job asynchronously
+    try {
+      const jobId = await transcriptionQueue.enqueue({
+        uploadId: upload.id,
+        filePath: upload.file_path,
+        fileName: upload.filename,
+        userId: user.id
       })
+
+      logger.info('[TranscribeAPI] Transcription job queued', {
+        jobId,
+        uploadId: upload.id
+      })
+
+      return NextResponse.json<TranscribeResponse>(
+        {
+          success: true,
+          message: 'Transcription job started successfully',
+          transcription: {
+            id: jobId,
+            text: '',
+            wordCount: 0
+          }
+        },
+        { status: 202 } // Accepted - processing started
+      )
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error'
+      logger.error('[TranscribeAPI] Failed to queue transcription job', {
+        error: errorMessage
+      })
+
       return NextResponse.json<ErrorResponse>(
         {
           success: false,
-          error: 'Transcription failed',
-          details: [result.error || 'Unknown error']
+          error: 'Failed to start transcription',
+          details: [errorMessage]
         },
         { status: 500 }
       )
     }
-
-    logger.info('[TranscribeAPI] Transcription completed, fetching result...')
-    logger.info('[TranscribeAPI] Transcription ID:', {
-      transcriptionId: result.transcriptionId
-    })
-
-    // Get the transcription result
-    const { data: transcriptionData, error: fetchError } = await supabase
-      .from('transcriptions')
-      .select('id, raw_text, word_count')
-      .eq('id', result.transcriptionId!)
-      .eq('user_id', user.id) // Add explicit user_id filter for RLS
-      .maybeSingle()
-
-    logger.info('[TranscribeAPI] Fetch result:', {
-      hasData: !!transcriptionData,
-      error: fetchError
-    })
-
-    if (fetchError) {
-      logger.error('[TranscribeAPI] Error fetching transcription', fetchError)
-      return NextResponse.json<ErrorResponse>(
-        {
-          success: false,
-          error: 'Failed to fetch transcription',
-          details: [fetchError.message]
-        },
-        { status: 500 }
-      )
-    }
-
-    if (!transcriptionData) {
-      logger.error('[TranscribeAPI] Transcription not found in database')
-      return NextResponse.json<ErrorResponse>(
-        {
-          success: false,
-          error: 'Transcription not found',
-          details: ['Transcription completed but record not found']
-        },
-        { status: 500 }
-      )
-    }
-
-    const transcription = transcriptionData as {
-      id: string
-      raw_text: string
-      word_count: number
-    }
-
-    return NextResponse.json<TranscribeResponse>(
-      {
-        success: true,
-        message: 'Transcription completed successfully',
-        transcription: {
-          id: transcription.id,
-          text: transcription.raw_text,
-          wordCount: transcription.word_count
-        }
-      },
-      { status: 201 }
-    )
   } catch (error) {
     logger.error('[TranscribeAPI] Unexpected transcription error', { error })
 

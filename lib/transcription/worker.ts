@@ -1,4 +1,5 @@
 import { logger } from '@/lib/utils/logger'
+import { fileSystemMonitor } from '@/lib/utils/file-system-monitor'
 
 /**
  * Transcription Worker Logic
@@ -38,8 +39,19 @@ export async function processTranscriptionJob(
   job: TranscriptionJob
 ): Promise<TranscriptionJobResult> {
   const supabase = await createClient()
+  const operationId = `transcription-${job.uploadId}-${Date.now()}`
 
   try {
+    // Monitor file system health before starting
+    fileSystemMonitor.monitorTranscriptionHealth(job.uploadId, job.filePath)
+
+    // Track file read operation
+    fileSystemMonitor.trackOperation(operationId, 'read', job.filePath, {
+      uploadId: job.uploadId,
+      fileName: job.fileName,
+      userId: job.userId
+    })
+
     // Update upload status to processing
     await (supabase.from('uploads') as any)
       .update({ status: 'processing' })
@@ -109,6 +121,9 @@ export async function processTranscriptionJob(
       .update({ status: 'transcribed' })
       .eq('id', job.uploadId)
 
+    // Complete file system monitoring
+    fileSystemMonitor.completeOperation(operationId, true)
+
     return {
       success: true,
       transcriptionId: transcription.id
@@ -118,6 +133,9 @@ export async function processTranscriptionJob(
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error'
     logger.error('[Worker] Error message', errorMessage)
+
+    // Complete file system monitoring with error
+    fileSystemMonitor.completeOperation(operationId, false, errorMessage)
 
     // Update upload status to failed
     await (supabase.from('uploads') as any)

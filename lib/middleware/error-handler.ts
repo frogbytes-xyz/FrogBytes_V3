@@ -264,36 +264,12 @@ export function withErrorHandler<T extends any[]>(
 }
 
 /**
- * Handle unhandled promise rejections
- * Only works in Node.js runtime, not in Edge Runtime
+ * Setup global error handlers for Node.js runtime
+ * This function is a no-op in Edge Runtime
  */
 export function setupGlobalErrorHandlers() {
-  // Check if we're in a Node.js environment (not Edge Runtime)
-  if (typeof process !== 'undefined' && typeof process.on === 'function') {
-    // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled Promise Rejection', {
-        reason: reason instanceof Error ? reason.message : reason,
-        stack: reason instanceof Error ? reason.stack : undefined,
-        promise: promise.toString(),
-        timestamp: new Date().toISOString()
-      })
-    })
-
-    // Handle uncaught exceptions
-    process.on('uncaughtException', error => {
-      logger.error('Uncaught Exception', {
-        message: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString()
-      })
-
-      // Exit gracefully
-      process.exit(1)
-    })
-  } else {
-    // In Edge Runtime, we can&apos;t set up global handlers
-    // The error handling will be done at the individual route level
-    logger.warn('Global error handlers not available in Edge Runtime')
-  }
+  // This function is intentionally empty for Edge Runtime compatibility
+  // The actual Node.js error handling is done in a separate file
+  // that is only imported in Node.js runtime contexts
+  logger.warn('Global error handlers not available in Edge Runtime')
 }

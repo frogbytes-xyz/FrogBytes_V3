@@ -242,6 +242,25 @@ export default function FileUpload({
     setProgress(0)
     setError(null)
 
+    // Start realistic progress simulation for video download
+    const startTime = Date.now()
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const estimatedDuration = 30000 // 30 seconds estimated download time
+
+      // Calculate progress based on time elapsed with some randomness
+      let timeBasedProgress = Math.min((elapsed / estimatedDuration) * 85, 85) // Cap at 85%
+
+      // Add small random increments to avoid getting stuck
+      const randomIncrement = Math.random() * 1.5
+      const newProgress = Math.min(timeBasedProgress + randomIncrement, 85)
+
+      setProgress(prev => {
+        // Ensure progress never goes backward
+        return Math.max(prev, newProgress)
+      })
+    }, 400)
+
     try {
       // Use the enhanced endpoint for automatic authentication
       const response = await fetch('/api/upload/from-url/enhanced', {
@@ -307,9 +326,16 @@ export default function FileUpload({
         )
       }
 
+      // Clear progress interval and set to 100%
+      clearInterval(progressInterval)
+      setProgress(100)
+
       // Start polling for job status
       await pollJobStatus(result.jobId)
     } catch (err) {
+      // Clear progress interval on error
+      clearInterval(progressInterval)
+
       const errorMessage =
         err instanceof Error ? err.message : 'Download failed'
       setError(errorMessage)
@@ -516,16 +542,24 @@ export default function FileUpload({
       const formData = new FormData()
       formData.append('file', file)
 
-      // Simulate progress (real progress tracking would require more complex setup)
+      // Realistic progress simulation with time-based updates
+      const startTime = Date.now()
       const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime
+        const estimatedDuration = 15000 // 15 seconds estimated upload time
+
+        // Calculate progress based on time elapsed with some randomness
+        let timeBasedProgress = Math.min((elapsed / estimatedDuration) * 85, 85) // Cap at 85%
+
+        // Add small random increments to avoid getting stuck
+        const randomIncrement = Math.random() * 2
+        const newProgress = Math.min(timeBasedProgress + randomIncrement, 85)
+
         setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return 90
-          }
-          return prev + 10
+          // Ensure progress never goes backward
+          return Math.max(prev, newProgress)
         })
-      }, 200)
+      }, 300)
 
       const response = await fetch('/api/upload', {
         method: 'POST',

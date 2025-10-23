@@ -4,6 +4,15 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb'
+    },
+    // Improve build stability and reduce file system conflicts
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js'
+        }
+      }
     }
   },
   images: {
@@ -17,6 +26,11 @@ const nextConfig: NextConfig = {
   },
   // Skip static export for dynamic pages
   output: 'standalone',
+  // Improve build stability and reduce file system conflicts
+  generateBuildId: async () => {
+    // Use timestamp-based build ID to prevent manifest conflicts
+    return `build-${Date.now()}`
+  },
   // Instrumentation is enabled by default in Next.js 15+
   // The instrumentation.ts file will be automatically picked up
   webpack: (config, { isServer }) => {
@@ -48,6 +62,40 @@ const nextConfig: NextConfig = {
       module: /node_modules\/clone-deep\/utils\.js$/,
       message: /Cannot statically analyse 'require\(…, …\)'/
     })
+
+    // Add file system stability improvements
+    config.watchOptions = {
+      ...config.watchOptions,
+      // Reduce file system polling to prevent conflicts
+      poll: 1000,
+      aggregateTimeout: 300,
+      ignored: [
+        '**/node_modules/**',
+        '**/.next/**',
+        '**/tmp/**',
+        '**/coverage/**',
+        '**/test-results/**',
+        '**/playwright-report/**'
+      ]
+    }
+
+    // Improve build performance and reduce file system conflicts
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        ...config.optimization?.splitChunks,
+        cacheGroups: {
+          ...config.optimization?.splitChunks?.cacheGroups,
+          // Separate vendor chunks to reduce manifest conflicts
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10
+          }
+        }
+      }
+    }
 
     return config
   }

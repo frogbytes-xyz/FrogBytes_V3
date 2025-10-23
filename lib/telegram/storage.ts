@@ -14,6 +14,13 @@ import archiver from 'archiver'
 import * as https from 'https'
 import * as http from 'http'
 import { logger } from '@/lib/utils/logger'
+import {
+  exceedsTelegramLimit,
+  splitFileIntoChunks,
+  cleanupChunks,
+  SAFE_CHUNK_SIZE,
+  type ChunkedUploadResult
+} from './file-chunking'
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const TELEGRAM_GROUP_ID = process.env.TELEGRAM_GROUP_ID || ''
@@ -115,7 +122,65 @@ export async function createArchive(
 }
 
 /**
- * Upload file to Telegram topic
+ * Upload file chunks to Telegram topic
+ */
+async function uploadFileChunks(
+  chunks: any[],
+  _fileName: string,
+  topicId: string,
+  caption: string
+): Promise<ChunkedUploadResult> {
+  const bot = createBot()
+  if (!bot) {
+    return {
+      success: false,
+      error: 'Telegram bot not configured',
+      chunkResults: []
+    }
+  }
+
+  const chunkResults = []
+
+  for (const chunk of chunks) {
+    try {
+      const chunkCaption = `${caption}\nPart ${chunk.chunkIndex + 1} of ${chunk.totalChunks}`
+
+      const message = await bot.telegram.sendDocument(
+        TELEGRAM_GROUP_ID,
+        { source: createReadStream(chunk.chunkPath) },
+        {
+          caption: chunkCaption,
+          message_thread_id: parseInt(topicId)
+        }
+      )
+
+      chunkResults.push({
+        chunkIndex: chunk.chunkIndex,
+        success: true,
+        messageId: message.message_id,
+        fileId: message.document?.file_id
+      })
+
+      logger.info(`Uploaded chunk ${chunk.chunkIndex + 1}/${chunk.totalChunks}`)
+    } catch (error) {
+      logger.error(`Failed to upload chunk ${chunk.chunkIndex + 1}`, error)
+      chunkResults.push({
+        chunkIndex: chunk.chunkIndex,
+        success: false,
+        error: (error as Error).message
+      })
+    }
+  }
+
+  const allSuccessful = chunkResults.every(result => result.success)
+  return {
+    success: allSuccessful,
+    chunkResults
+  }
+}
+
+/**
+ * Upload file to Telegram topic with automatic chunking for large files
  */
 export async function uploadToTelegramTopic(
   filePath: string,
@@ -150,11 +215,65 @@ export async function uploadToTelegramTopic(
   }
 
   try {
-    // Determine file type and upload accordingly
+    // Determine file type and check if it exceeds Telegram Bot API limits
     const fileExt = fileName.split('.').pop()?.toLowerCase()
     const isVideo = ['mp4', 'mov', 'mpeg', 'avi', 'mkv'].includes(fileExt || '')
     const isAudio = ['mp3', 'wav', 'm4a', 'ogg'].includes(fileExt || '')
 
+    // Check if file exceeds Telegram Bot API limits and needs chunking
+    const fileType = isVideo ? 'video' : isAudio ? 'audio' : 'document'
+    const needsChunking = exceedsTelegramLimit(fileSize, fileType)
+
+    if (needsChunking) {
+      logger.info(`File exceeds Telegram limit, using chunked upload`, {
+        fileName,
+        fileSize,
+        fileType,
+        limit:
+          fileType === 'video' ? '50MB' : fileType === 'audio' ? '50MB' : '50MB'
+      })
+
+      // Split file into chunks
+      const chunks = await splitFileIntoChunks(filePath, SAFE_CHUNK_SIZE)
+
+      // Upload chunks
+      const chunkResult = await uploadFileChunks(
+        chunks,
+        fileName,
+        topicId,
+        caption ||
+          `${fileName}\nSize: ${(fileSize / 1024 / 1024).toFixed(2)}MB (Chunked)`
+      )
+
+      // Clean up chunks
+      await cleanupChunks(chunks)
+
+      if (!chunkResult.success) {
+        return {
+          success: false,
+          error: `Chunked upload failed: ${chunkResult.chunkResults.find(r => !r.success)?.error}`
+        }
+      }
+
+      // Return success with first chunk's file ID for reference
+      const firstSuccessfulChunk = chunkResult.chunkResults.find(r => r.success)
+      const result: TelegramUploadResult = {
+        success: true,
+        messageThreadId: parseInt(topicId)
+      }
+
+      if (firstSuccessfulChunk?.fileId) {
+        result.fileId = firstSuccessfulChunk.fileId
+      }
+
+      if (firstSuccessfulChunk?.messageId) {
+        result.messageId = firstSuccessfulChunk.messageId
+      }
+
+      return result
+    }
+
+    // Regular upload for files under the limit
     const messageOptions: any = {
       caption:
         caption ||
