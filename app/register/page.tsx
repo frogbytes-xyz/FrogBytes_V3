@@ -109,7 +109,12 @@ export default function RegisterPage() {
         )
       }
 
-      router.push('/login?registered=true')
+      // Check if email confirmation is required
+      if (data.message && data.message.includes('check your email')) {
+        router.push('/login?registered=true&confirm=true')
+      } else {
+        router.push('/login?registered=true')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
