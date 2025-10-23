@@ -41,9 +41,10 @@ export function useAdminAuth() {
   const [user, setUser] = useState<AdminUserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
+
     /**
      * Initialize admin auth state
      * Fetches user data including role from the database
