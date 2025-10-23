@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -52,13 +52,7 @@ export function DocumentShareButton({
   const [copying, setCopying] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  useEffect(() => {
-    if (isDialogOpen) {
-      fetchShareInfo()
-    }
-  }, [isDialogOpen, documentId])
-
-  const fetchShareInfo = async (): Promise<void> => {
+  const fetchShareInfo = useCallback(async (): Promise<void> => {
     try {
       setLoading(true)
       setError(null)
@@ -80,7 +74,13 @@ export function DocumentShareButton({
     } finally {
       setLoading(false)
     }
-  }
+  }, [documentId])
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      fetchShareInfo()
+    }
+  }, [isDialogOpen, fetchShareInfo])
 
   const toggleSharing = async (makePublic: boolean): Promise<void> => {
     try {

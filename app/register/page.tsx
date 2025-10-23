@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -312,7 +311,6 @@ export default function RegisterPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   )
 }

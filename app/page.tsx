@@ -7,7 +7,6 @@ import SummaryMockup from '@/components/SummaryMockup'
 import LearningMockup from '@/components/LearningMockup'
 import HeroFileUpload from '@/components/HeroFileUpload'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 import AnimatedText from '@/components/AnimatedText'
 
 export default function Home() {
@@ -421,8 +420,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </main>
   )
 }

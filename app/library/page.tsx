@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ForYouSection from '@/components/ForYouSection'
 import PDFThumbnail from '@/components/PDFThumbnail'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 import { enhancedSearch } from '@/lib/recommendations/similarity'
 import type { EnhancedSummary } from '@/lib/types/library'
 import { useVoting } from '@/lib/hooks/useVoting'
@@ -86,7 +85,7 @@ export default function LibraryPage() {
     setCurrentUser(user)
   }, [supabase])
 
-  const loadSummaries = async () => {
+  const loadSummaries = useCallback(async () => {
     try {
       setLoading(true)
 
@@ -186,9 +185,9 @@ export default function LibraryPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, sortBy, currentUser])
 
-  const loadFilterOptions = async () => {
+  const loadFilterOptions = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('summaries')
@@ -213,7 +212,7 @@ export default function LibraryPage() {
       setUniversities([])
       setSubjects([])
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     async function init() {
@@ -857,8 +856,6 @@ export default function LibraryPage() {
           )}
         </div>
       </div>
-
-      <Footer />
     </main>
   )
 }

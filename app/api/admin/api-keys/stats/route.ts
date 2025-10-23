@@ -10,9 +10,21 @@ import { getValidationStats } from '@/lib/api-keys/database'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET(_request: NextRequest) {
   try {
+    // Check if required environment variables are available
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      return NextResponse.json(
+        { error: 'Database configuration missing' },
+        { status: 503 }
+      )
+    }
+
     const stats = await getValidationStats()
 
     // Build a simple time-bucketed series for valid vs quota_exceeded (last 24h hourly)

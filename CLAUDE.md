@@ -220,6 +220,109 @@ Recent refactoring has established a clean foundation:
 
 ## PRO-MODE: Enterprise Code Quality Enforcement
 
+### CRITICAL: Pre-Commit Workflow (MANDATORY)
+
+**ALWAYS run this workflow before committing to prevent CI/CD failures:**
+
+```bash
+# 1. Type check (MUST pass - zero errors)
+npm run type-check
+
+# 2. Lint (MUST pass - zero warnings)
+npm run lint
+
+# 3. Format check (MUST pass)
+npm run format:check
+
+# 4. Security audit (MUST pass)
+npm run security-audit
+
+# 5. Circular dependencies check (MUST pass)
+npm run check-deps
+
+# If format:check fails, auto-fix:
+npm run format
+
+# If lint fails with auto-fixable issues:
+npm run lint:fix
+```
+
+**Use the `/pre-commit` slash command to run all checks automatically.**
+
+### React Hooks Best Practices (CRITICAL)
+
+**All hooks MUST follow exhaustive-deps rules to prevent CI failures:**
+
+#### 1. useCallback Dependencies
+
+```typescript
+// ❌ WRONG - Missing dependencies causes CI failure
+const fetchData = useCallback(async () => {
+  await fetchStatus()
+  await fetchKeys() // fetchKeys not in deps array
+}, [])
+
+// ✅ CORRECT - All dependencies included
+const fetchData = useCallback(async () => {
+  await fetchStatus()
+  await fetchKeys()
+}, [fetchKeys, fetchStatus])
+```
+
+#### 2. Function Declaration Order (TypeScript Hoisting)
+
+```typescript
+// ❌ WRONG - Functions used before declaration
+const fetchData = useCallback(() => {
+  fetchKeys()  // Error: used before declaration
+}, [fetchKeys])
+
+const fetchKeys = useCallback(() => { ... }, [])
+
+// ✅ CORRECT - Declare functions before use
+const fetchKeys = useCallback(() => { ... }, [])
+
+const fetchData = useCallback(() => {
+  fetchKeys()  // Now defined
+}, [fetchKeys])
+```
+
+#### 3. Stable Functions and Arrays
+
+```typescript
+// ❌ WRONG - Array created on every render
+const supportedFormats = ['.mp3', '.wav', '.mp4']
+
+const validateFile = useCallback(
+  file => {
+    return supportedFormats.includes(file.ext)
+  },
+  [supportedFormats]
+) // supportedFormats changes every render
+
+// ✅ CORRECT - Memoize array
+const supportedFormats = useMemo(() => ['.mp3', '.wav', '.mp4'], [])
+
+const validateFile = useCallback(
+  file => {
+    return supportedFormats.includes(file.ext)
+  },
+  [supportedFormats]
+) // Stable reference
+```
+
+#### 4. When to Use eslint-disable
+
+```typescript
+// Only use when function is stable but ESLint can't detect it
+const handleUpload = useCallback(async () => {
+  await pollJobStatus(jobId)  // pollJobStatus is stable useCallback below
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [jobId])  // Don't include pollJobStatus - causes hoisting issues
+
+const pollJobStatus = useCallback(async (id) => { ... }, [])
+```
+
 ### Mandatory Code Review Checklist
 
 Before any code is considered complete, it MUST pass this checklist:
@@ -232,8 +335,18 @@ Before any code is considered complete, it MUST pass this checklist:
 - [ ] No unused variables, imports, or parameters
 - [ ] Proper handling of `null` and `undefined` cases
 - [ ] Type guards used for runtime type checking
+- [ ] All React hooks imported (useCallback, useMemo, useEffect, etc.)
+- [ ] Function declarations ordered to prevent hoisting errors
 
-#### 2. Code Documentation (JSDoc)
+#### 2. React Hooks Compliance
+
+- [ ] All useCallback/useMemo have complete dependency arrays
+- [ ] Functions declared before use in dependency arrays
+- [ ] Stable arrays/objects wrapped in useMemo
+- [ ] No exhaustive-deps ESLint warnings
+- [ ] eslint-disable comments justified with explanation
+
+#### 3. Code Documentation (JSDoc)
 
 - [ ] All exported functions have complete JSDoc
 - [ ] All React components have JSDoc with props interface
@@ -241,7 +354,7 @@ Before any code is considered complete, it MUST pass this checklist:
 - [ ] Complex algorithms have explanatory comments
 - [ ] Business logic has clear documentation
 
-#### 3. Professional Standards
+#### 4. Professional Standards
 
 - [ ] NO emojis anywhere in the codebase
 - [ ] NO console.log/error/warn statements
@@ -250,15 +363,15 @@ Before any code is considered complete, it MUST pass this checklist:
 - [ ] Consistent naming conventions
 - [ ] Single responsibility principle followed
 
-#### 4. Performance & Security
+#### 5. Performance & Security
 
 - [ ] Input validation with Zod schemas
 - [ ] Proper error handling and logging
-- [ ] No security vulnerabilities
+- [ ] No security vulnerabilities (run `npm audit`)
 - [ ] Optimized re-renders (React.memo, useMemo, useCallback)
 - [ ] Bundle size impact considered
 
-#### 5. Testing Requirements
+#### 6. Testing Requirements
 
 - [ ] Unit tests for business logic
 - [ ] Integration tests for API endpoints
@@ -266,39 +379,116 @@ Before any code is considered complete, it MUST pass this checklist:
 - [ ] Edge cases handled
 - [ ] Mock external dependencies
 
+#### 7. CI/CD Compliance
+
+- [ ] All pre-commit checks pass locally
+- [ ] No Prettier formatting issues
+- [ ] Security audit passes
+- [ ] No circular dependencies
+- [ ] All dev dependencies installed (check package.json)
+
 ### Code Quality Gates
 
-The following will cause immediate rejection:
+The following will cause immediate CI/CD rejection:
 
 1. **Emoji Usage**: Any emoji in code, comments, strings, or UI text
 2. **Console Statements**: Any console.log/error/warn in production code
 3. **Missing Documentation**: Exported functions without JSDoc
 4. **Type Safety Violations**: Any `any` types or missing return types
-5. **Security Issues**: Unvalidated inputs, SQL injection risks
+5. **Security Issues**: Unvalidated inputs, SQL injection risks, vulnerable dependencies
 6. **Performance Issues**: Unnecessary re-renders, large bundle sizes
 7. **Unprofessional Messages**: Technical jargon in user-facing text
+8. **React Hooks Violations**: Missing dependencies, hoisting errors
+9. **Formatting Issues**: Code not formatted with Prettier
+10. **Missing Dependencies**: Tools like madge, prettier not in package.json
 
 ### Automated Quality Checks
 
 Run these commands before every commit:
 
 ```bash
-# Type checking
-npm run type-check
+# MANDATORY PRE-COMMIT WORKFLOW
+npm run type-check      # Zero TypeScript errors
+npm run lint           # Zero ESLint warnings
+npm run format:check   # Prettier compliance
+npm run security-audit # No vulnerabilities
+npm run check-deps     # No circular deps
 
-# Linting
-npm run lint
+# Auto-fix commands if needed
+npm run format         # Fix formatting
+npm run lint:fix       # Fix auto-fixable lint issues
+npm audit fix          # Fix security issues
+npm audit fix --force  # Fix breaking changes (use cautiously)
 
-# Formatting
-npm run format
-
-# Testing
+# Testing (when implemented)
 npm run test:unit
 npm run test:e2e
-
-# Bundle analysis
-npm run analyze
 ```
+
+### GitHub Actions & CI/CD Environment
+
+**CRITICAL**: GitHub Actions require environment variables for successful builds:
+
+#### Required Environment Variables (GitHub Secrets)
+
+Add these in **GitHub Repository → Settings → Secrets and variables → Actions**:
+
+```bash
+# Supabase Configuration (REQUIRED for build)
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional but recommended for production
+NEXT_PUBLIC_SITE_URL=https://your-domain.com
+```
+
+#### CI/CD Workflow Files
+
+- `.github/workflows/ci.yml` - Main CI/CD pipeline (type-check, lint, test, security scan)
+- `.github/workflows/vercel-deployment.yml` - Vercel deployment workflow
+
+#### Common CI/CD Failures and Solutions
+
+1. **Build fails with "supabaseUrl is required"**
+   - Solution: Add NEXT_PUBLIC_SUPABASE_URL to GitHub secrets
+
+2. **ESLint warnings cause failure**
+   - Solution: Fix warnings locally with `npm run lint` before pushing
+   - CI runs with `--max-warnings 0` flag (zero tolerance)
+
+3. **Security audit failures**
+   - Solution: Run `npm audit fix` locally before pushing
+   - Use `npm audit fix --force` for breaking changes (test thoroughly)
+
+4. **Prettier formatting failures**
+   - Solution: Run `npm run format` before committing
+   - CI runs `npm run format:check` which fails on unformatted code
+
+5. **Missing dev dependencies (e.g., madge)**
+   - Solution: Install locally and commit package.json
+   - Verify with `npm ci` in clean environment
+
+6. **CodeQL upload failures**
+   - Solution: Ensure workflow has `security-events: write` permission
+   - Use CodeQL action v3 (not deprecated v2)
+
+#### Pre-Push Checklist
+
+```bash
+# Run ALL checks before pushing to avoid CI failures
+npm run type-check      # Must pass
+npm run lint           # Must pass
+npm run format:check   # Must pass
+npm run security-audit # Must pass
+npm run check-deps     # Must pass
+
+# If any fail, fix them:
+npm run format         # Auto-fix formatting
+npm run lint:fix       # Auto-fix linting
+npm audit fix          # Fix security issues
+```
+
+**Pro Tip**: Use the `/pre-commit` command to run all checks automatically.
 
 ### When Making Changes
 

@@ -9,9 +9,21 @@ import { NextResponse } from 'next/server'
 import { getEnrichedScrapedKeys } from '@/lib/api-keys/database'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if required environment variables are available
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      return NextResponse.json(
+        { error: 'Database configuration missing' },
+        { status: 503 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
 
     const page = parseInt(searchParams.get('page') || '1')

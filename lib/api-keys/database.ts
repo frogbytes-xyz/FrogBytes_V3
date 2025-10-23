@@ -11,11 +11,28 @@ import { createClient } from '@supabase/supabase-js'
 import type { ScrapedKey } from './types'
 import type { KeyValidationResult } from './validator'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+/**
+ * Get Supabase admin client (lazy-initialized to avoid build-time issues)
+ */
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// Use service role key for full access
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  if (!supabaseUrl) {
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_URL environment variable is required. Please configure your database connection'
+    )
+  }
+
+  if (!supabaseServiceKey) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY environment variable is required. Please configure your database connection'
+    )
+  }
+
+  // Use service role key for full access
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export interface DatabasePotentialKey extends ScrapedKey {
   id: string
@@ -51,6 +68,7 @@ export interface DatabaseWorkingKey {
  * Store scraped keys in the potential_keys table
  */
 export async function storeScrapedKeys(keys: ScrapedKey[]): Promise<void> {
+  const supabase = getSupabaseClient()
   const { error } = await supabase.from('potential_keys').upsert(
     keys.map(key => ({
       api_key: key.key,
@@ -74,6 +92,7 @@ export async function storeScrapedKeys(keys: ScrapedKey[]): Promise<void> {
 export async function getPendingKeysForValidation(
   limit = 50
 ): Promise<DatabasePotentialKey[]> {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('potential_keys')
     // Select with aliases to match ScrapedKey shape so downstream code can use key/sourceUrl/foundAt
@@ -95,6 +114,7 @@ export async function getPendingKeysForValidation(
  * Mark key as validated in potential_keys (after moving to working_gemini_keys)
  */
 export async function markKeyAsValidated(apiKey: string): Promise<void> {
+  const supabase = getSupabaseClient()
   const { error } = await supabase
     .from('potential_keys')
     .update({
@@ -113,6 +133,7 @@ export async function markKeyAsValidated(apiKey: string): Promise<void> {
 export async function storeValidationResult(
   validationResult: KeyValidationResult
 ): Promise<void> {
+  const supabase = getSupabaseClient()
   // Determine if quota is exceeded via either explicit status or quotaRemaining header
   const isQuotaExceeded =
     validationResult.status === 'quota_reached' ||
@@ -241,6 +262,7 @@ export async function getValidatedKeys(filters?: {
   minTokens?: number
   limit?: number
 }): Promise<DatabaseWorkingKey[]> {
+  const supabase = getSupabaseClient()
   let query = supabase
     .from('working_gemini_keys')
     .select('*')
@@ -310,6 +332,7 @@ export async function getValidationStats(): Promise<{
     canCallFunctions: number
   }
 }> {
+  const supabase = getSupabaseClient()
   const [potentialResult, workingResult] = await Promise.all([
     // Get total scraped keys
     supabase.from('potential_keys').select('id, validated', { count: 'exact' }),
@@ -368,6 +391,7 @@ export async function getValidationStats(): Promise<{
 export async function getKeysNeedingRevalidation(
   limit = 50
 ): Promise<DatabaseWorkingKey[]> {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('working_gemini_keys')
     .select('*')
@@ -390,6 +414,7 @@ export async function updateKeyStatus(
   status: 'valid' | 'quota_exceeded',
   nextCheckMinutes = 5
 ): Promise<void> {
+  const supabase = getSupabaseClient()
   const { error } = await supabase
     .from('working_gemini_keys')
     .update({
@@ -410,6 +435,7 @@ export async function updateKeyStatus(
  * Remove invalid key from working_gemini_keys
  */
 export async function removeInvalidKey(apiKey: string): Promise<void> {
+  const supabase = getSupabaseClient()
   const { error } = await supabase
     .from('working_gemini_keys')
     .delete()
@@ -427,6 +453,7 @@ export async function getEnrichedScrapedKeys(
   limit = 50,
   offset = 0
 ): Promise<any[]> {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('potential_keys')
     .select('*')

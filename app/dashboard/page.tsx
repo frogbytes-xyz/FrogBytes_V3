@@ -8,7 +8,6 @@ import Link from 'next/link'
 import { createClient } from '@/services/supabase/client'
 import { getUserSummaries, type SummaryListItem } from '@/services/summaries'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 import CollectionCard from '@/components/ui/collection-card'
 import LectureSelector from '@/components/features/lecture-selector'
 import SummaryCard from '@/components/DraggableSummaryCard'
@@ -629,8 +628,6 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-
-      <Footer />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

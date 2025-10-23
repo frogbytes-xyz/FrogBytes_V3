@@ -85,23 +85,6 @@ export default function AdminApiKeysDashboard() {
     {}
   )
 
-  // Fetch all data
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      await Promise.all([
-        fetchStatus(),
-        fetchKeys(),
-        fetchLogs(),
-        fetchGithubTokens()
-      ])
-    } catch (error) {
-      logger.error('Error fetching data', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   const fetchStatus = async () => {
     const response = await fetch('/api/admin/dashboard/status', {
       headers: { 'x-api-key': ADMIN_API_KEY }
@@ -109,6 +92,16 @@ export default function AdminApiKeysDashboard() {
     const data = await response.json()
     if (data.success) {
       setStatus(data.data)
+    }
+  }
+
+  const fetchGithubTokens = async () => {
+    const response = await fetch('/api/admin/dashboard/github-tokens', {
+      headers: { 'x-api-key': ADMIN_API_KEY }
+    })
+    const data = await response.json()
+    if (data.success) {
+      setGithubTokens(data.data)
     }
   }
 
@@ -156,15 +149,22 @@ export default function AdminApiKeysDashboard() {
     }
   }, [logFilter])
 
-  const fetchGithubTokens = async () => {
-    const response = await fetch('/api/admin/dashboard/github-tokens', {
-      headers: { 'x-api-key': ADMIN_API_KEY }
-    })
-    const data = await response.json()
-    if (data.success) {
-      setGithubTokens(data.data)
+  // Fetch all data
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      await Promise.all([
+        fetchStatus(),
+        fetchKeys(),
+        fetchLogs(),
+        fetchGithubTokens()
+      ])
+    } catch (error) {
+      logger.error('Error fetching data', error)
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [fetchKeys, fetchLogs])
 
   const controlService = async (
     service: string,

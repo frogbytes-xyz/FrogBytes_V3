@@ -9,7 +9,6 @@ import MetadataForm from '@/components/MetadataForm'
 import type { LibraryMetadata } from '@/components/MetadataForm'
 import { createClient } from '@/services/supabase/client'
 import Menubar from '@/components/layout/Menubar'
-import Footer from '@/components/layout/Footer'
 import { Button } from '@/components/ui/button'
 import { getPendingFile, clearPendingFile } from '@/lib/pendingFileStore'
 import ProcessingProgress from '@/components/ProcessingProgress'
@@ -546,8 +545,6 @@ export default function UploadPage() {
           </div>
         )}
       </div>
-
-      <Footer />
     </main>
   )
 }

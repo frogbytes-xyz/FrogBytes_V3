@@ -102,7 +102,7 @@ export default function ProcessingProgress({
     }, 100)
 
     return () => clearInterval(stageInterval)
-  }, [currentStage])
+  }, [currentStage, progress])
 
   const getCurrentStageIndex = () => {
     return STAGES.findIndex(s => s.id === currentStage)
